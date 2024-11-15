@@ -1,4 +1,4 @@
-import { ConfigException } from './config.exception';
+import { ConfigException } from '@src/shared/module/config/exception/config.exception';
 import { configSchema } from './config.schema';
 import { Config } from './config.type';
 
@@ -17,6 +17,12 @@ export const factory = (): Config => {
     movieDb: {
       apiToken: process.env.MOVIEDB_API_TOKEN,
       url: process.env.MOVIEDB_BASE_URL,
+    },
+    trainingPlanApi: {
+      url: process.env.TRAINING_PLAN_API,
+    },
+    billingApi: {
+      url: process.env.BILLING_API_URL,
     },
   });
 
