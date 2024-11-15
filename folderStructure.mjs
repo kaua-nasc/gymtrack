@@ -95,6 +95,10 @@ export const folderStructureConfig = createFolderStructure({
                           name: 'type',
                           children: [{ name: '*.type.ts' }],
                         },
+                        {
+                          name: 'guard',
+                          children: [{ name: '*.guard.ts' }],
+                        },
                       ],
                     },
                     {
@@ -134,6 +138,15 @@ export const folderStructureConfig = createFolderStructure({
                   ],
                 },
                 {
+                  name: 'integration',
+                  children: [
+                    {
+                      name: 'provider',
+                      ruleId: 'finalDirectoryWithUnitTests_provider',
+                    },
+                  ],
+                },
+                {
                   name: 'persistence',
                   children: [
                     {
@@ -143,6 +156,10 @@ export const folderStructureConfig = createFolderStructure({
                     {
                       name: 'repository',
                       ruleId: 'finalDirectoryWithUnitTests_repository',
+                      children: [
+                        { name: '*.repository.ts' },
+                        { name: 'external', children: [{ name: '*.repository.ts' }] },
+                      ],
                     },
                     {
                       name: '{kebab-case}.*.ts', //persisnce may need some files like a module or a schema definition
@@ -226,6 +243,9 @@ export const folderStructureConfig = createFolderStructure({
               name: '{kebab-case}',
               children: [
                 {
+                  name: '*-migration-helper.ts',
+                },
+                {
                   name: '{kebab-case}.(ts|json|prisma)',
                 },
                 {
@@ -246,30 +266,34 @@ export const folderStructureConfig = createFolderStructure({
       name: 'test',
       children: [
         {
+          name: 'enum',
+          children: [{ name: '*.enum.ts' }],
+        },
+        {
+          name: 'factory',
+          children: [{ name: '*', children: [{ name: '*.test-factory.ts' }] }],
+        },
+        {
           name: '*',
         },
       ],
     },
   ],
   rules: {
-    finalDirectoryWithUnitTests_service:
-      finalDirectoryWithUnitTestsBuilder('service'),
-    finalDirectoryWithUnitTests_resolver:
-      finalDirectoryWithUnitTestsBuilder('resolver'),
-    finalDirectoryWithUnitTests_model:
-      finalDirectoryWithUnitTestsBuilder('model'),
+    finalDirectoryWithUnitTests_service: finalDirectoryWithUnitTestsBuilder('service'),
+    finalDirectoryWithUnitTests_resolver: finalDirectoryWithUnitTestsBuilder('resolver'),
+    finalDirectoryWithUnitTests_model: finalDirectoryWithUnitTestsBuilder('model'),
     finalDirectoryWithUnitTests_controller:
       finalDirectoryWithUnitTestsBuilder('controller'),
     finalDirectoryWithUnitTests_repository:
       finalDirectoryWithUnitTestsBuilder('repository'),
-    finalDirectoryWithUnitTests_entity:
-      finalDirectoryWithUnitTestsBuilder('entity'),
+    finalDirectoryWithUnitTests_entity: finalDirectoryWithUnitTestsBuilder('entity'),
     finalDirectoryWithUnitTests_exception:
       finalDirectoryWithUnitTestsBuilder('exception'),
     finalDirectoryWithUnitTests_eventHandler:
       finalDirectoryWithUnitTestsBuilder('event-handler'),
-    finalDirectoryWithUnitTests_httpClient:
-      finalDirectoryWithUnitTestsBuilder('client'),
+    finalDirectoryWithUnitTests_httpClient: finalDirectoryWithUnitTestsBuilder('client'),
+    finalDirectoryWithUnitTests_provider: finalDirectoryWithUnitTestsBuilder('provider'),
     tsOnlyFiles: {
       children: [{ name: '*.ts' }],
     },
