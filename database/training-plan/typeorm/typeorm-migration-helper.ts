@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { BillingPersistenceModule } from '@src/module/billing/persistence/billing-persistence.module';
 import { TrainingPlanPersistenceModule } from '@src/module/training-plan/persistence/training-plan-persistence.module';
 import { ConfigService } from '@src/shared/module/config/service/config.service';
 import { TypeOrmMigrationService } from '@src/shared/module/persistence/typeorm/service/typeorm-migration.service';

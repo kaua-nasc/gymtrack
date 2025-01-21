@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, ManyToMany } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 
 @Entity({ name: 'users' })

@@ -1,12 +1,15 @@
+import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
-import { ExerciseType } from '../../core/enum/exercise-type.enum';
 import { Training } from './training.entity';
 
 @Entity({ name: 'exercises' })
 export class Exercise extends DefaultEntity<Exercise> {
   @Column({ type: 'varchar', nullable: false })
   name: string;
+
+  @Column({ type: 'uuid', nullable: false })
+  trainingId: string;
 
   @Column({ type: 'enum', enum: ExerciseType, nullable: false })
   type: ExerciseType;

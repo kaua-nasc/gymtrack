@@ -1,8 +1,9 @@
 import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
-import { TrainingModel } from './training.model';
 import { randomUUID } from 'crypto';
+import { TrainingModel } from './training.model';
 
 export class DayModel extends DefaultModel {
+  trainingPlanId: string;
   trainings: TrainingModel[];
 
   private constructor(data: DayModel) {

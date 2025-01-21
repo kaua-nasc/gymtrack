@@ -1,7 +1,7 @@
+import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
+import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
 import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { TrainingLevel } from '../../core/enum/training-level.enum';
-import { TrainingType } from '../../core/enum/training-type.enum';
 import { Day } from './day.entity';
 
 @Entity({ name: 'training_plans' })

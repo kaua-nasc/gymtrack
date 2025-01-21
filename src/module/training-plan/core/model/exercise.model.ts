@@ -1,8 +1,9 @@
+import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
 import { randomUUID } from 'crypto';
-import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 
 export class ExerciseModel extends DefaultModel {
+  trainingId: string;
   name: string;
   type: ExerciseType;
   setsNumber: number;

@@ -18,14 +18,14 @@ export class AuthService {
   ) {}
 
   async signIn(email: string, password: string): Promise<{ accessToken: string }> {
-    const user = await this.userRepository.findOneBy({ email });
+    const user = await this.userRepository.findOneBy(email);
     if (!user || !(await this.comparePassword(password, user.password))) {
       throw new UserUnauthorizedException(`Cannot authorize user: ${email}`);
     }
 
     const trainingPlanIds = user.trainingPlans.map((values) => values.id);
 
-    const userValue = UserModel.create({
+    UserModel.create({
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,

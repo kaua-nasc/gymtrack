@@ -16,7 +16,7 @@ export class SubscriptionService {
   ) {}
 
   async createSubscription({ planId }: { planId: string }): Promise<SubscriptionModel> {
-    const plan = await this.planRepository.findOneBy({ id: planId });
+    const plan = await this.planRepository.findOneBy(planId);
     if (!plan) {
       throw new NotFoundDomainException(`Plan with id ${planId} not found`);
     }
@@ -28,7 +28,7 @@ export class SubscriptionService {
       startDate: new Date(),
       autoRenew: true,
     });
-    this.subscriptionRepository.create({ ...subscription });
+    this.subscriptionRepository.saveSubscription({ ...subscription });
     return subscription;
   }
 

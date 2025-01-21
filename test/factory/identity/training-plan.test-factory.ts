@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker/.';
-import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
 import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
 import { DayModel } from '@src/module/training-plan/core/model/day.model';
@@ -15,7 +14,7 @@ const exercise = ExerciseModel.create({
   observation: faker.string.sample(),
   repsNumber: faker.number.int(),
   setsNumber: faker.number.int(),
-  type: ExerciseType.cardio,
+  //type: ExerciseType.cardio,
   createdAt: faker.date.recent(),
   updatedAt: faker.date.recent(),
   deletedAt: null,
@@ -26,12 +25,14 @@ const training = TrainingModel.create({
   createdAt: faker.date.recent(),
   updatedAt: faker.date.recent(),
   deletedAt: null,
-  title: faker.string.sample(),
+  name: faker.string.sample(),
   exercises: [exercise],
+  dayId: faker.string.uuid(),
 });
 
 const day = DayModel.create({
   id: faker.string.uuid(),
+  trainingPlanId: faker.string.uuid(),
   createdAt: faker.date.recent(),
   updatedAt: faker.date.recent(),
   deletedAt: null,

@@ -1,8 +1,8 @@
-import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
-import { DayModel } from './day.model';
-import { randomUUID } from 'crypto';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
 import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
+import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
+import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
+import { randomUUID } from 'crypto';
+import { DayModel } from './day.model';
 
 export class TrainingPlanModel extends DefaultModel {
   name: string;

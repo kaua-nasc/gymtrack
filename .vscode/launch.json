@@ -23,6 +23,16 @@
       "windows": {
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Start NestJS with Watch",
+      "runtimeExecutable": "/home/kaua/.asdf/installs/nodejs/23.6.0/bin/npm",
+      "runtimeArgs": ["run", "start:dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "restart": true
     }
   ]
 }

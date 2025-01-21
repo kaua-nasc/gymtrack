@@ -1,20 +1,24 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import { DefaultTypeOrmRepository } from '@src/shared/module/persistence/typeorm/repository/default-typeorm.repository';
-import { Plan } from '../entity/plan.entity';
-import { PlanModel } from '../../core/model/plan.model';
+import { Plan } from '@src/module/billing/persistence/entity/plan.entity';
+import { PlanModel } from '@src/module/billing/core/model/plan.model';
 
 @Injectable()
 export class PlanRepository extends DefaultTypeOrmRepository<Plan> {
-  constructor(@Inject(DataSource) readonly dataSource: DataSource) {
-    super(Plan, dataSource);
+  constructor(readonly transactionalEntityManager: EntityManager) {
+    super(Plan, transactionalEntityManager);
   }
 
   async createPlan(entityLike: PlanModel) {
-    const plan = this.create({ ...entityLike });
+    const plan = new Plan({ ...entityLike });
 
     await this.save(plan);
 
     return plan;
+  }
+
+  async findOneBy(id: string) {
+    return await this.findOneById(id);
   }
 }

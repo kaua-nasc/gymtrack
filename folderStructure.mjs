@@ -246,7 +246,7 @@ export const folderStructureConfig = createFolderStructure({
                   name: '*-migration-helper.ts',
                 },
                 {
-                  name: '{kebab-case}.(ts|json|prisma)',
+                  name: '{kebab-case}.datasource.(ts|json|prisma)',
                 },
                 {
                   name: 'migration',

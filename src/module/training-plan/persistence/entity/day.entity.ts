@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
-import { Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 import { Training } from './training.entity';
 
@@ -7,6 +7,9 @@ import { Training } from './training.entity';
 export class Day extends DefaultEntity<Day> {
   @OneToMany(() => Training, (training) => training.day, { cascade: true })
   trainings: Training[];
+
+  @Column({ type: 'uuid', nullable: false })
+  trainingPlanId: string;
 
   @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.days, {
     nullable: false,

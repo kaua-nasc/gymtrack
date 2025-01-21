@@ -1,9 +1,10 @@
 import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
-import { ExerciseModel } from './exercise.model';
 import { randomUUID } from 'crypto';
+import { ExerciseModel } from './exercise.model';
 
 export class TrainingModel extends DefaultModel {
-  title: string;
+  name: string;
+  dayId: string;
   exercises: ExerciseModel[];
 
   private constructor(data: TrainingModel) {

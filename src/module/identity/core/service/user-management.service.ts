@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UserModel } from '@src/module/identity/core/model/user.model';
-import { DomainException } from '@src/shared/core/exception/domain.exception';
 import { hash } from 'bcrypt';
 import { UserRepository } from '@src/module/identity/persistence/repository/user.repository';
 import { BillingSubscriptionPlanTrainingPlanQuantityApi } from '@src/shared/module/integration/interface/billing-integration.interface';
@@ -32,13 +31,13 @@ export class UserManagementService {
       trainingPlanIds: [],
     });
 
-    await this.userRepository.createUser({ ...newUser });
+    await this.userRepository.saveUser({ ...newUser });
 
     return newUser;
   }
 
   async getUserById(id: string) {
-    const userData = await this.userRepository.findOneBy({ id });
+    const userData = await this.userRepository.findOneBy(id);
 
     if (!userData) throw new Error();
 
@@ -58,7 +57,7 @@ export class UserManagementService {
   }
 
   async associateTrainingPlan(userId: string, trainingPlanId: string) {
-    const user = await this.userRepository.findOneBy({ id: userId });
+    const user = await this.userRepository.findOneBy(userId);
 
     if (!user) {
       throw new Error();
@@ -72,10 +71,10 @@ export class UserManagementService {
       throw new Error();
     }
 
-    const subscriptionPlanTrainingPlanMaxQuantity =
-      await this.subscriptionPlanQuantityServiceClient.subscriptionPlanTrainingPlanQuantity(
-        userId
-      );
+    //const subscriptionPlanTrainingPlanMaxQuantity =
+    await this.subscriptionPlanQuantityServiceClient.subscriptionPlanTrainingPlanQuantity(
+      userId
+    );
 
     //if (subscriptionPlanTrainingPlanMaxQuantity <= user.trainingPlanIds.length) {
     //throw new Error();
@@ -83,6 +82,6 @@ export class UserManagementService {
 
     //user.trainingPlanIds.push(trainingPlanId);
 
-    this.userRepository.update(user.id, user);
+    //this.userRepository.update(user.id, user);
   }
 }
