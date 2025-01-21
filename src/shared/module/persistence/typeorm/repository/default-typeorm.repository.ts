@@ -1,19 +1,54 @@
-import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
+import {
+  EntityManager,
+  EntityTarget,
+  FindManyOptions,
+  FindOneOptions,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
 
-//TODO change to hide typeorm repository, stop using inheritance
-export abstract class DefaultTypeOrmRepository<
-  T extends ObjectLiteral,
-> extends Repository<T> {
+export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
+  protected repository: Repository<T>;
   constructor(
-    readonly model: EntityTarget<T>,
-    readonly dataSource: DataSource
+    readonly entity: EntityTarget<T>,
+    readonly manager: EntityManager
   ) {
-    super(model, dataSource.createEntityManager());
+    this.repository = manager.getRepository(entity);
   }
 
-  async deleteAll(): Promise<void> {
-    const repository = this.dataSource.getRepository(this.model);
-    const entities = await repository.find();
-    await repository.remove(entities);
+  async save(entity: T): Promise<T> {
+    return await this.repository.save(entity);
+  }
+
+  async findOneById(id: string, relations?: string[]): Promise<T | null> {
+    return this.repository.findOne({
+      where: { id } as FindOptionsWhere<T>,
+      relations,
+    });
+  }
+
+  async find(options: FindOneOptions<T>): Promise<T | null> {
+    return this.repository.findOne(options);
+  }
+
+  async findMany(options: FindManyOptions<T>): Promise<T[] | null> {
+    return this.repository.find(options);
+  }
+
+  async exists(id: string): Promise<boolean> {
+    return this.repository.exists({
+      where: { id } as FindOptionsWhere<T>,
+    });
+  }
+
+  async existsBy(properties: FindOptionsWhere<T>): Promise<boolean> {
+    return this.repository.exists({
+      where: properties,
+    });
+  }
+
+  async delete(options: FindOptionsWhere<T>): Promise<void> {
+    this.repository.delete(options);
   }
 }

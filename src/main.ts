@@ -2,7 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { LoggerFactory } from '@src/shared/module/logger/util/logger.factory';
 import { AppModule } from './app.module';
-import { ConfigService } from './shared/module/config/config.service';
+import { ConfigService } from './shared/module/config/service/config.service';
 
 async function bootstrap() {
   const logger = LoggerFactory('appplication-main');
