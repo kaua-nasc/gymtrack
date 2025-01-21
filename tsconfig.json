@@ -25,6 +25,7 @@
       "@src/*": ["./src/*"],
       "@database/*": ["./database/*"],
       "@testInfra/*": ["./test/*"],
+      "@billingModule/*": ["./src/module/billing/*"],
       "@resource/*": ["./resource/*"]
     },
     "removeComments": true,
