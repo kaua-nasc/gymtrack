@@ -1,60 +1,51 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { CreateDayUseCase } from '@src/module/training-plan/application/use-case/create-day.use-case';
+import { DeleteDayUseCase } from '@src/module/training-plan/application/use-case/delete-day.use-case';
+import { GetDayUseCase } from '@src/module/training-plan/application/use-case/get-day.use-case';
+import { LisDayUseCase } from '@src/module/training-plan/application/use-case/list-day.use-case';
 import { DayManagementService } from '@src/module/training-plan/core/service/day-management.service';
 import { CreateDayRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-day-request.dto';
 
 @Controller('day')
 export class DayController {
-  constructor(private readonly dayManagementService: DayManagementService) {}
+  constructor(
+    private readonly dayManagementService: DayManagementService,
+    private readonly createDayUseCase: CreateDayUseCase,
+    private readonly listDayUseCase: LisDayUseCase,
+    private readonly getDayUseCase: GetDayUseCase,
+    private readonly deleteDayUseCase: DeleteDayUseCase
+  ) {}
 
   @Post()
   async createDay(@Body() contentData: CreateDayRequestDto): Promise<Output> {
-    const createdDay = await this.dayManagementService.createDay({
+    return await this.createDayUseCase.execute({
       ...contentData,
-      exercises: [],
     });
-
-    return {
-      id: createdDay.id,
-    };
-  }
-
-  @Put('update/name/:dayId')
-  async updateDayName(
-    @Param('dayId') dayId: string,
-    @Body() contentData: { name: string }
-  ) {
-    await this.dayManagementService.updateDayName(dayId, { ...contentData });
   }
 
   @Get('list/:trainingPlanId')
   async getDaysBytrainingPlanId(@Param('trainingPlanId') trainingPlanId: string) {
-    const days = await this.dayManagementService.getDays(trainingPlanId);
+    return await this.listDayUseCase.execute(trainingPlanId);
+  }
 
-    return days;
+  @Get('list/recursivaly/:trainingPlanId')
+  async getDaysRecursivaly(@Param('trainingPlanId') trainingPlanId: string) {
+    return await this.listDayUseCase.execute(trainingPlanId, true);
   }
 
   @Get(':dayId')
-  async getDayById(@Param('dayId') id: string) {
-    const day = await this.dayManagementService.findDayById(id);
+  async getDayById(@Param('dayId') dayId: string) {
+    return await this.getDayUseCase.execute(dayId);
+  }
 
-    return day;
+  @Get('recursivaly/:dayId')
+  async getOneDaysRecursivaly(@Param('dayId') dayId: string) {
+    return await this.getDayUseCase.execute(dayId, true);
   }
 
   @Delete(':dayId')
   async deleteTrainingPlanById(@Param('dayId') id: string) {
-    await this.dayManagementService.deleteDayById(id);
-  }
-
-  @Get('get-recursivaly/:trainingPlanId')
-  async getDaysRecursivaly(@Param('trainingPlanId') trainingPlanId: string) {
-    return await this.dayManagementService.findDaysByTrainingPlanIdRecursivaly(
-      trainingPlanId
-    );
-  }
-
-  @Get('get-one-recursivaly/:dayId')
-  async getOneDaysRecursivaly(@Param('dayId') dayId: string) {
-    return await this.dayManagementService.findDayRecursivaly(dayId);
+    await this.deleteDayUseCase.execute(id);
   }
 }
 
