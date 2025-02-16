@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { UserModel } from '@src/module/identity/core/model/user.model';
+import { User } from '@src/module/identity/persistence/entity/user.entity';
 import { DefaultTypeOrmRepository } from '@src/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { EntityManager } from 'typeorm';
-import { User } from '@src/module/identity/persistence/entity/user.entity';
-import { UserModel } from '@src/module/identity/core/model/user.model';
 
 @Injectable()
 export class UserRepository extends DefaultTypeOrmRepository<User> {
@@ -14,13 +14,27 @@ export class UserRepository extends DefaultTypeOrmRepository<User> {
     return await super.find({ where: { email } });
   }
 
-  async findOneById(id: string) {
-    return await super.findOneById(id);
+  async findUserById(id: string) {
+    const user = await super.findOneById(id);
+
+    if (!user) {
+      throw new Error();
+    }
+
+    return UserModel.create({ ...user });
   }
 
   async saveUser(entity: UserModel) {
     const user = new User({ ...entity });
 
     await super.save(user);
+  }
+
+  async associateCurrentTrainingPlanToUser(userId: string, trainingPlanId: string) {
+    await this.update({ id: userId }, { currentTrainingPlan: trainingPlanId });
+  }
+
+  async associateNextTrainingPlanToUser(userId: string, trainingPlanId: string) {
+    await this.update({ id: userId }, { nextTrainingPlan: trainingPlanId });
   }
 }

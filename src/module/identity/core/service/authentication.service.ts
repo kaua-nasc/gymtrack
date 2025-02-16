@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserUnauthorizedException } from '@src/module/identity/core/exception/user-unauthorized.exception';
-import { compare } from 'bcrypt';
+import { UserModel } from '@src/module/identity/core/model/user.model';
 import { UserRepository } from '@src/module/identity/persistence/repository/user.repository';
-import { UserModel } from '../model/user.model';
+import { compare } from 'bcrypt';
 
 // TODO: move this to a .env file and config
 export const jwtConstants = {
@@ -23,14 +23,11 @@ export class AuthService {
       throw new UserUnauthorizedException(`Cannot authorize user: ${email}`);
     }
 
-    const trainingPlanIds = user.trainingPlans.map((values) => values.id);
-
     UserModel.create({
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       password: user.password,
-      trainingPlanIds,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
       id: user.id,

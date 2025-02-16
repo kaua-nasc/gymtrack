@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UserModel } from '@src/module/identity/core/model/user.model';
-import { hash } from 'bcrypt';
 import { UserRepository } from '@src/module/identity/persistence/repository/user.repository';
-import { BillingSubscriptionPlanTrainingPlanQuantityApi } from '@src/shared/module/integration/interface/billing-integration.interface';
 import { TrainingPlanExistsApi } from '@src/shared/module/integration/interface/training-plan-integration.interface';
+import { hash } from 'bcrypt';
 
 export interface CreateUserDto {
   email: string;
@@ -19,16 +18,13 @@ export const PASSWORD_HASH_SALT = 10;
 export class UserManagementService {
   constructor(
     private readonly userRepository: UserRepository,
-    @Inject(BillingSubscriptionPlanTrainingPlanQuantityApi)
-    private readonly subscriptionPlanQuantityServiceClient: BillingSubscriptionPlanTrainingPlanQuantityApi,
-    @Inject(BillingSubscriptionPlanTrainingPlanQuantityApi)
+    @Inject(TrainingPlanExistsApi)
     private readonly trainingPlanServiceClient: TrainingPlanExistsApi
   ) {}
   async create(user: CreateUserDto) {
     const newUser = UserModel.create({
       ...user,
       password: await hash(user.password, PASSWORD_HASH_SALT),
-      trainingPlanIds: [],
     });
 
     await this.userRepository.saveUser({ ...newUser });
@@ -37,51 +33,38 @@ export class UserManagementService {
   }
 
   async getUserById(id: string) {
-    const userData = await this.userRepository.findOneBy(id);
+    const user = await this.userRepository.findUserById(id);
 
-    if (!userData) throw new Error();
+    if (!user) throw new Error();
 
-    const trainingPlanIds = userData.trainingPlans.map((values) => values.id);
-
-    return UserModel.create({
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      password: userData.password,
-      trainingPlanIds,
-      createdAt: userData.createdAt,
-      deletedAt: userData.deletedAt,
-      id,
-      updatedAt: userData.updatedAt,
-    });
+    return UserModel.create({ ...user, id });
   }
 
-  async associateTrainingPlan(userId: string, trainingPlanId: string) {
-    const user = await this.userRepository.findOneBy(userId);
+  async associateCurrentTrainingPlan(userId: string, trainingPlanId: string) {
+    const user = await this.userRepository.findUserById(userId);
 
-    if (!user) {
+    if (!(await this.trainingPlanServiceClient.traningPlanExists(trainingPlanId))) {
       throw new Error();
     }
 
-    //if (user.trainingPlans.includes(e => e. trainingPlanId)) {
-    //throw new Error();
-    //}
+    await this.userRepository.associateCurrentTrainingPlanToUser(userId, trainingPlanId);
 
-    if (!this.trainingPlanServiceClient.traningPlanExists(trainingPlanId)) {
+    user.currentTrainingPlan = trainingPlanId;
+
+    return user;
+  }
+
+  async associateNextTrainingPlan(userId: string, trainingPlanId: string) {
+    const user = await this.userRepository.findUserById(userId);
+
+    if (!(await this.trainingPlanServiceClient.traningPlanExists(trainingPlanId))) {
       throw new Error();
     }
 
-    //const subscriptionPlanTrainingPlanMaxQuantity =
-    await this.subscriptionPlanQuantityServiceClient.subscriptionPlanTrainingPlanQuantity(
-      userId
-    );
+    await this.userRepository.associateNextTrainingPlanToUser(userId, trainingPlanId);
 
-    //if (subscriptionPlanTrainingPlanMaxQuantity <= user.trainingPlanIds.length) {
-    //throw new Error();
-    //}
+    user.nextTrainingPlan = trainingPlanId;
 
-    //user.trainingPlanIds.push(trainingPlanId);
-
-    //this.userRepository.update(user.id, user);
+    return user;
   }
 }

@@ -41,6 +41,10 @@ export const folderStructureConfig = createFolderStructure({
                     },
                   ],
                 },
+                {
+                  name: 'application',
+                  children: [{ name: 'use-case', children: [{ name: '*.use-case.ts' }] }],
+                },
                 { name: '{kebab-case}.module.ts' },
                 {
                   name: 'core',

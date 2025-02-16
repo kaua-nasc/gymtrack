@@ -8,28 +8,25 @@ export class UserModel {
   lastName: string;
   email: string;
   password: string;
-  trainingPlanIds: string[];
+  currentTrainingPlan?: string;
+  nextTrainingPlan?: string;
   createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
+  updatedAt?: Date;
+  deletedAt?: Date;
 
   private constructor(data: UserModel) {
     Object.assign(this, data);
   }
 
   static create(
-    data: WithOptional<
-      UserModel,
-      'id' | 'trainingPlanIds' | 'createdAt' | 'updatedAt' | 'deletedAt'
-    >
+    data: WithOptional<UserModel, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
   ): UserModel {
     return new UserModel({
       ...data,
       id: data.id ? data.id : randomUUID(),
-      trainingPlanIds: data.trainingPlanIds ? data.trainingPlanIds : [],
       createdAt: data.createdAt ? data.createdAt : new Date(),
       updatedAt: data.updatedAt ? data.updatedAt : new Date(),
-      deletedAt: data.deletedAt ? data.deletedAt : null,
+      deletedAt: data.deletedAt ? data.deletedAt : undefined,
     });
   }
 
