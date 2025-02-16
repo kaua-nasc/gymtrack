@@ -8,9 +8,31 @@ export class ExerciseRepository extends DefaultTypeOrmRepository<Exercise> {
     super(Exercise, transactionalEntityManager);
   }
 
-  async saveExercise(entity: ExerciseModel) {
-    const trainingPlan = new Exercise({ ...entity });
+  async saveExercise(entity: ExerciseModel): Promise<ExerciseModel> {
+    const exercise = new Exercise({ ...entity });
 
-    await super.save(trainingPlan);
+    const createdExercise = await super.save(exercise);
+
+    return ExerciseModel.create({ ...createdExercise });
+  }
+
+  async findExeciseById(id: string): Promise<ExerciseModel> {
+    const exercise = await this.find({ where: { id } });
+
+    if (!exercise) throw new Error();
+
+    return ExerciseModel.create({ ...exercise });
+  }
+
+  async findExecisesByDayId(dayId: string): Promise<ExerciseModel[]> {
+    const exercises = await this.findMany({ where: { dayId } });
+
+    if (!exercises) throw new Error();
+
+    return exercises?.map((exercise) => ExerciseModel.create({ ...exercise }));
+  }
+
+  async deleteExerciseById(id: string) {
+    await this.delete({ id });
   }
 }

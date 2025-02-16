@@ -6,33 +6,31 @@ import { ExerciseRepository } from '@src/module/training-plan/persistence/reposi
 @Injectable()
 export class ExerciseManagementService {
   constructor(private readonly exerciseRepository: ExerciseRepository) {}
-  async createExercise(training: Input) {
-    const newTraining = ExerciseModel.create({ ...training });
+  async createExercise(exercise: {
+    dayId: string;
+    name: string;
+    type: ExerciseType;
+    setsNumber: number;
+    repsNumber: number;
+    description?: string;
+    observation?: string;
+  }) {
+    const newExercise = ExerciseModel.create({ ...exercise });
 
-    await this.exerciseRepository.saveExercise({ ...newTraining });
+    await this.exerciseRepository.saveExercise({ ...newExercise });
 
-    return newTraining;
+    return newExercise;
   }
 
-  async getExercises(trainingId: string) {
-    return await this.exerciseRepository.findMany({ where: { trainingId } });
+  async findExecisesByDayId(dayId: string) {
+    return await this.exerciseRepository.findExecisesByDayId(dayId);
   }
 
-  async getExerciseById(id: string) {
-    return await this.exerciseRepository.findOneById(id);
+  async findExeciseById(id: string) {
+    return await this.exerciseRepository.findExeciseById(id);
   }
 
-  async deleteOne(id: string) {
-    return await this.exerciseRepository.delete({ id });
+  async deleteExerciseById(id: string) {
+    return await this.exerciseRepository.deleteExerciseById(id);
   }
 }
-
-type Input = {
-  name: string;
-  type: ExerciseType;
-  setsNumber: number;
-  repsNumber: number;
-  description: string;
-  observation: string;
-  trainingId: string;
-};

@@ -1,57 +1,57 @@
 import { Injectable } from '@nestjs/common';
-import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
+import { TrainingPlanLevel } from '@src/module/training-plan/core/enum/training-plan-level.enum';
+import { TrainingPlanType } from '@src/module/training-plan/core/enum/training-plan-type.enum';
+import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { TrainingPlanModel } from '@src/module/training-plan/core/model/training-plan.model';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
-import { DayManagementService } from './day-management.service';
+
+export interface CreateTrainingPlanData {
+  name: string;
+  authorId: string;
+  lastUpdatedBy?: string;
+  timeInDays: number;
+  type: TrainingPlanType;
+  observation?: string;
+  pathology?: string;
+  level: TrainingPlanLevel;
+  visibility: TrainingPlanVisibility;
+}
 
 @Injectable()
 export class TrainingPlanManagementService {
-  constructor(
-    private readonly trainingPlanRepository: TrainingPlanRepository,
-    private readonly dayManagementService: DayManagementService
-  ) {}
+  constructor(private readonly trainingPlanRepository: TrainingPlanRepository) {}
 
-  async createTrainingPlan(trainingPlan: Input) {
-    const newTrainingPlan = await this.trainingPlanRepository.saveTrainingPlan(
+  async createTrainingPlan(trainingPlan: {
+    name: string;
+    authorId: string;
+    lastUpdatedBy?: string;
+    timeInDays: number;
+    type: TrainingPlanType;
+    visibility: TrainingPlanVisibility;
+    observation?: string;
+    pathology?: string;
+    level: TrainingPlanLevel;
+  }) {
+    return await this.trainingPlanRepository.saveTrainingPlan(
       TrainingPlanModel.create({
         ...trainingPlan,
-        days: [],
       })
     );
-
-    return newTrainingPlan;
   }
 
   async traningPlanExists(trainingPlanId: string) {
     return await this.trainingPlanRepository.traningPlanExists(trainingPlanId);
   }
 
-  async getTrainingPlansByUserId(userId: string) {
-    const traningPlans = await this.trainingPlanRepository.findMany({
-      where: { userId },
-    });
-
-    return traningPlans ?? [];
+  async findTrainingPlansByAuthorId(authorId: string) {
+    return await this.trainingPlanRepository.findTrainingPlansByAuthorId(authorId);
   }
 
-  async getTrainingPlanId(id: string) {
-    const traningPlans = await this.trainingPlanRepository.findOneById(id);
-
-    return traningPlans;
+  async findOneTrainingPlanById(id: string) {
+    return await this.trainingPlanRepository.findOneTrainingPlanById(id);
   }
 
   async deleteTrainingPlan(id: string) {
-    await this.trainingPlanRepository.delete({ id });
+    await this.trainingPlanRepository.deleteTrainingPlan(id);
   }
 }
-
-type Input = {
-  name: string;
-  userId: string;
-  timeInDays: number;
-  type: TrainingType;
-  observation: string | null;
-  pathology: string | null;
-  level: TrainingLevel;
-};

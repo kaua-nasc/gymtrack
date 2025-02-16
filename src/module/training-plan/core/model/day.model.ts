@@ -1,10 +1,11 @@
 import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
 import { randomUUID } from 'crypto';
-import { TrainingModel } from './training.model';
+import { ExerciseModel } from './exercise.model';
 
 export class DayModel extends DefaultModel {
+  name: string;
   trainingPlanId: string;
-  trainings: TrainingModel[];
+  exercises: ExerciseModel[];
 
   private constructor(data: DayModel) {
     super();
@@ -19,7 +20,7 @@ export class DayModel extends DefaultModel {
       id: data.id ? data.id : randomUUID(),
       createdAt: data.createdAt ? data.createdAt : new Date(),
       updatedAt: data.updatedAt ? data.updatedAt : new Date(),
-      deletedAt: data.deletedAt ? data.deletedAt : null,
+      deletedAt: data.deletedAt ? data.deletedAt : undefined,
     });
   }
 

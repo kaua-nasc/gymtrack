@@ -7,6 +7,7 @@ import {
   FindOptionsWhere,
   Repository,
 } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   protected repository: Repository<T>;
@@ -49,6 +50,10 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   }
 
   async delete(options: FindOptionsWhere<T>): Promise<void> {
-    this.repository.delete(options);
+    await this.repository.delete(options);
+  }
+
+  async update(criteria: FindOptionsWhere<T>, partialEntity: QueryDeepPartialEntity<T>) {
+    await this.repository.update(criteria, partialEntity);
   }
 }

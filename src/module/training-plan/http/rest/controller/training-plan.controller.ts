@@ -1,7 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
+import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
 
 @Controller('training-plan')
 export class TrainingPlanController {
@@ -10,29 +18,29 @@ export class TrainingPlanController {
   ) {}
 
   @Post()
-  async createTrainingPlan(@Body() contentData: Input): Promise<Output> {
-    const createdTrainingPlan =
-      await this.trainingPlanManagementService.createTrainingPlan({
-        ...contentData,
-      });
+  @HttpCode(HttpStatus.CREATED)
+  async createTrainingPlan(@Body() contentData: CreateTrainingPlanRequestDto) {
+    const created = await this.trainingPlanManagementService.createTrainingPlan({
+      ...contentData,
+    });
 
     return {
-      id: createdTrainingPlan.id,
+      id: created.id,
     };
   }
 
-  @Get('list/:userId')
-  async getTrainingPlansByUserId(@Param('userId') userId: string) {
+  @Get('list/:authorId')
+  async findTrainingPlansByAuthorId(@Param('authorId') authorId: string) {
     const traningPlans =
-      await this.trainingPlanManagementService.getTrainingPlansByUserId(userId);
+      await this.trainingPlanManagementService.findTrainingPlansByAuthorId(authorId);
 
     return traningPlans;
   }
 
   @Get(':trainingPlanId')
-  async getTrainingPlanById(@Param('trainingPlanId') trainingPlanId: string) {
+  async findOneTrainingPlanById(@Param('trainingPlanId') trainingPlanId: string) {
     const traningPlans =
-      await this.trainingPlanManagementService.getTrainingPlanId(trainingPlanId);
+      await this.trainingPlanManagementService.findOneTrainingPlanById(trainingPlanId);
 
     return traningPlans;
   }
@@ -42,17 +50,3 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.deleteTrainingPlan(id);
   }
 }
-
-type Input = {
-  name: string;
-  userId: string;
-  timeInDays: number;
-  type: TrainingType;
-  observation: string | null;
-  pathology: string | null;
-  level: TrainingLevel;
-};
-
-type Output = {
-  id: string;
-};

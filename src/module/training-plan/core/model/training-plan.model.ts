@@ -1,18 +1,19 @@
-import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
+import { TrainingPlanLevel } from '@src/module/training-plan/core/enum/training-plan-level.enum';
+import { TrainingPlanType } from '@src/module/training-plan/core/enum/training-plan-type.enum';
+import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { DefaultModel, WithOptional } from '@src/shared/core/model/default.model';
 import { randomUUID } from 'crypto';
-import { DayModel } from './day.model';
 
 export class TrainingPlanModel extends DefaultModel {
   name: string;
-  days: DayModel[];
-  userId: string;
+  authorId: string;
+  lastUpdatedBy?: string;
   timeInDays: number;
-  type: TrainingType;
-  observation: string | null;
-  pathology: string | null;
-  level: TrainingLevel;
+  type: TrainingPlanType;
+  visibility: TrainingPlanVisibility;
+  observation?: string;
+  pathology?: string;
+  level: TrainingPlanLevel;
 
   private constructor(data: TrainingPlanModel) {
     super();
@@ -26,8 +27,8 @@ export class TrainingPlanModel extends DefaultModel {
       ...data,
       id: data.id ? data.id : randomUUID(),
       createdAt: data.createdAt ? data.createdAt : new Date(),
-      updatedAt: data.updatedAt ? data.updatedAt : new Date(),
-      deletedAt: data.deletedAt ? data.deletedAt : null,
+      updatedAt: data.updatedAt ? data.updatedAt : undefined,
+      deletedAt: data.deletedAt ? data.deletedAt : undefined,
     });
   }
 

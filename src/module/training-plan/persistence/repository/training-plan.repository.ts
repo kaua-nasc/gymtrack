@@ -12,12 +12,39 @@ export class TrainingPlanRepository extends DefaultTypeOrmRepository<TrainingPla
     return this.existsBy({ id: trainingPlanId });
   }
 
-  async saveTrainingPlan(entity: TrainingPlanModel) {
-    return await super.save(
+  async saveTrainingPlan(entity: TrainingPlanModel): Promise<TrainingPlanModel> {
+    const createdTrainingPlan = await super.save(
       new TrainingPlan({
         ...entity,
-        days: [],
       })
     );
+    return TrainingPlanModel.create({ ...createdTrainingPlan });
+  }
+
+  async findTrainingPlansByAuthorId(authorId: string): Promise<TrainingPlanModel[]> {
+    const trainingPlans = await this.findMany({ where: { authorId } });
+
+    if (!trainingPlans) return [];
+
+    return trainingPlans?.map((t) => TrainingPlanModel.create({ ...t }));
+  }
+
+  async findOneTrainingPlanById(
+    id: string,
+    relations?: string[]
+  ): Promise<TrainingPlanModel> {
+    const trainingPlan = await super.findOneById(id, relations);
+
+    if (!trainingPlan) {
+      throw new Error();
+    }
+
+    return TrainingPlanModel.create({ ...trainingPlan });
+  }
+
+  async deleteTrainingPlan(id: string): Promise<void> {
+    const trainingPlan = await this.findOneTrainingPlanById(id);
+
+    await this.delete({ id: trainingPlan.id });
   }
 }

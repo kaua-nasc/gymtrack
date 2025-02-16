@@ -19,7 +19,7 @@ export abstract class DefaultEntity<T> {
   @BeforeInsert()
   beforeInsert(): void {
     this.createdAt = this.createdAt || new Date();
-    this.updatedAt = new Date();
+    this.updatedAt = this.updatedAt || undefined;
   }
 
   @BeforeUpdate()
@@ -34,9 +34,9 @@ export abstract class DefaultEntity<T> {
   createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt?: Date;
 
   //TODO add soft remove
   @DeleteDateColumn({ nullable: true })
-  deletedAt: Date | null;
+  deletedAt?: Date;
 }

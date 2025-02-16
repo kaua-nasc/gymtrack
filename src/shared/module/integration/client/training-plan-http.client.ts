@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { HttpClient } from '@src/shared/http/client/http.client';
-import { TrainingPlanExistsApi } from '@src/shared/module/integration/interface/training-plan-integration.interface';
+import { ConfigService } from '@src/shared/module/config/service/config.service';
 import { TrainingPlanApiExistsResponseDto } from '@src/shared/module/integration/http/dto/training-plan-exists-response.dto';
-import { ConfigService } from '../../config/service/config.service';
+import { TrainingPlanExistsApi } from '@src/shared/module/integration/interface/training-plan-integration.interface';
 
 @Injectable()
 export class TrainingPlanHttpClient implements TrainingPlanExistsApi {
