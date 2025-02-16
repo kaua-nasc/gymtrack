@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker/.';
-import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
+import { TrainingLevel } from '@src/module/training-plan/core/enum/training-plan-level.enum';
+import { TrainingType } from '@src/module/training-plan/core/enum/training-plan-type.enum';
 import { DayModel } from '@src/module/training-plan/core/model/day.model';
 import { ExerciseModel } from '@src/module/training-plan/core/model/exercise.model';
 import { TrainingPlanModel } from '@src/module/training-plan/core/model/training-plan.model';

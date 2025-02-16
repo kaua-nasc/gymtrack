@@ -33,6 +33,16 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "restart": true
+    },
+    {
+      "name": "Jest Unit Tests Watch",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "/home/kaua/.asdf/installs/nodejs/23.6.0/bin/npm",
+      "runtimeArgs": ["run", "test:unit:watch"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }
