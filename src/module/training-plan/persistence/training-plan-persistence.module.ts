@@ -4,10 +4,12 @@ import { TypeOrmPersistenceModule } from '@src/shared/module/persistence/typeorm
 import { DataSource } from 'typeorm';
 import { Day } from './entity/day.entity';
 import { Exercise } from './entity/exercise.entity';
+import { TrainingPlanProgress } from './entity/training-plan-progress.entity';
 import { TrainingPlan } from './entity/training-plan.entity';
 import { Training } from './entity/training.entity';
 import { DayRepository } from './repository/day.repository';
 import { ExerciseRepository } from './repository/exercise.repository';
+import { TrainingPlanProgressRepository } from './repository/training-plan-progress.repository';
 import { TrainingPlanRepository } from './repository/training-plan.repository';
 import { TrainingRepository } from './repository/training.repository';
 
@@ -20,7 +22,7 @@ export class TrainingPlanPersistenceModule {
       imports: [
         TypeOrmPersistenceModule.forRoot({
           migrations,
-          entities: [TrainingPlan, Day, Training, Exercise],
+          entities: [TrainingPlan, Day, Exercise, TrainingPlanProgress],
         }),
         ConfigModule.forRoot(),
       ],
@@ -44,9 +46,9 @@ export class TrainingPlanPersistenceModule {
           inject: [DataSource],
         },
         {
-          provide: ExerciseRepository,
+          provide: TrainingPlanProgressRepository,
           useFactory: (datasource: DataSource) =>
-            new ExerciseRepository(datasource.manager),
+            new TrainingPlanProgressRepository(datasource.manager),
           inject: [DataSource],
         },
       ],
@@ -55,6 +57,7 @@ export class TrainingPlanPersistenceModule {
         DayRepository,
         TrainingRepository,
         ExerciseRepository,
+        TrainingPlanProgressRepository,
       ],
     };
   }
