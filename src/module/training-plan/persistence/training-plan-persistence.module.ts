@@ -6,12 +6,10 @@ import { Day } from './entity/day.entity';
 import { Exercise } from './entity/exercise.entity';
 import { TrainingPlanProgress } from './entity/training-plan-progress.entity';
 import { TrainingPlan } from './entity/training-plan.entity';
-import { Training } from './entity/training.entity';
 import { DayRepository } from './repository/day.repository';
 import { ExerciseRepository } from './repository/exercise.repository';
 import { TrainingPlanProgressRepository } from './repository/training-plan-progress.repository';
 import { TrainingPlanRepository } from './repository/training-plan.repository';
-import { TrainingRepository } from './repository/training.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -40,9 +38,9 @@ export class TrainingPlanPersistenceModule {
           inject: [DataSource],
         },
         {
-          provide: TrainingRepository,
+          provide: ExerciseRepository,
           useFactory: (datasource: DataSource) =>
-            new TrainingRepository(datasource.manager),
+            new ExerciseRepository(datasource.manager),
           inject: [DataSource],
         },
         {
@@ -55,7 +53,6 @@ export class TrainingPlanPersistenceModule {
       exports: [
         TrainingPlanRepository,
         DayRepository,
-        TrainingRepository,
         ExerciseRepository,
         TrainingPlanProgressRepository,
       ],
