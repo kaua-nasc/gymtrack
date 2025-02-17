@@ -4,4 +4,8 @@ import { TrainingPlanRepository } from '@src/module/training-plan/persistence/re
 @Injectable()
 export class TrainingPlanManagementService {
   constructor(private readonly trainingPlanRepository: TrainingPlanRepository) {}
+
+  async traningPlanExists(trainingPlanId: string) {
+    return await this.trainingPlanRepository.traningPlanExists(trainingPlanId);
+  }
 }

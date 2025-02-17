@@ -30,7 +30,7 @@ export class PlanModel extends DefaultModel {
       id: data.id ? data.id : randomUUID(),
       createdAt: data.createdAt ? data.createdAt : new Date(),
       updatedAt: data.updatedAt ? data.updatedAt : new Date(),
-      deletedAt: data.deletedAt ? data.deletedAt : null,
+      deletedAt: data.deletedAt ? data.deletedAt : undefined,
     });
   }
 

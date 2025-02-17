@@ -1,14 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { TrainingPlanProgressRepository } from '@src/module/training-plan/persistence/repository/training-plan-progress.repository';
-
-export interface CreateTrainingPlanProgressData {
-  userId: string;
-  trainingPlanId: string;
-}
+import { TrainingPlanProgressStatus } from '@src/module/training-plan/core/enum/training-plan-progress-status.enum';
+import { TrainingPlanProgress } from '@src/module/training-plan/persistence/entity/training-plan-progress.entity';
 
 @Injectable()
 export class TrainingPlanProgressService {
-  constructor(
-    private readonly trainingPlanProgressRepository: TrainingPlanProgressRepository
-  ) {}
+  setStatusToInProgress(trainingPlanProgress: TrainingPlanProgress) {
+    trainingPlanProgress.status = TrainingPlanProgressStatus.inProgress;
+  }
+
+  setStatusToCompleted(trainingPlanProgress: TrainingPlanProgress) {
+    trainingPlanProgress.status = TrainingPlanProgressStatus.completed;
+  }
+
+  setStatusToNotStarted(trainingPlanProgress: TrainingPlanProgress) {
+    trainingPlanProgress.status = TrainingPlanProgressStatus.notStarted;
+  }
 }

@@ -1,6 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
 import { TrainingPlanProgressStatus } from '@src/module/training-plan/core/enum/training-plan-progress-status.enum';
-import { TrainingPlanProgressModel } from '@src/module/training-plan/core/model/training-plan-progress.model';
 import { TrainingPlanProgress } from '@src/module/training-plan/persistence/entity/training-plan-progress.entity';
 import { EntityManager, Repository } from 'typeorm';
 
@@ -18,17 +17,9 @@ export class TrainingPlanProgressRepository {
   }
 
   async saveTrainingPlanProgress(
-    entity: TrainingPlanProgressModel
-  ): Promise<TrainingPlanProgressModel> {
-    const createdTrainingPlan = await this.repository.save(
-      new TrainingPlanProgress({
-        ...entity,
-      })
-    );
-    return TrainingPlanProgressModel.create({
-      ...createdTrainingPlan,
-      trainingPlanId: createdTrainingPlan.trainingPlanId,
-    });
+    entity: TrainingPlanProgress
+  ): Promise<TrainingPlanProgress> {
+    return await this.repository.save(entity);
   }
 
   async updateTrainingPlanProgressStatus({
@@ -49,6 +40,6 @@ export class TrainingPlanProgressRepository {
       throw new NotFoundException();
     }
 
-    return TrainingPlanProgressModel.create({ ...data });
+    return data;
   }
 }

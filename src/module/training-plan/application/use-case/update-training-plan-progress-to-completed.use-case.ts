@@ -1,17 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { TrainingPlanProgressStatus } from '@src/module/training-plan/core/enum/training-plan-progress-status.enum';
+import { TrainingPlanProgressService } from '@src/module/training-plan/core/service/training-plan-progress.service';
 import { TrainingPlanProgressRepository } from '@src/module/training-plan/persistence/repository/training-plan-progress.repository';
 
 @Injectable()
 export class UpdateTrainingPlanProgressToCompletedUseCase {
   constructor(
-    private readonly trainingPlanProgressRepository: TrainingPlanProgressRepository
+    private readonly trainingPlanProgressRepository: TrainingPlanProgressRepository,
+    private readonly trainingPlanProgressService: TrainingPlanProgressService
   ) {}
   async execute(userId: string, trainingPlanId: string) {
-    return await this.trainingPlanProgressRepository.updateTrainingPlanProgressStatus({
-      userId,
-      trainingPlanId,
-      newStatus: TrainingPlanProgressStatus.completed,
-    });
+    const trainingPlanProgress =
+      await this.trainingPlanProgressRepository.findTrainingPlanProgress(
+        userId,
+        trainingPlanId
+      );
+
+    this.trainingPlanProgressService.setStatusToCompleted(trainingPlanProgress);
+
+    return await this.trainingPlanProgressRepository.saveTrainingPlanProgress(
+      trainingPlanProgress
+    );
   }
 }
