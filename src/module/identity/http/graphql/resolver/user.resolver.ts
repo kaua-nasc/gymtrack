@@ -1,5 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { CreateUserUseCase } from '@src/module/identity/application/use-case/create-user.use-case';
 import { UserModel } from '@src/module/identity/core/model/user.model';
 import { UserManagementService } from '@src/module/identity/core/service/user-management.service';
 import {
@@ -11,12 +12,15 @@ import { User } from '@src/module/identity/http/graphql/type/user.type';
 
 @Resolver()
 export class UserResolver {
-  constructor(private readonly userManagementService: UserManagementService) {}
+  constructor(
+    private readonly userManagementService: UserManagementService,
+    private readonly createUserUseCase: CreateUserUseCase
+  ) {}
   @Mutation(() => User)
   async createUser(
     @Args('CreateUserInput') createUserInput: CreateUserInput
   ): Promise<UserModel> {
-    const user = await this.userManagementService.create(createUserInput);
+    const user = await this.createUserUseCase.execute(createUserInput);
     return user;
   }
 

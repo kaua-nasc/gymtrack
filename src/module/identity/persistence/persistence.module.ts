@@ -1,8 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmPersistenceModule } from '@src/shared/module/persistence/typeorm/typeorm-persistence.module';
-import { UserRepository } from './repository/user.repository';
 import { User } from './entity/user.entity';
-import { TrainingPlan } from './entity/training-plan.entity';
+import { UserRepository } from './repository/user.repository';
 
 @Module({})
 export class PersistenceModule {
@@ -13,7 +12,7 @@ export class PersistenceModule {
       imports: [
         TypeOrmPersistenceModule.forRoot({
           migrations,
-          entities: [User, TrainingPlan],
+          entities: [User],
         }),
       ],
       providers: [UserRepository],

@@ -1,6 +1,5 @@
 import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToMany } from 'typeorm';
-import { TrainingPlan } from './training-plan.entity';
+import { Column, Entity } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User extends DefaultEntity<User> {
@@ -21,7 +20,4 @@ export class User extends DefaultEntity<User> {
 
   @Column({ type: 'uuid', nullable: true })
   nextTrainingPlan?: string;
-
-  @ManyToMany(() => TrainingPlan, (trainingPlan) => trainingPlan.users, { cascade: true })
-  trainingPlans: TrainingPlan[];
 }

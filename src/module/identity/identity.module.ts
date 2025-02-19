@@ -1,21 +1,26 @@
-import { Module } from '@nestjs/common';
-import { PersistenceModule } from './persistence/persistence.module';
-import { JwtModule } from '@nestjs/jwt';
-import { AuthService, jwtConstants } from './core/service/authentication.service';
-import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { DomainModuleIntegrationModule } from '@src/shared/module/integration/interface/domain-module-integration.module';
-import { AuthResolver } from './http/graphql/resolver/auth.resolver';
-import { UserResolver } from './http/graphql/resolver/user.resolver';
-import { UserManagementService } from './core/service/user-management.service';
-import { UserRepository } from './persistence/repository/user.repository';
+import { Module } from '@nestjs/common';
+import { GraphQLModule } from '@nestjs/graphql';
+import { JwtModule } from '@nestjs/jwt';
+import { BillingSubscriptionHttpClient } from '@src/shared/module/integration/client/billing-subscription-http.client';
+import { TrainingPlanHttpClient } from '@src/shared/module/integration/client/training-plan-http.client';
 import {
   BillingSubscriptionPlanTrainingPlanQuantityApi,
   BillingSubscriptionStatusApi,
 } from '@src/shared/module/integration/interface/billing-integration.interface';
-import { BillingSubscriptionHttpClient } from '@src/shared/module/integration/client/billing-subscription-http.client';
+import { DomainModuleIntegrationModule } from '@src/shared/module/integration/interface/domain-module-integration.module';
 import { TrainingPlanExistsApi } from '@src/shared/module/integration/interface/training-plan-integration.interface';
-import { TrainingPlanHttpClient } from '@src/shared/module/integration/client/training-plan-http.client';
+import { CreateUserUseCase } from './application/use-case/create-user.use-case';
+import { GetUserUseCase } from './application/use-case/get-user.use-case';
+import { UpdateUserCurrentTrainingPlanUseCase } from './application/use-case/update-user-current-training-plan.use-case';
+import { UpdateUserNextTrainingPlanUseCase } from './application/use-case/update-user-next-training-plan.use-case';
+import { AuthService, jwtConstants } from './core/service/authentication.service';
+import { UserManagementService } from './core/service/user-management.service';
+import { AuthResolver } from './http/graphql/resolver/auth.resolver';
+import { UserResolver } from './http/graphql/resolver/user.resolver';
+import { UserController } from './http/rest/controller/user.controller';
+import { PersistenceModule } from './persistence/persistence.module';
+import { UserRepository } from './persistence/repository/user.repository';
 
 @Module({
   imports: [
@@ -47,7 +52,12 @@ import { TrainingPlanHttpClient } from '@src/shared/module/integration/client/tr
     AuthResolver,
     UserResolver,
     UserManagementService,
+    CreateUserUseCase,
+    GetUserUseCase,
+    UpdateUserNextTrainingPlanUseCase,
+    UpdateUserCurrentTrainingPlanUseCase,
     UserRepository,
   ],
+  controllers: [UserController],
 })
 export class IdentityModule {}

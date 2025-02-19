@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { JwtService } from '@nestjs/jwt';
+import { GetUserUseCase } from '@src/module/identity/application/use-case/get-user.use-case';
 import { UserModel } from '@src/module/identity/core/model/user.model';
 import { jwtConstants } from '@src/module/identity/core/service/authentication.service';
 import { UserManagementService } from '@src/module/identity/core/service/user-management.service';
@@ -19,7 +20,8 @@ export interface AuthenticatedRequest extends Request {
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly userManagementService: UserManagementService
+    private readonly userManagementService: UserManagementService,
+    private readonly getUserUseCase: GetUserUseCase
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -33,7 +35,7 @@ export class AuthGuard implements CanActivate {
         secret: jwtConstants.secret,
       });
 
-      const user = await this.userManagementService.getUserById(payload.sub);
+      const user = await this.getUserUseCase.execute(payload.sub);
       if (!user) {
         throw new UnauthorizedException();
       }
