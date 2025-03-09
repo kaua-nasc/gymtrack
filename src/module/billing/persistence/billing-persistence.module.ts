@@ -7,16 +7,10 @@ import { SubscriptionRepository } from './repository/subscription.repository';
 
 @Module({})
 export class BillingPersistenceModule {
-  static forRoot(opts?: { migrations?: string[] }): DynamicModule {
-    const { migrations } = opts || {};
+  static forRoot(): DynamicModule {
     return {
       module: BillingPersistenceModule,
-      imports: [
-        TypeOrmPersistenceModule.forRoot({
-          migrations,
-          entities: [Plan, Subscription],
-        }),
-      ],
+      imports: [TypeOrmPersistenceModule.forFeature([Plan, Subscription])],
       providers: [PlanRepository, SubscriptionRepository],
       exports: [PlanRepository, SubscriptionRepository],
     };

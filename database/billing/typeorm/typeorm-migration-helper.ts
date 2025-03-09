@@ -1,13 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { PersistenceModule } from '@src/module/identity/persistence/persistence.module';
 import { ConfigService } from '@src/shared/module/config/service/config.service';
 import { TypeOrmMigrationService } from '@src/shared/module/persistence/typeorm/service/typeorm-migration.service';
+import { TypeOrmPersistenceModule } from '@src/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { DataSourceOptions } from 'typeorm';
 import { createPostgresDatabase } from 'typeorm-extension';
 
 const createDatabaseModule = async () => {
   return await NestFactory.createApplicationContext(
-    PersistenceModule.forRoot({
+    TypeOrmPersistenceModule.forRoot({
       migrations: [__dirname + '/migration/*'],
     })
   );

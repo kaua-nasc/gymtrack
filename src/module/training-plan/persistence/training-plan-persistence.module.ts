@@ -13,15 +13,16 @@ import { TrainingPlanRepository } from './repository/training-plan.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
-  static forRoot(opts?: { migrations?: string[] }): DynamicModule {
-    const { migrations } = opts || {};
+  static forRoot(): DynamicModule {
     return {
       module: TrainingPlanPersistenceModule,
       imports: [
-        TypeOrmPersistenceModule.forRoot({
-          migrations,
-          entities: [TrainingPlan, Day, Exercise, TrainingPlanProgress],
-        }),
+        TypeOrmPersistenceModule.forFeature([
+          TrainingPlan,
+          Day,
+          Exercise,
+          TrainingPlanProgress,
+        ]),
         ConfigModule.forRoot(),
       ],
       providers: [

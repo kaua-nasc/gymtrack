@@ -5,16 +5,10 @@ import { UserRepository } from './repository/user.repository';
 
 @Module({})
 export class PersistenceModule {
-  static forRoot(opts?: { migrations?: string[] }): DynamicModule {
-    const { migrations } = opts || {};
+  static forRoot(): DynamicModule {
     return {
       module: PersistenceModule,
-      imports: [
-        TypeOrmPersistenceModule.forRoot({
-          migrations,
-          entities: [User],
-        }),
-      ],
+      imports: [TypeOrmPersistenceModule.forFeature([User])],
       providers: [UserRepository],
       exports: [UserRepository],
     };

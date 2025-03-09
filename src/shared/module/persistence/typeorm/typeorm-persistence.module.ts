@@ -7,10 +7,11 @@ import { TypeOrmMigrationService } from './service/typeorm-migration.service';
 
 @Module({})
 export class TypeOrmPersistenceModule {
-  static forRoot(options: {
-    migrations?: string[];
-    entities?: Array<typeof DefaultEntity>;
-  }): DynamicModule {
+  static forFeature(entities?: Array<typeof DefaultEntity>) {
+    return TypeOrmModule.forFeature(entities);
+  }
+
+  static forRoot(options: { migrations?: string[] }): DynamicModule {
     return {
       module: TypeOrmPersistenceModule,
       imports: [
@@ -21,7 +22,7 @@ export class TypeOrmPersistenceModule {
             return {
               type: 'postgres',
               logging: false,
-              autoLoadEntities: false,
+              autoLoadEntities: true,
               synchronize: true,
               migrationsTableName: 'typeorm_migrations',
               ...configService.get('database'),

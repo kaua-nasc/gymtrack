@@ -19,14 +19,26 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   }
 
   async save(entity: T): Promise<T> {
-    return await this.repository.save(entity);
+    try {
+      return await this.repository.save(entity);
+    } catch (e) {
+      console.log(e);
+
+      return await this.repository.save(entity);
+    }
   }
 
   async findOneById(id: string, relations?: string[]): Promise<T | null> {
-    return this.repository.findOne({
-      where: { id } as FindOptionsWhere<T>,
-      relations,
-    });
+    try {
+      return this.repository.findOne({
+        where: { id } as FindOptionsWhere<T>,
+        relations,
+      });
+    } catch (e) {
+      console.log(e);
+
+      return null;
+    }
   }
 
   async find(options: FindOneOptions<T>): Promise<T | null> {
@@ -55,5 +67,9 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
 
   async update(criteria: FindOptionsWhere<T>, partialEntity: QueryDeepPartialEntity<T>) {
     await this.repository.update(criteria, partialEntity);
+  }
+
+  async deleteAll() {
+    await this.repository.delete({});
   }
 }

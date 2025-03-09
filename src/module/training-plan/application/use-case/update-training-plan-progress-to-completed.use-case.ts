@@ -15,6 +15,8 @@ export class UpdateTrainingPlanProgressToCompletedUseCase {
         trainingPlanId
       );
 
+    this.trainingPlanProgressService.progressCanBeCompleted(trainingPlanProgress)
+
     this.trainingPlanProgressService.setStatusToCompleted(trainingPlanProgress);
 
     return await this.trainingPlanProgressRepository.saveTrainingPlanProgress(

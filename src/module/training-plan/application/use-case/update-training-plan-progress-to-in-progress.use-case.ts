@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { TrainingPlanProgressService } from '@src/module/training-plan/core/service/training-plan-progress.service';
-import { TrainingPlanProgress } from '@src/module/training-plan/persistence/entity/training-plan-progress.entity';
 import { TrainingPlanProgressRepository } from '@src/module/training-plan/persistence/repository/training-plan-progress.repository';
 
 @Injectable()
@@ -11,7 +10,11 @@ export class UpdateTrainingPlanProgressToInProgressUseCase {
   ) {}
 
   async execute(userId: string, trainingPlanId: string) {
-    const trainingPlanProgress = new TrainingPlanProgress({ userId, trainingPlanId });
+    const trainingPlanProgress =
+      await this.trainingPlanProgressRepository.findTrainingPlanProgress(
+        userId,
+        trainingPlanId
+      );
 
     this.trainingPlanProgressService.setStatusToInProgress(trainingPlanProgress);
 

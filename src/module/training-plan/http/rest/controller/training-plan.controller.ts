@@ -39,6 +39,15 @@ export class TrainingPlanController {
     return await this.getTrainingPlanUseCase.execute(trainingPlanId);
   }
 
+  @Get('exists/:trainingPlanId')
+  async TrainingPlanExists(@Param('trainingPlanId') trainingPlanId: string) {
+    await this.getTrainingPlanUseCase.execute(trainingPlanId);
+
+    return {
+      exists: true,
+    };
+  }
+
   @Delete(':trainingPlanId')
   async deleteTrainingPlanById(@Param('trainingPlanId') id: string) {
     await this.deleteTrainignPlanUseCase.execute(id);

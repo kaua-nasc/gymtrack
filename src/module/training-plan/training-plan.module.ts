@@ -3,7 +3,6 @@ import { ConfigModule } from '@src/shared/module/config/config.module';
 import { HttpClientModule } from '@src/shared/module/http-client/http-client.module';
 import { CreateDayUseCase } from './application/use-case/create-day.use-case';
 import { CreateExerciseUseCase } from './application/use-case/create-exercise.use-case';
-import { CreateTrainingPlanProgressUseCase } from './application/use-case/create-training-plan-progress.use-case';
 import { CreateTrainingPlanUseCase } from './application/use-case/create-training-plan.use-case';
 import { DeleteDayUseCase } from './application/use-case/delete-day.use-case';
 import { DeleteExerciseUseCase } from './application/use-case/delete-exercise.use-case';
@@ -37,7 +36,6 @@ import { TrainingPlanPersistenceModule } from './persistence/training-plan-persi
     CreateDayUseCase,
     CreateExerciseUseCase,
     CreateTrainingPlanUseCase,
-    CreateTrainingPlanProgressUseCase,
     DeleteDayUseCase,
     DeleteExerciseUseCase,
     DeleteTrainingPlanUseCase,

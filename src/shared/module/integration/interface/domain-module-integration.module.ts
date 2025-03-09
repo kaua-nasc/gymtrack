@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@src/shared/module/config/config.module';
 import { HttpClientModule } from '@src/shared/module/http-client/http-client.module';
-import { TrainingPlanHttpClient } from '@src/shared/module/integration/client/training-plan-http.client';
 import { BillingSubscriptionHttpClient } from '@src/shared/module/integration/client/billing-subscription-http.client';
-import { ConfigModule } from '../../config/config.module';
+import { TrainingPlanHttpClient } from '@src/shared/module/integration/client/training-plan-http.client';
 
 @Module({
   imports: [ConfigModule.forRoot(), HttpClientModule],

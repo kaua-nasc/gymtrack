@@ -4,10 +4,17 @@ import { Injectable } from '@nestjs/common';
 export class HttpClient {
   async get<T>(url: string, options: Record<string, any>): Promise<T> {
     const res = await fetch(url, options);
+
+    const text = await res.text(); // Lê o corpo da resposta uma única vez
+
     if (!res.ok) {
-      const errorMessage = await res.text(); // or res.json() if the response is a JSON object
-      throw new Error(`Failed to fetch ${errorMessage}`);
+      throw new Error(`Failed to fetch ${text}`);
     }
-    return (await res.json()) as T;
+
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new Error(`Failed to parse JSON: ${text}`);
+    }
   }
 }

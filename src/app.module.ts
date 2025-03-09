@@ -5,6 +5,7 @@ import { AppResolver } from './app.resolver';
 import { IdentityModule } from './module/identity/identity.module';
 import { TrainingPlanModule } from './module/training-plan/training-plan.module';
 import { ConfigModule } from './shared/module/config/config.module';
+import { TypeOrmPersistenceModule } from './shared/module/persistence/typeorm/typeorm-persistence.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ConfigModule } from './shared/module/config/config.module';
       driver: ApolloDriver,
     }),
     ConfigModule.forRoot(),
+    TypeOrmPersistenceModule.forRoot({}),
     IdentityModule,
     TrainingPlanModule,
   ],

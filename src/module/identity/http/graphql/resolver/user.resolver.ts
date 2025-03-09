@@ -21,7 +21,11 @@ export class UserResolver {
     @Args('CreateUserInput') createUserInput: CreateUserInput
   ): Promise<UserModel> {
     const user = await this.createUserUseCase.execute(createUserInput);
-    return user;
+    return {
+      ...user,
+      password: 'dasda',
+      createdAt: new Date(),
+    };
   }
 
   @Query(() => User)

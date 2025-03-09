@@ -15,7 +15,8 @@ export const initLogger = (appName: string) => {
   const serverFormat = format.combine(format.timestamp(), format.ms(), format.json());
 
   return createLogger({
-    level: env === 'test' ? 'silent' : 'info',
+    //level: env === 'test' ? 'silent' : 'info',
+    level: 'silly',
     defaultMeta: { environment: env },
     transports: [
       new transports.Console({

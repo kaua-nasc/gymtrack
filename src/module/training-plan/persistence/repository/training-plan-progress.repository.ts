@@ -1,7 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
 import { TrainingPlanProgressStatus } from '@src/module/training-plan/core/enum/training-plan-progress-status.enum';
 import { TrainingPlanProgress } from '@src/module/training-plan/persistence/entity/training-plan-progress.entity';
-import { EntityManager, Repository } from 'typeorm';
+import { DefaultTypeOrmRepository } from '@src/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { EntityManager } from 'typeorm';
 
 interface UpdateTrainingPlan {
   userId: string;
@@ -9,11 +10,9 @@ interface UpdateTrainingPlan {
   newStatus: TrainingPlanProgressStatus;
 }
 
-export class TrainingPlanProgressRepository {
-  protected repository: Repository<TrainingPlanProgress>;
-
+export class TrainingPlanProgressRepository extends DefaultTypeOrmRepository<TrainingPlanProgress> {
   constructor(readonly transactionalEntityManager: EntityManager) {
-    this.repository = transactionalEntityManager.getRepository(TrainingPlanProgress);
+    super(TrainingPlanProgress, transactionalEntityManager);
   }
 
   async saveTrainingPlanProgress(

@@ -43,6 +43,16 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Jest e2e Tests Watch",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "/home/kaua/.asdf/installs/nodejs/23.6.0/bin/npm",
+      "runtimeArgs": ["run", "test:e2e:watch"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }

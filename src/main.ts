@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { LoggerFactory } from '@src/shared/module/logger/util/logger.factory';
 import { AppModule } from './app.module';
 import { ConfigService } from './shared/module/config/service/config.service';
@@ -9,6 +10,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get('port');
+
+  const docConfig = new DocumentBuilder().setVersion('1.0').build();
+  SwaggerModule.setup('api', app, () => SwaggerModule.createDocument(app, docConfig));
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useLogger(logger);

@@ -32,6 +32,16 @@ export class CreateTrainingPlanUseCase {
       trainingPlanProgress
     );
 
-    return { id: trainingPlan.id };
+    const progress = await this.trainingPlanProgressRepository.findTrainingPlanProgress(
+      trainingPlan.authorId,
+      trainingPlan.id
+    );
+
+    return {
+      id: trainingPlan.id,
+      authorId: trainingPlan.authorId,
+      name: trainingPlan.name,
+      status: progress.status,
+    };
   }
 }
