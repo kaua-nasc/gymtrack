@@ -34,12 +34,9 @@ export class AuthService {
       updatedAt: user.updatedAt,
     });
 
-    //TODO add more fields to the JWT
     const payload = { sub: user.id };
     return {
       accessToken: await this.jwtService.signAsync(payload, {
-        // Using HS256 algorithm to prenvent from security risk
-        // https://book.hacktricks.xyz/pentesting-web/hacking-jwt-json-web-tokens#modify-the-algorithm-to-none-cve-2015-9235
         algorithm: 'HS256',
       }),
     };

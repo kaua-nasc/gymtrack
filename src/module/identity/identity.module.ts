@@ -18,6 +18,7 @@ import { UpdateUserAddCurrentTrainingPlanUseCase } from './application/use-case/
 import { UpdateUserCurrentTrainingPlanUseCase } from './application/use-case/update-user-current-training-plan.use-case';
 import { UpdateUserFinishCurrentTrainingPlanUseCase } from './application/use-case/update-user-finish-current-training-plan.use-case';
 import { UpdateUserNextTrainingPlanUseCase } from './application/use-case/update-user-next-training-plan.use-case';
+import { UpdateUserUseCase } from './application/use-case/update-user.use-case';
 import { AuthService, jwtConstants } from './core/service/authentication.service';
 import { UserManagementService } from './core/service/user-management.service';
 import { AuthResolver } from './http/graphql/resolver/auth.resolver';
@@ -33,10 +34,6 @@ import { UserRepository } from './persistence/repository/user.repository';
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '60m' },
     }),
-    //GraphQLModule.forRoot<ApolloDriverConfig>({
-    //  autoSchemaFile: true,
-    //  driver: ApolloDriver,
-    //}),
     DomainModuleIntegrationModule,
   ],
   providers: [
@@ -57,6 +54,7 @@ import { UserRepository } from './persistence/repository/user.repository';
     UpdateUserNextTrainingPlanUseCase,
     UpdateUserCurrentTrainingPlanUseCase,
     UpdateUserAddCurrentTrainingPlanUseCase,
+    UpdateUserUseCase,
     UserRepository,
     UpdateUserFinishCurrentTrainingPlanUseCase,
   ],

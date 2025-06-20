@@ -37,4 +37,8 @@ export class UserRepository extends DefaultTypeOrmRepository<User> {
   async associateNextTrainingPlanToUser(userId: string, trainingPlanId: string) {
     await this.update({ id: userId }, { nextTrainingPlan: trainingPlanId });
   }
+
+  async updateUser(userId: string, entity: Partial<UserModel>) {
+    return await this.update({ id: userId }, { ...entity });
+  }
 }
