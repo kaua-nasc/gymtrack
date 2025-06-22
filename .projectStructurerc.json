@@ -35,7 +35,7 @@
       "name": "module",
       "children": [
         { "name": "billing", "ruleId": "domain_module_folder" },
-        { "name": "training-plan", "ruleId": "sub_domain_module_folder" },
+        { "name": "training-plan", "ruleId": "domain_module_folder" },
         { "name": "identity", "ruleId": "domain_module_folder" },
         { "name": "shared", "ruleId": "shared_module_folder" }
       ]
