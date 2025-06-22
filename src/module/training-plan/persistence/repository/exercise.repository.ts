@@ -1,6 +1,5 @@
-import { ExerciseModel } from '@src/module/training-plan/core/model/exercise.model';
 import { Exercise } from '@src/module/training-plan/persistence/entity/exercise.entity';
-import { DefaultTypeOrmRepository } from '@src/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { EntityManager } from 'typeorm';
 
 export class ExerciseRepository extends DefaultTypeOrmRepository<Exercise> {
@@ -8,28 +7,26 @@ export class ExerciseRepository extends DefaultTypeOrmRepository<Exercise> {
     super(Exercise, transactionalEntityManager);
   }
 
-  async saveExercise(entity: ExerciseModel): Promise<ExerciseModel> {
+  async saveExercise(entity: Exercise): Promise<Exercise> {
     const exercise = new Exercise({ ...entity });
 
-    const createdExercise = await super.save(exercise);
-
-    return ExerciseModel.create({ ...createdExercise });
+    return await super.save(exercise);
   }
 
-  async findExeciseById(id: string): Promise<ExerciseModel> {
+  async findExeciseById(id: string): Promise<Exercise> {
     const exercise = await this.find({ where: { id } });
 
     if (!exercise) throw new Error();
 
-    return ExerciseModel.create({ ...exercise });
+    return exercise;
   }
 
-  async findExecisesByDayId(dayId: string): Promise<ExerciseModel[]> {
+  async findExecisesByDayId(dayId: string): Promise<Exercise[]> {
     const exercises = await this.findMany({ where: { dayId } });
 
     if (!exercises) throw new Error();
 
-    return exercises?.map((exercise) => ExerciseModel.create({ ...exercise }));
+    return exercises;
   }
 
   async deleteExerciseById(id: string) {

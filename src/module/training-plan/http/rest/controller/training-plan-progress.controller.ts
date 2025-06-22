@@ -1,13 +1,11 @@
 import { Controller, Param, Put } from '@nestjs/common';
-import { UpdateTrainingPlanProgressToCompletedUseCase } from '@src/module/training-plan/application/use-case/update-training-plan-progress-to-completed.use-case';
-import { UpdateTrainingPlanProgressToInProgressUseCase } from '@src/module/training-plan/application/use-case/update-training-plan-progress-to-in-progress.use-case';
 import { TrainingPlanProgressStatus } from '@src/module/training-plan/core/enum/training-plan-progress-status.enum';
+import { TrainingPlanProgressService } from '@src/module/training-plan/core/service/training-plan-progress.service';
 
 @Controller('training-plan/progress')
 export class TrainingPlanProgressController {
   constructor(
-    private readonly updateTrainingPlanProgressToCompletedUseCase: UpdateTrainingPlanProgressToCompletedUseCase,
-    private readonly updateTrainingPlanProgressToInProgressUseCase: UpdateTrainingPlanProgressToInProgressUseCase
+    private readonly trainingPlanProgressService: TrainingPlanProgressService
   ) {}
 
   @Put('/complete/:userId/:trainingPlanId')
@@ -15,10 +13,11 @@ export class TrainingPlanProgressController {
     @Param('userId') userId: string,
     @Param('trainingPlanId') trainingPlanId: string
   ) {
-    const result = await this.updateTrainingPlanProgressToCompletedUseCase.execute(
-      userId,
-      trainingPlanId
-    );
+    const result =
+      await this.trainingPlanProgressService.upgradeTrainingPlanProgressToCompleted(
+        userId,
+        trainingPlanId
+      );
 
     return { status: result.status == TrainingPlanProgressStatus.completed };
   }
@@ -28,10 +27,11 @@ export class TrainingPlanProgressController {
     @Param('userId') userId: string,
     @Param('trainingPlanId') trainingPlanId: string
   ) {
-    const result = await this.updateTrainingPlanProgressToInProgressUseCase.execute(
-      userId,
-      trainingPlanId
-    );
+    const result =
+      await this.trainingPlanProgressService.upgradeTrainingPlanProgressToInProgress(
+        userId,
+        trainingPlanId
+      );
 
     return { status: result.status == TrainingPlanProgressStatus.inProgress };
   }

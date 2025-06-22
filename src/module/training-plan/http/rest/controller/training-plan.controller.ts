@@ -8,40 +8,39 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { CreateTrainingPlanUseCase } from '@src/module/training-plan/application/use-case/create-training-plan.use-case';
-import { DeleteTrainingPlanUseCase } from '@src/module/training-plan/application/use-case/delete-training-plan.use-case';
-import { GetTrainingPlanUseCase } from '@src/module/training-plan/application/use-case/get-training-plan.use-case';
-import { ListTrainingPlanUseCase } from '@src/module/training-plan/application/use-case/list-training-plan.use-case';
+import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
 import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
 
 @Controller('training-plan')
 export class TrainingPlanController {
   constructor(
-    private readonly listTrainingPlanUseCase: ListTrainingPlanUseCase,
-    private readonly createTrainingPlanUseCase: CreateTrainingPlanUseCase,
-    private readonly getTrainingPlanUseCase: GetTrainingPlanUseCase,
-    private readonly deleteTrainignPlanUseCase: DeleteTrainingPlanUseCase
+    private readonly trainingPlanManagementService: TrainingPlanManagementService
   ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createTrainingPlan(@Body() contentData: CreateTrainingPlanRequestDto) {
-    return await this.createTrainingPlanUseCase.execute({ ...contentData });
+    return await this.trainingPlanManagementService.create({ ...contentData });
   }
 
   @Get('list/:authorId')
   async findTrainingPlansByAuthorId(@Param('authorId') authorId: string) {
-    return await this.listTrainingPlanUseCase.execute(authorId);
+    return await this.trainingPlanManagementService.list(authorId);
+  }
+
+  @Get('lista')
+  async findTrainingPlans() {
+    return await this.trainingPlanManagementService.lista();
   }
 
   @Get(':trainingPlanId')
   async findOneTrainingPlanById(@Param('trainingPlanId') trainingPlanId: string) {
-    return await this.getTrainingPlanUseCase.execute(trainingPlanId);
+    return await this.trainingPlanManagementService.get(trainingPlanId);
   }
 
   @Get('exists/:trainingPlanId')
   async TrainingPlanExists(@Param('trainingPlanId') trainingPlanId: string) {
-    await this.getTrainingPlanUseCase.execute(trainingPlanId);
+    await this.trainingPlanManagementService.get(trainingPlanId);
 
     return {
       exists: true,
@@ -50,6 +49,6 @@ export class TrainingPlanController {
 
   @Delete(':trainingPlanId')
   async deleteTrainingPlanById(@Param('trainingPlanId') id: string) {
-    await this.deleteTrainignPlanUseCase.execute(id);
+    await this.trainingPlanManagementService.delete(id);
   }
 }

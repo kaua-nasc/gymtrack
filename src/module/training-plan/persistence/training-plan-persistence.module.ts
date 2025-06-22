@@ -1,15 +1,9 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@src/shared/module/config/config.module';
-import { TypeOrmPersistenceModule } from '@src/shared/module/persistence/typeorm/typeorm-persistence.module';
-import { DataSource } from 'typeorm';
-import { Day } from './entity/day.entity';
-import { Exercise } from './entity/exercise.entity';
-import { TrainingPlanProgress } from './entity/training-plan-progress.entity';
-import { TrainingPlan } from './entity/training-plan.entity';
-import { DayRepository } from './repository/day.repository';
-import { ExerciseRepository } from './repository/exercise.repository';
-import { TrainingPlanProgressRepository } from './repository/training-plan-progress.repository';
+import { ConfigModule } from '@src/module/shared/module/config/config.module';
+import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { TrainingPlanRepository } from './repository/training-plan.repository';
+import { ConfigService } from '@src/module/shared/module/config/service/config.service';
+import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -17,45 +11,26 @@ export class TrainingPlanPersistenceModule {
     return {
       module: TrainingPlanPersistenceModule,
       imports: [
-        TypeOrmPersistenceModule.forFeature([
-          TrainingPlan,
-          Day,
-          Exercise,
-          TrainingPlanProgress,
-        ]),
-        ConfigModule.forRoot(),
+        TypeOrmPersistenceModule.forRoot({
+          name: 'training-plan',
+          imports: [ConfigModule.forRoot()],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) => {
+            return dataSourceOptionsFactory(configService);
+          },
+        }),
       ],
       providers: [
-        {
-          provide: TrainingPlanRepository,
-          useFactory: function (datasource: DataSource) {
-            return new TrainingPlanRepository(datasource.manager);
-          },
-          inject: [DataSource],
-        },
-        {
-          provide: DayRepository,
-          useFactory: (datasource: DataSource) => new DayRepository(datasource.manager),
-          inject: [DataSource],
-        },
-        {
-          provide: ExerciseRepository,
-          useFactory: (datasource: DataSource) =>
-            new ExerciseRepository(datasource.manager),
-          inject: [DataSource],
-        },
-        {
-          provide: TrainingPlanProgressRepository,
-          useFactory: (datasource: DataSource) =>
-            new TrainingPlanProgressRepository(datasource.manager),
-          inject: [DataSource],
-        },
+        TrainingPlanRepository,
+        // DayRepository,
+        // ExerciseRepository,
+        // TrainingPlanProgressRepository,
       ],
       exports: [
         TrainingPlanRepository,
-        DayRepository,
-        ExerciseRepository,
-        TrainingPlanProgressRepository,
+        // DayRepository,
+        // ExerciseRepository,
+        //TrainingPlanProgressRepository,
       ],
     };
   }

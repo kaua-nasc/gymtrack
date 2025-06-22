@@ -1,5 +1,5 @@
 import { TrainingPlanProgressStatus } from '@src/module/training-plan/core/enum/training-plan-progress-status.enum';
-import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
+import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity } from 'typeorm';
 
 @Entity({ name: 'training_plans_progress' })

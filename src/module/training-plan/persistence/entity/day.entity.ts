@@ -1,4 +1,4 @@
-import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
+import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { Exercise } from './exercise.entity';
 import { TrainingPlan } from './training-plan.entity';
