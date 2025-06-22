@@ -6,10 +6,11 @@ import tsParser from '@typescript-eslint/parser';
 import _import from 'eslint-plugin-import';
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 import { projectStructurePlugin } from 'eslint-plugin-project-structure';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { folderStructureConfig } from './folderStructure.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,16 +22,15 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['**/.eslintrc.js'],
+    ignores: ['**/.eslintrc.js', 'eslint.config.mjs'],
   },
   ...fixupConfigRules(
     compat.extends(
       'eslint:recommended',
       'plugin:@typescript-eslint/recommended',
-      // "plugin:prettier/recommended",
       'plugin:import/recommended',
-      'plugin:import/typescript',
-    ),
+      'plugin:import/typescript'
+    )
   ),
   {
     plugins: {
@@ -38,6 +38,8 @@ export default [
       'no-relative-import-paths': noRelativeImportPaths,
       import: fixupPluginRules(_import),
       'project-structure': projectStructurePlugin,
+      eslintPluginPrettierRecommended,
+      prettier,
     },
 
     languageOptions: {
@@ -52,6 +54,7 @@ export default [
 
       parserOptions: {
         project: 'tsconfig.json',
+        tsconfigRootDir: __dirname,
       },
     },
 
@@ -61,23 +64,16 @@ export default [
           project: './tsconfig.json',
         },
       },
+      'project-structure/folder-structure-config-path': '.projectStructurerc.json',
     },
 
     rules: {
-      'project-structure/folder-structure': ['error', folderStructureConfig],
+      'prettier/prettier': 'error',
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'error',
-      'no-relative-import-paths/no-relative-import-paths': [
-        'warn',
-        {
-          allowSameFolder: true,
-          prefix: '@src',
-          rootDir: 'src',
-        },
-      ],
 
       'no-restricted-imports': [
         'error',
@@ -86,8 +82,7 @@ export default [
             {
               name: '@nestjs/config',
               importNames: ['ConfigModule', 'ConfigService'],
-              message:
-                'Please use classes from @src/shared/module/config instead',
+              message: 'Please use classes from @src/shared/module/config instead',
             },
           ],
         },
@@ -136,6 +131,7 @@ export default [
           ],
         },
       ],
+      'project-structure/folder-structure': 'error',
     },
   },
 ];
