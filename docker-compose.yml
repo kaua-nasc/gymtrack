@@ -1,0 +1,36 @@
+name: 'gymtrack'
+
+services:
+  gymtrack:
+    image: gymtrack
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_URL: ${DATABASE_URL}
+      MOVIEDB_API_TOKEN: ${MOVIEDB_API_TOKEN}
+      MOVIEDB_BASE_URL: ${MOVIEDB_BASE_URL}
+      TRAINING_PLAN_API: ${TRAINING_PLAN_API}
+      BILLING_API_URL: ${BILLING_API_URL}
+    ports:
+      - ${PORT}:${PORT}
+    depends_on:
+      - db
+  db:
+    image: postgres:latest
+    container_name: gymtrack-db
+    environment:
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    ports:
+      - ${DATABASE_PORT}:${DATABASE_PORT}
+    volumes:
+      - postgres-data:/data
