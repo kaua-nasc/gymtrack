@@ -30,8 +30,7 @@ describe('', () => {
   it('', async () => {
     //await testDbClient(Tables.TrainingPlan).insert(trainingPlanFactory.build());
 
-    const res = await request(app.getHttpServer()).get('/training-plan/lista');
-    console.log(res.body);
+    const res = await request(app.getHttpServer()).get('/training-plan/list');
 
     expect(res.status).toBe(HttpStatus.OK);
   });

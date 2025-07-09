@@ -26,8 +26,6 @@ export const factory = (): Config => {
     },
   });
 
-  console.log(result);
-
   if (result.success) {
     return result.data;
   }

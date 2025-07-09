@@ -15,31 +15,22 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
     readonly entity: EntityTarget<T>,
     readonly manager: EntityManager
   ) {
-    console.log(entity);
     this.repository = manager.getRepository(entity);
   }
 
   async save(entity: T): Promise<T> {
     try {
       return await this.repository.save(entity);
-    } catch (e) {
-      console.log(e);
-
+    } catch {
       return await this.repository.save(entity);
     }
   }
 
   async findOneById(id: string, relations?: string[]): Promise<T | null> {
-    try {
-      return this.repository.findOne({
-        where: { id } as FindOptionsWhere<T>,
-        relations,
-      });
-    } catch (e) {
-      console.log(e);
-
-      return null;
-    }
+    return this.repository.findOne({
+      where: { id } as FindOptionsWhere<T>,
+      relations,
+    });
   }
 
   async find(options: FindOneOptions<T>): Promise<T | null> {

@@ -9,8 +9,7 @@ export class TypeOrmMigrationService {
   async migrate(): Promise<void> {
     const pendingMigrations = await this.dataSource.showMigrations();
     if (pendingMigrations) {
-      const appliedMigrations = await this.dataSource.runMigrations();
-      console.log('Applied migrations:', appliedMigrations);
+      await this.dataSource.runMigrations();
     }
   }
 

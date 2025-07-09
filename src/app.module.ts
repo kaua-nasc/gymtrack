@@ -2,10 +2,9 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { AppResolver } from './app.resolver';
-//import { IdentityModule } from './module/identity/identity.module';
 import { TrainingPlanModule } from './module/training-plan/training-plan.module';
 import { ConfigModule } from './module/shared/module/config/config.module';
-import { TypeOrmPersistenceModule } from './module/shared/module/persistence/typeorm/typeorm-persistence.module';
+import { IdentityModule } from './module/identity/identity.module';
 
 @Module({
   imports: [
@@ -14,8 +13,7 @@ import { TypeOrmPersistenceModule } from './module/shared/module/persistence/typ
       driver: ApolloDriver,
     }),
     ConfigModule.forRoot(),
-    TypeOrmPersistenceModule.forRoot({}),
-    //IdentityModule,
+    IdentityModule,
     TrainingPlanModule,
   ],
   providers: [AppResolver],
