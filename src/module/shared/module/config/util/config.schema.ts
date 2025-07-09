@@ -24,6 +24,10 @@ const billingApiSchema = z.object({
   url: z.string(),
 });
 
+const identityApiSchema = z.object({
+  url: z.string(),
+});
+
 export const configSchema = z.object({
   env: environmentSchema,
   port: z.coerce.number().positive().int(),
@@ -31,4 +35,5 @@ export const configSchema = z.object({
   movieDb: movieDbSchema,
   trainingPlanApi: trainingPlanApiSchema,
   billingApi: billingApiSchema,
+  identityApi: identityApiSchema,
 });

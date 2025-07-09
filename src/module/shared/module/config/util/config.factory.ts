@@ -24,6 +24,9 @@ export const factory = (): Config => {
     billingApi: {
       url: process.env.BILLING_API_URL,
     },
+    identityApi: {
+      url: process.env.IDENTITY_API,
+    },
   });
 
   if (result.success) {

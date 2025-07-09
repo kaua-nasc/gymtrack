@@ -4,6 +4,7 @@ import { HttpClientModule } from '@src/module/shared/module/http-client/http-cli
 import { TrainingPlanManagementService } from './core/service/training-plan-management.service';
 import { TrainingPlanController } from './http/rest/controller/training-plan.controller';
 import { TrainingPlanPersistenceModule } from './persistence/training-plan-persistence.module';
+import { TrainingPlanPublicApiProvider } from './integration/provider/public-api.provider';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { TrainingPlanPersistenceModule } from './persistence/training-plan-persi
     TrainingPlanManagementService,
     // ExerciseManagementService,
     // TrainingPlanProgressService,
-    //TrainingPlanPublicApiProvider,
+    TrainingPlanPublicApiProvider,
   ],
   controllers: [
     TrainingPlanController,
@@ -24,6 +25,6 @@ import { TrainingPlanPersistenceModule } from './persistence/training-plan-persi
     // ExerciseController,
     // TrainingPlanProgressController,
   ],
-  //exports: [TrainingPlanPublicApiProvider],
+  exports: [TrainingPlanPublicApiProvider],
 })
 export class TrainingPlanModule {}

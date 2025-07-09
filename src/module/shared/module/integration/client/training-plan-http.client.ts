@@ -1,49 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { HttpClient } from '@src/module/shared/http/client/http.client';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
 import { TrainingPlanApiExistsResponseDto } from '@src/module/shared/module/integration/http/dto/training-plan-exists-response.dto';
-import {
-  TrainingPlanCompleteApi,
-  TrainingPlanExistsApi,
-  TrainingPlanUpdateToInProgressApi,
-} from '@src/module/shared/module/integration/interface/training-plan-integration.interface';
+import { TrainingPlanExistsApi } from '@src/module/shared/module/integration/interface/training-plan-integration.interface';
+import { HttpClient } from '../../http-client/client/http.client';
 
 @Injectable()
-export class TrainingPlanHttpClient
-  implements
-    TrainingPlanExistsApi,
-    TrainingPlanCompleteApi,
-    TrainingPlanUpdateToInProgressApi
-{
+export class TrainingPlanHttpClient implements TrainingPlanExistsApi {
   constructor(
     private readonly httpClient: HttpClient,
     private readonly configService: ConfigService
   ) {}
-  async updateToInProgressTrainingPlan(
-    userId: string,
-    trainingPlanId: string
-  ): Promise<{ status: boolean }> {
-    const options = { method: 'PUT', headers: { accept: 'application/json' } };
-    const url = `${this.configService.get('billingApi').url}/training-plan/progress/in-progress/${userId}/${trainingPlanId}`;
-
-    return await this.httpClient.get<{ status: boolean }>(url, options);
-  }
-
-  async completeTrainingPlan(
-    userId: string,
-    trainingPlanId: string
-  ): Promise<{ status: boolean }> {
-    const options = {
-      method: 'PUT',
-      headers: {
-        accept: 'application/json',
-        //Authorization: `Bearer PUT SOMETHING`,
-      },
-    };
-    const url = `${this.configService.get('billingApi').url}/training-plan/progress/complete/${userId}/${trainingPlanId}`;
-
-    return await this.httpClient.get<{ status: boolean }>(url, options);
-  }
 
   async traningPlanExists(trainingPlanId: string): Promise<boolean> {
     const options = {
@@ -53,7 +19,7 @@ export class TrainingPlanHttpClient
         //Authorization: `Bearer PUT SOMETHING`,
       },
     };
-    const url = `${this.configService.get('billingApi').url}/training-plan/exists/${trainingPlanId}`;
+    const url = `${this.configService.get('trainingPlanApi').url}/training-plan/exists/${trainingPlanId}`;
 
     const response = await this.httpClient.get<TrainingPlanApiExistsResponseDto>(
       url,

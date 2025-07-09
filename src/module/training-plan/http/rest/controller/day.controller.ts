@@ -5,13 +5,6 @@ import { DayManagementService } from '@src/module/training-plan/core/service/day
 export class DayController {
   constructor(private readonly dayManagementService: DayManagementService) {}
 
-  // @Post()
-  // async createDay(@Body() contentData: CreateDayRequestDto): Promise<Output> {
-  //   return await this.dayManagementService.create({
-  //     ...contentData,
-  //   });
-  // }
-
   @Get('list/:trainingPlanId')
   async getDaysBytrainingPlanId(@Param('trainingPlanId') trainingPlanId: string) {
     return await this.dayManagementService.list(trainingPlanId);

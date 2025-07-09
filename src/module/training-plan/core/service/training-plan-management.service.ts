@@ -66,7 +66,7 @@ export class TrainingPlanManagementService {
     return await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
   }
 
-  async lista() {
+  async listAll() {
     return await this.trainingPlanRepository.findTrainingPlans();
   }
 }
