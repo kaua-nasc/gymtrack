@@ -10,6 +10,8 @@ import { IdentityHttpClient } from '../shared/module/integration/client/identity
 import { DomainModuleIntegrationModule } from '../shared/module/integration/interface/domain-module-integration.module';
 import { PlanSubscriptionController } from './http/rest/controller/plan-subscription.controller';
 import { PlanSubscriptionManagementService } from './core/service/plan-subscription-management.service';
+import { DayManagementService } from './core/service/day-management.service';
+import { DayController } from './http/rest/controller/day.controller';
 
 @Module({
   imports: [
@@ -21,13 +23,14 @@ import { PlanSubscriptionManagementService } from './core/service/plan-subscript
   providers: [
     TrainingPlanManagementService,
     PlanSubscriptionManagementService,
+    DayManagementService,
     TrainingPlanPublicApiProvider,
     {
       provide: IdentityUserExistsApi,
       useExisting: IdentityHttpClient,
     },
   ],
-  controllers: [TrainingPlanController, PlanSubscriptionController],
+  controllers: [TrainingPlanController, PlanSubscriptionController, DayController],
   exports: [TrainingPlanPublicApiProvider],
 })
 export class TrainingPlanModule {}

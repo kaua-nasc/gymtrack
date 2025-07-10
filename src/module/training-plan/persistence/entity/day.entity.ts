@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Exercise } from './exercise.entity';
 import { TrainingPlan } from './training-plan.entity';
 import { PlanDayProgress } from './plan-day-progress.entity';
@@ -9,9 +9,6 @@ export class Day extends DefaultEntity<Day> {
   @Column({ type: 'varchar', nullable: false, unique: true, width: 255 })
   name: string;
 
-  @OneToMany(() => Exercise, (exercise) => exercise.day, { cascade: true })
-  exercises: Exercise[];
-
   @Column({ type: 'uuid', nullable: false })
   trainingPlanId: string;
 
@@ -19,7 +16,11 @@ export class Day extends DefaultEntity<Day> {
     nullable: false,
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'trainingPlanId' })
   trainingPlan: TrainingPlan;
+
+  @OneToMany(() => Exercise, (exercise) => exercise.day, { cascade: true })
+  exercises: Exercise[];
 
   @OneToMany(() => PlanDayProgress, (planDayProgress) => planDayProgress.day, {
     cascade: true,

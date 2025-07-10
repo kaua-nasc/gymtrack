@@ -4,7 +4,7 @@ import { TrainingPlan } from './training-plan.entity';
 import { PlanDayProgress } from './plan-day-progress.entity';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
 
-@Entity({ name: 'user_plan_subscription' })
+@Entity({ name: 'plan_subscription' })
 export class PlanSubscription extends DefaultEntity<PlanSubscription> {
   @Column({ type: 'uuid', nullable: false })
   trainingPlanId: string;

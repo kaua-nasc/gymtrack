@@ -75,4 +75,96 @@ export class PlanSubscriptionManagementService {
 
     await this.planSubscriptionRepository.remove(subscription);
   }
+
+  async updateStatusToInProgress(trainingPlanId: string, userId: string) {
+    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      throw new NotFoundException('training plan not found');
+    }
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      throw new NotFoundException('user not found');
+    }
+
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('subscription not found');
+    }
+
+    if (
+      subscription.status !== PlanSubscriptionStatus.canceled &&
+      subscription.status !== PlanSubscriptionStatus.notStarted
+    ) {
+      throw new BadRequestException(
+        'Subscription status must be "not started" or "cancelled".'
+      );
+    }
+
+    await this.planSubscriptionRepository.update(
+      { id: subscription.id },
+      { status: PlanSubscriptionStatus.inProgress }
+    );
+  }
+
+  async updateStatusToFinished(trainingPlanId: string, userId: string) {
+    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      throw new NotFoundException('training plan not found');
+    }
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      throw new NotFoundException('user not found');
+    }
+
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('subscription not found');
+    }
+
+    if (subscription.status !== PlanSubscriptionStatus.inProgress) {
+      throw new BadRequestException('Subscription status must be "in progress".');
+    }
+
+    await this.planSubscriptionRepository.update(
+      { id: subscription.id },
+      { status: PlanSubscriptionStatus.completed }
+    );
+  }
+
+  async updateStatusToCanceled(trainingPlanId: string, userId: string) {
+    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      throw new NotFoundException('training plan not found');
+    }
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      throw new NotFoundException('user not found');
+    }
+
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('subscription not found');
+    }
+
+    if (subscription.status !== PlanSubscriptionStatus.inProgress) {
+      throw new BadRequestException('Subscription status must be "in progress".');
+    }
+
+    await this.planSubscriptionRepository.update(
+      { id: subscription.id },
+      { status: PlanSubscriptionStatus.canceled }
+    );
+  }
 }

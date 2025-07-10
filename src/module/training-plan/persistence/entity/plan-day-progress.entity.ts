@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { PlanSubscription } from './plan-subscription.entity';
 import { Day } from './day.entity';
 
@@ -15,11 +15,13 @@ export class PlanDayProgress extends DefaultEntity<PlanDayProgress> {
     nullable: false,
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'planSubscriptionId' })
   planSubscription: PlanSubscription;
 
   @ManyToOne(() => Day, (day) => day.planDayProgress, {
     nullable: false,
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'dayId' })
   day: Day;
 }
