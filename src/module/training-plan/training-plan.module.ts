@@ -5,26 +5,29 @@ import { TrainingPlanManagementService } from './core/service/training-plan-mana
 import { TrainingPlanController } from './http/rest/controller/training-plan.controller';
 import { TrainingPlanPersistenceModule } from './persistence/training-plan-persistence.module';
 import { TrainingPlanPublicApiProvider } from './integration/provider/public-api.provider';
+import { IdentityUserExistsApi } from '../shared/module/integration/interface/identity-integration.interface';
+import { IdentityHttpClient } from '../shared/module/integration/client/identity-http.client';
+import { DomainModuleIntegrationModule } from '../shared/module/integration/interface/domain-module-integration.module';
+import { PlanSubscriptionController } from './http/rest/controller/plan-subscription.controller';
+import { PlanSubscriptionManagementService } from './core/service/plan-subscription-management.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TrainingPlanPersistenceModule.forRoot(),
+    DomainModuleIntegrationModule,
     HttpClientModule,
   ],
   providers: [
-    // DayManagementService,
     TrainingPlanManagementService,
-    // ExerciseManagementService,
-    // TrainingPlanProgressService,
+    PlanSubscriptionManagementService,
     TrainingPlanPublicApiProvider,
+    {
+      provide: IdentityUserExistsApi,
+      useExisting: IdentityHttpClient,
+    },
   ],
-  controllers: [
-    TrainingPlanController,
-    // DayController,
-    // ExerciseController,
-    // TrainingPlanProgressController,
-  ],
+  controllers: [TrainingPlanController, PlanSubscriptionController],
   exports: [TrainingPlanPublicApiProvider],
 })
 export class TrainingPlanModule {}

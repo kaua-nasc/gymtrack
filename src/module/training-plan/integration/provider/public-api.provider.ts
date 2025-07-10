@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
-import { TrainingPlanExistsApi } from '@src/module/shared/module/integration/interface/training-plan-integration.interface';
 
 @Injectable()
-export class TrainingPlanPublicApiProvider implements TrainingPlanExistsApi {
+export class TrainingPlanPublicApiProvider {
   constructor(
     private readonly trainingPlanManagementService: TrainingPlanManagementService
   ) {}

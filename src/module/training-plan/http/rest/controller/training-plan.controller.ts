@@ -28,18 +28,13 @@ export class TrainingPlanController {
     return await this.trainingPlanManagementService.list(authorId);
   }
 
-  @Get('list')
-  async findTrainingPlans() {
-    return await this.trainingPlanManagementService.listAll();
-  }
-
   @Get(':trainingPlanId')
   async findOneTrainingPlanById(@Param('trainingPlanId') trainingPlanId: string) {
     return await this.trainingPlanManagementService.get(trainingPlanId);
   }
 
   @Get('exists/:trainingPlanId')
-  async TrainingPlanExists(@Param('trainingPlanId') trainingPlanId: string) {
+  async trainingPlanExists(@Param('trainingPlanId') trainingPlanId: string) {
     const user = await this.trainingPlanManagementService.get(trainingPlanId);
 
     if (!user) {

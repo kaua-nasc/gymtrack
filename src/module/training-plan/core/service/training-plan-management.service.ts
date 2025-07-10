@@ -5,11 +5,7 @@ import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
 
 @Injectable()
 export class TrainingPlanManagementService {
-  constructor(
-    private readonly trainingPlanRepository: TrainingPlanRepository
-    // private readonly trainingPlanProgressRepository: TrainingPlanProgressRepository,
-    // private readonly trainingPlanProgressService: TrainingPlanProgressService
-  ) {}
+  constructor(private readonly trainingPlanRepository: TrainingPlanRepository) {}
 
   async traningPlanExists(trainingPlanId: string) {
     return await this.trainingPlanRepository.traningPlanExists(trainingPlanId);
@@ -20,27 +16,10 @@ export class TrainingPlanManagementService {
       new TrainingPlan({ ...trainingPlanData })
     );
 
-    // const trainingPlanProgress = new TrainingPlanProgress({
-    //   userId: trainingPlan.authorId,
-    //   trainingPlanId: trainingPlan.id,
-    // });
-
-    // this.trainingPlanProgressService.setStatusToNotStarted(trainingPlanProgress);
-
-    // await this.trainingPlanProgressRepository.saveTrainingPlanProgress(
-    //   trainingPlanProgress
-    // );
-
-    // const progress = await this.trainingPlanProgressRepository.findTrainingPlanProgress(
-    //   trainingPlan.authorId,
-    //   trainingPlan.id
-    // );
-
     return {
       id: trainingPlan.id,
       authorId: trainingPlan.authorId,
       name: trainingPlan.name,
-      //status: progress.status,
     };
   }
 
@@ -53,12 +32,6 @@ export class TrainingPlanManagementService {
 
     if (!trainingPlan) throw new NotFoundException();
 
-    // const progress = await this.trainingPlanProgressRepository.findTrainingPlanProgress(
-    //   trainingPlan.authorId,
-    //   trainingPlan.id
-    // );
-
-    // return { ...trainingPlan, status: progress.status };
     return { ...trainingPlan };
   }
 

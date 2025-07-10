@@ -2,6 +2,7 @@ import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/ent
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { Exercise } from './exercise.entity';
 import { TrainingPlan } from './training-plan.entity';
+import { PlanDayProgress } from './plan-day-progress.entity';
 
 @Entity({ name: 'days' })
 export class Day extends DefaultEntity<Day> {
@@ -19,4 +20,9 @@ export class Day extends DefaultEntity<Day> {
     onDelete: 'CASCADE',
   })
   trainingPlan: TrainingPlan;
+
+  @OneToMany(() => PlanDayProgress, (planDayProgress) => planDayProgress.day, {
+    cascade: true,
+  })
+  planDayProgress: PlanDayProgress;
 }

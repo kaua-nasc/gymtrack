@@ -1,5 +1,5 @@
 export enum TrainingPlanType {
-  hypertrophy = 1,
-  strength = 2,
-  mixed = 3,
+  hypertrophy = 'HYPERTROPHY',
+  strength = 'STRENGTH',
+  mixed = 'MIXED',
 }

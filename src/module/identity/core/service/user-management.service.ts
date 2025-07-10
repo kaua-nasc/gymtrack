@@ -1,8 +1,7 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { User } from '../../persistence/entity/user.entity';
 import { hash } from 'bcrypt';
-import { TrainingPlanExistsApi } from '@src/module/shared/module/integration/interface/training-plan-integration.interface';
 
 export interface CreateUserDto {
   email: string;
@@ -15,11 +14,7 @@ export const PASSWORD_HASH_SALT = 10;
 
 @Injectable()
 export class UserManagementService {
-  constructor(
-    private readonly userRepository: UserRepository,
-    @Inject(TrainingPlanExistsApi)
-    private readonly trainingPlanServiceClient: TrainingPlanExistsApi
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async create(user: CreateUserDto) {
     if (await this.userRepository.findOneByEmail(user.email)) {
@@ -47,18 +42,8 @@ export class UserManagementService {
     return this.userRepository.findMany({});
   }
 
-  async addNewActualTrainingPlan(userId: string, trainingPlanId: string) {
-    if (!(await this.userRepository.findOneById(userId))) {
-      throw new NotFoundException('user not found');
-    }
-
-    if (!(await this.trainingPlanServiceClient.traningPlanExists(trainingPlanId))) {
-      throw new NotFoundException('training plan not found');
-    }
-
-    await this.userRepository.update(
-      { id: userId },
-      { actualTrainingPlan: trainingPlanId }
-    );
+  async exists(userId: string) {
+    const user = await this.userRepository.findOneById(userId);
+    return user ? true : false;
   }
 }

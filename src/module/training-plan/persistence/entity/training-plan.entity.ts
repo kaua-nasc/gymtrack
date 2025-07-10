@@ -4,6 +4,7 @@ import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/trai
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { Day } from './day.entity';
+import { PlanSubscription } from './plan-subscription.entity';
 
 @Entity({ name: 'training_plans' })
 export class TrainingPlan extends DefaultEntity<TrainingPlan> {
@@ -36,4 +37,9 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
 
   @Column({ type: 'enum', enum: TrainingPlanLevel, nullable: false })
   level: TrainingPlanLevel;
+
+  @OneToMany(() => PlanSubscription, (subscription) => subscription.trainingPlan, {
+    cascade: true,
+  })
+  planSubscriptions: PlanSubscription[];
 }

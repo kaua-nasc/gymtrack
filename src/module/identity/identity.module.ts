@@ -7,20 +7,10 @@ import { UserRepository } from './persistence/repository/user.repository';
 import { AuthModule } from '../shared/module/auth/auth.module';
 import { AuthController } from './http/rest/controller/auth.controller';
 import { UserController } from './http/rest/controller/user.controller';
-import { TrainingPlanExistsApi } from '../shared/module/integration/interface/training-plan-integration.interface';
-import { TrainingPlanHttpClient } from '../shared/module/integration/client/training-plan-http.client';
 
 @Module({
   imports: [IdentityPersistenceModule, DomainModuleIntegrationModule, AuthModule],
-  providers: [
-    AuthService,
-    UserManagementService,
-    UserRepository,
-    {
-      provide: TrainingPlanExistsApi,
-      useExisting: TrainingPlanHttpClient,
-    },
-  ],
+  providers: [AuthService, UserManagementService, UserRepository],
   controllers: [AuthController, UserController],
 })
 export class IdentityModule {}

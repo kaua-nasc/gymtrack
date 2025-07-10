@@ -1,5 +1,5 @@
 export enum TrainingPlanVisibility {
-  public,
-  protected,
-  private,
+  public = 'PUBLIC',
+  protected = 'PROTECTED',
+  private = 'PRIVATE',
 }

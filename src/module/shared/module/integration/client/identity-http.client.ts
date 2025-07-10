@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
-import { TrainingPlanApiExistsResponseDto } from '@src/module/shared/module/integration/http/dto/training-plan-exists-response.dto';
 import { HttpClient } from '../../http-client/client/http.client';
+import { IdentityUserExistsApi } from '../interface/identity-integration.interface';
+import { IdentityApiUserExistsResponseDto } from '../http/dto/identity-api-user-exists-response.dto';
 
 @Injectable()
-export class TrainingPlanHttpClient {
+export class IdentityHttpClient implements IdentityUserExistsApi {
   constructor(
     private readonly httpClient: HttpClient,
     private readonly configService: ConfigService
   ) {}
-
-  async traningPlanExists(trainingPlanId: string): Promise<boolean> {
+  async userExists(userId: string): Promise<boolean> {
     const options = {
       method: 'GET',
       headers: {
@@ -18,9 +18,9 @@ export class TrainingPlanHttpClient {
         //Authorization: `Bearer PUT SOMETHING`,
       },
     };
-    const url = `${this.configService.get('trainingPlanApi').url}/training-plan/exists/${trainingPlanId}`;
+    const url = `${this.configService.get('identityApi').url}/identity/user/exists/${userId}`;
 
-    const response = await this.httpClient.get<TrainingPlanApiExistsResponseDto>(
+    const response = await this.httpClient.get<IdentityApiUserExistsResponseDto>(
       url,
       options
     );

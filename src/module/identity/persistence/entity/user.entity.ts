@@ -17,7 +17,4 @@ export class User extends DefaultEntity<User> {
 
   @Column()
   password: string;
-
-  @Column({ nullable: true })
-  actualTrainingPlan?: string;
 }
