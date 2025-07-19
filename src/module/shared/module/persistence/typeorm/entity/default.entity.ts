@@ -34,9 +34,9 @@ export abstract class DefaultEntity<T> {
   createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt?: Date;
+  updatedAt?: Date | null;
 
   //TODO add soft remove
   @DeleteDateColumn({ nullable: true })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 }

@@ -24,13 +24,11 @@ export class DayRepository extends DefaultTypeOrmRepository<Day> {
     return days;
   }
 
-  async findDayById(id: string, recursivaly: boolean = false): Promise<Day> {
+  async findDayById(id: string, recursivaly: boolean = false): Promise<Day | null> {
     const day = await this.find({
       where: { id },
       relations: recursivaly ? ['exercises'] : undefined,
     });
-
-    if (!day) throw new Error();
 
     return day;
   }

@@ -1,29 +1,17 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { IdentityModule } from '@src/module/identity/identity.module';
-import { TrainingPlanHttpClient } from '@src/module/shared/module/integration/client/training-plan-http.client';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import nock from 'nock';
 import request from 'supertest';
 
-describe('UserController (e2e)', () => {
+describe('Identity - User Management Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
 
   beforeAll(async () => {
-    const nestTestSetup = await createNestApp(
-      [IdentityModule],
-      [
-        {
-          provide: TrainingPlanHttpClient,
-          useValue: {
-            traningPlanExists: async () => true,
-          },
-        },
-      ]
-    );
+    const nestTestSetup = await createNestApp([IdentityModule]);
     app = nestTestSetup.app;
     module = nestTestSetup.module;
   });
@@ -39,7 +27,7 @@ describe('UserController (e2e)', () => {
     await testDbClient.destroy();
   });
 
-  describe('Identity - createUser', () => {
+  describe('Create User', () => {
     it('should creates a new user', async () => {
       const createUserInput = {
         firstName: 'John',
@@ -47,15 +35,6 @@ describe('UserController (e2e)', () => {
         email: 'johndoe@example.com',
         password: 'password123',
       };
-
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/training-plan/exists/22222222-2222-2222-2222-222222222222`)
-        .reply(200, {
-          exists: true,
-        });
 
       const response = await request(app.getHttpServer())
         .post('/identity/user')
@@ -77,15 +56,6 @@ describe('UserController (e2e)', () => {
         id: '5e2a62de-6ead-4678-a12f-8c17e91513a3',
       });
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/training-plan/exists/22222222-2222-2222-2222-222222222222`)
-        .reply(200, {
-          exists: true,
-        });
-
       const res = await request(app.getHttpServer())
         .post('/identity/user')
         .send({
@@ -97,7 +67,7 @@ describe('UserController (e2e)', () => {
     });
   });
 
-  describe('Identity - getUserById', () => {
+  describe('Get User by Id', () => {
     it('should gets an user', async () => {
       const createUserInput = {
         firstName: 'John',

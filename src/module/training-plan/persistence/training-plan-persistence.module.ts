@@ -6,6 +6,7 @@ import { ConfigService } from '@src/module/shared/module/config/service/config.s
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
 import { DayRepository } from './repository/day.repository';
+import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -26,6 +27,7 @@ export class TrainingPlanPersistenceModule {
         PlanSubscriptionRepository,
         TrainingPlanRepository,
         DayRepository,
+        PlanDayProgressRepository,
         // ExerciseRepository,
         // TrainingPlanProgressRepository,
       ],
@@ -33,6 +35,7 @@ export class TrainingPlanPersistenceModule {
         PlanSubscriptionRepository,
         TrainingPlanRepository,
         DayRepository,
+        PlanDayProgressRepository,
         // DayRepository,
         // ExerciseRepository,
         //TrainingPlanProgressRepository,

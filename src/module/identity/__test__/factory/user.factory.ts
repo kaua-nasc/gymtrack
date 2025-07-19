@@ -1,6 +1,6 @@
 import * as Factory from 'factory.ts';
 import { User } from '../../persistence/entity/user.entity';
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import { hashSync } from 'bcrypt';
 import { PASSWORD_HASH_SALT } from '../../core/service/user-management.service';
 
