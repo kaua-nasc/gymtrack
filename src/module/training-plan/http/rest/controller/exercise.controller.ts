@@ -1,51 +1,31 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { ExerciseManagementService } from '@src/module/training-plan/core/service/exercise-management.service';
+import { CreateExerciseRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-exercise-request.dto';
 
 @Controller('exercise')
 export class ExerciseController {
   constructor(private readonly exerciseManagementService: ExerciseManagementService) {}
 
   @Post()
-  async createTraining(@Body() contentData: Input): Promise<Output> {
-    const createTraining = await this.exerciseManagementService.createExercise({
-      ...contentData,
-    });
-
-    return {
-      id: createTraining.id,
-    };
+  async createExercise(@Body() contentData: CreateExerciseRequestDto): Promise<Output> {
+    return await this.exerciseManagementService.create({ ...contentData });
   }
 
   @Get('list/:trainingId')
-  async getTrainingsByDayId(@Param('trainingId') trainingId: string) {
-    const traningPlans = await this.exerciseManagementService.getExercises(trainingId);
-
-    return traningPlans;
+  async findExecisesByDayId(@Param('trainingId') trainingId: string) {
+    return await this.exerciseManagementService.execute(trainingId);
   }
 
   @Get(':exerciseId')
-  async getExerciseById(@Param('exerciseId') id: string) {
-    const traningPlans = await this.exerciseManagementService.getExerciseById(id);
-
-    return traningPlans;
+  async findExeciseById(@Param('exerciseId') id: string) {
+    return await this.exerciseManagementService.get(id);
   }
 
   @Delete(':exerciseId')
-  async deleteDayById(@Param('exerciseId') id: string) {
-    await this.exerciseManagementService.deleteOne(id);
+  async deleteExerciseById(@Param('exerciseId') id: string) {
+    await this.exerciseManagementService.delete(id);
   }
 }
-
-type Input = {
-  name: string;
-  trainingId: string;
-  type: ExerciseType;
-  setsNumber: number;
-  repsNumber: number;
-  description: string;
-  observation: string;
-};
 
 type Output = {
   id: string;

@@ -1,15 +1,15 @@
 import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
-import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
+import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
-import { Training } from './training.entity';
+import { Day } from './day.entity';
 
 @Entity({ name: 'exercises' })
 export class Exercise extends DefaultEntity<Exercise> {
-  @Column({ type: 'varchar', nullable: false })
+  @Column({ type: 'varchar', nullable: false, unique: true, width: 255 })
   name: string;
 
   @Column({ type: 'uuid', nullable: false })
-  trainingId: string;
+  dayId: string;
 
   @Column({ type: 'enum', enum: ExerciseType, nullable: false })
   type: ExerciseType;
@@ -26,9 +26,9 @@ export class Exercise extends DefaultEntity<Exercise> {
   @Column({ type: 'text', nullable: true })
   observation: string;
 
-  @ManyToOne(() => Training, (training) => training.exercises, {
+  @ManyToOne(() => Day, (day) => day.id, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  training: Training;
+  day: Day;
 }

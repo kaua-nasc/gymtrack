@@ -1,7 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
+import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
 
 @Controller('training-plan')
 export class TrainingPlanController {
@@ -10,49 +18,38 @@ export class TrainingPlanController {
   ) {}
 
   @Post()
-  async createTrainingPlan(@Body() contentData: Input): Promise<Output> {
-    const createdTrainingPlan =
-      await this.trainingPlanManagementService.createTrainingPlan({
-        ...contentData,
-      });
-
-    return {
-      id: createdTrainingPlan.id,
-    };
+  @HttpCode(HttpStatus.CREATED)
+  async createTrainingPlan(@Body() contentData: CreateTrainingPlanRequestDto) {
+    return await this.trainingPlanManagementService.create({ ...contentData });
   }
 
-  @Get('list/:userId')
-  async getTrainingPlansByUserId(@Param('userId') userId: string) {
-    const traningPlans =
-      await this.trainingPlanManagementService.getTrainingPlansByUserId(userId);
-
-    return traningPlans;
+  @Get('list/:authorId')
+  async findTrainingPlansByAuthorId(@Param('authorId') authorId: string) {
+    return await this.trainingPlanManagementService.list(authorId);
   }
 
   @Get(':trainingPlanId')
-  async getTrainingPlanById(@Param('trainingPlanId') trainingPlanId: string) {
-    const traningPlans =
-      await this.trainingPlanManagementService.getTrainingPlanId(trainingPlanId);
+  async findOneTrainingPlanById(@Param('trainingPlanId') trainingPlanId: string) {
+    return await this.trainingPlanManagementService.get(trainingPlanId);
+  }
 
-    return traningPlans;
+  @Get('exists/:trainingPlanId')
+  async trainingPlanExists(@Param('trainingPlanId') trainingPlanId: string) {
+    const user = await this.trainingPlanManagementService.get(trainingPlanId);
+
+    if (!user) {
+      return {
+        exists: false,
+      };
+    }
+
+    return {
+      exists: true,
+    };
   }
 
   @Delete(':trainingPlanId')
   async deleteTrainingPlanById(@Param('trainingPlanId') id: string) {
-    await this.trainingPlanManagementService.deleteTrainingPlan(id);
+    await this.trainingPlanManagementService.delete(id);
   }
 }
-
-type Input = {
-  name: string;
-  userId: string;
-  timeInDays: number;
-  type: TrainingType;
-  observation: string | null;
-  pathology: string | null;
-  level: TrainingLevel;
-};
-
-type Output = {
-  id: string;
-};

@@ -1,19 +1,45 @@
-import { DayModel } from '@src/module/training-plan/core/model/day.model';
 import { Day } from '@src/module/training-plan/persistence/entity/day.entity';
-import { DefaultTypeOrmRepository } from '@src/shared/module/persistence/typeorm/repository/default-typeorm.repository';
-import { EntityManager } from 'typeorm';
+import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 export class DayRepository extends DefaultTypeOrmRepository<Day> {
-  constructor(readonly transactionalEntityManager: EntityManager) {
-    super(Day, transactionalEntityManager);
+  constructor(
+    @InjectDataSource('training-plan')
+    dataSource: DataSource
+  ) {
+    super(Day, dataSource.manager);
   }
 
-  async saveDay(entity: DayModel) {
-    const day = new Day({
-      ...entity,
-      trainingPlanId: entity.trainingPlanId,
-      trainings: [],
+  async findDaysByTrainingPlanId(
+    trainingPlanId: string,
+    recursivaly: boolean = false
+  ): Promise<Day[]> {
+    const days =
+      (await this.findMany({
+        where: { trainingPlanId },
+        relations: recursivaly ? ['exercises'] : undefined,
+      })) ?? [];
+
+    return days;
+  }
+
+  async findDayById(id: string, recursivaly: boolean = false): Promise<Day | null> {
+    const day = await this.find({
+      where: { id },
+      relations: recursivaly ? ['exercises'] : undefined,
     });
-    return await super.save(day);
+
+    return day;
+  }
+
+  async save(day: Day) {
+    const saveDay = await super.save(day);
+
+    return saveDay;
+  }
+
+  async deleteDayById(id: string) {
+    await this.delete({ id });
   }
 }

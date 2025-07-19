@@ -1,9 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { UserModel } from '@src/module/identity/core/model/user.model';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { UserRepository } from '../../persistence/repository/user.repository';
+import { User } from '../../persistence/entity/user.entity';
 import { hash } from 'bcrypt';
-import { UserRepository } from '@src/module/identity/persistence/repository/user.repository';
-import { BillingSubscriptionPlanTrainingPlanQuantityApi } from '@src/shared/module/integration/interface/billing-integration.interface';
-import { TrainingPlanExistsApi } from '@src/shared/module/integration/interface/training-plan-integration.interface';
 
 export interface CreateUserDto {
   email: string;
@@ -12,76 +10,40 @@ export interface CreateUserDto {
   lastName: string;
 }
 
-//TODO move to a configuration
 export const PASSWORD_HASH_SALT = 10;
 
 @Injectable()
 export class UserManagementService {
-  constructor(
-    private readonly userRepository: UserRepository,
-    @Inject(BillingSubscriptionPlanTrainingPlanQuantityApi)
-    private readonly subscriptionPlanQuantityServiceClient: BillingSubscriptionPlanTrainingPlanQuantityApi,
-    @Inject(BillingSubscriptionPlanTrainingPlanQuantityApi)
-    private readonly trainingPlanServiceClient: TrainingPlanExistsApi
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
+
   async create(user: CreateUserDto) {
-    const newUser = UserModel.create({
+    if (await this.userRepository.findOneByEmail(user.email)) {
+      throw new ConflictException('email already in use');
+    }
+    const newUser = new User({
       ...user,
       password: await hash(user.password, PASSWORD_HASH_SALT),
-      trainingPlanIds: [],
     });
 
-    await this.userRepository.saveUser({ ...newUser });
+    await this.userRepository.save(newUser);
 
     return newUser;
   }
 
   async getUserById(id: string) {
-    const userData = await this.userRepository.findOneBy(id);
+    const user = await this.userRepository.findOneById(id);
 
-    if (!userData) throw new Error();
+    if (!user) throw new NotFoundException('user not found');
 
-    const trainingPlanIds = userData.trainingPlans.map((values) => values.id);
-
-    return UserModel.create({
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      password: userData.password,
-      trainingPlanIds,
-      createdAt: userData.createdAt,
-      deletedAt: userData.deletedAt,
-      id,
-      updatedAt: userData.updatedAt,
-    });
+    return user;
   }
 
-  async associateTrainingPlan(userId: string, trainingPlanId: string) {
-    const user = await this.userRepository.findOneBy(userId);
+  async getUsers() {
+    return this.userRepository.findMany({});
+  }
 
-    if (!user) {
-      throw new Error();
-    }
-
-    //if (user.trainingPlans.includes(e => e. trainingPlanId)) {
-    //throw new Error();
-    //}
-
-    if (!this.trainingPlanServiceClient.traningPlanExists(trainingPlanId)) {
-      throw new Error();
-    }
-
-    //const subscriptionPlanTrainingPlanMaxQuantity =
-    await this.subscriptionPlanQuantityServiceClient.subscriptionPlanTrainingPlanQuantity(
-      userId
-    );
-
-    //if (subscriptionPlanTrainingPlanMaxQuantity <= user.trainingPlanIds.length) {
-    //throw new Error();
-    //}
-
-    //user.trainingPlanIds.push(trainingPlanId);
-
-    //this.userRepository.update(user.id, user);
+  async exists(userId: string) {
+    const user = await this.userRepository.findOneById(userId);
+    return user ? true : false;
   }
 }

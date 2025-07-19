@@ -1,21 +1,20 @@
-import { DefaultEntity } from '@src/shared/module/persistence/typeorm/entity/default.entity';
-import { Entity, Column, ManyToMany } from 'typeorm';
-import { TrainingPlan } from './training-plan.entity';
+import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User extends DefaultEntity<User> {
-  @Column({ type: 'varchar', length: 100, nullable: false })
+  @PrimaryColumn()
+  id: string;
+
+  @Column()
   firstName: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
+  @Column()
   lastName: string;
 
-  @Column({ type: 'varchar', length: 150, unique: true, nullable: false })
+  @Column({ unique: true })
   email: string;
 
-  @Column({ type: 'varchar', nullable: false })
+  @Column()
   password: string;
-
-  @ManyToMany(() => TrainingPlan, (trainingPlan) => trainingPlan.users, { cascade: true })
-  trainingPlans: TrainingPlan[];
 }

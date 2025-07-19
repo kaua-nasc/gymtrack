@@ -1,57 +1,54 @@
-import { Injectable } from '@nestjs/common';
-import { TrainingLevel } from '@src/module/training-plan/core/enum/training-level.enum';
-import { TrainingType } from '@src/module/training-plan/core/enum/training-type.enum';
-import { TrainingPlanModel } from '@src/module/training-plan/core/model/training-plan.model';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
-import { DayManagementService } from './day-management.service';
+import { CreateTrainingPlanRequestDto } from '../../http/rest/dto/request/create-training-plan-request.dto';
+import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
+import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 
 @Injectable()
 export class TrainingPlanManagementService {
   constructor(
     private readonly trainingPlanRepository: TrainingPlanRepository,
-    private readonly dayManagementService: DayManagementService
+    @Inject(IdentityUserExistsApi)
+    private readonly identityUserServiceClient: IdentityUserExistsApi
   ) {}
-
-  async createTrainingPlan(trainingPlan: Input) {
-    const newTrainingPlan = await this.trainingPlanRepository.saveTrainingPlan(
-      TrainingPlanModel.create({
-        ...trainingPlan,
-        days: [],
-      })
-    );
-
-    return newTrainingPlan;
-  }
 
   async traningPlanExists(trainingPlanId: string) {
     return await this.trainingPlanRepository.traningPlanExists(trainingPlanId);
   }
 
-  async getTrainingPlansByUserId(userId: string) {
-    const traningPlans = await this.trainingPlanRepository.findMany({
-      where: { userId },
-    });
+  async create(trainingPlanData: CreateTrainingPlanRequestDto) {
+    if (!(await this.identityUserServiceClient.userExists(trainingPlanData.authorId))) {
+      throw new NotFoundException('user not found');
+    }
 
-    return traningPlans ?? [];
+    const trainingPlan = await this.trainingPlanRepository.saveTrainingPlan(
+      new TrainingPlan({ ...trainingPlanData })
+    );
+
+    return {
+      id: trainingPlan.id,
+      authorId: trainingPlan.authorId,
+      name: trainingPlan.name,
+    };
   }
 
-  async getTrainingPlanId(id: string) {
-    const traningPlans = await this.trainingPlanRepository.findOneById(id);
-
-    return traningPlans;
+  async delete(id: string) {
+    return await this.trainingPlanRepository.deleteTrainingPlan(id);
   }
 
-  async deleteTrainingPlan(id: string) {
-    await this.trainingPlanRepository.delete({ id });
+  async get(id: string) {
+    const trainingPlan = await this.trainingPlanRepository.findOneById(id);
+
+    if (!trainingPlan) throw new NotFoundException();
+
+    return { ...trainingPlan };
+  }
+
+  async list(userId: string) {
+    return await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
+  }
+
+  async listAll() {
+    return await this.trainingPlanRepository.findTrainingPlans();
   }
 }
-
-type Input = {
-  name: string;
-  userId: string;
-  timeInDays: number;
-  type: TrainingType;
-  observation: string | null;
-  pathology: string | null;
-  level: TrainingLevel;
-};

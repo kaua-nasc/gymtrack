@@ -1,0 +1,255 @@
+{
+  "$schema": "node_modules/eslint-plugin-project-structure/folderStructure.schema.json",
+  "structureRoot": ".",
+  "structure": [
+    { "name": "src", "ruleId": "src_folder" },
+    { "name": "test", "ruleId": "global_test_folder" }
+  ],
+  "rules": {
+    "global_test_folder": {
+      "name": "test",
+      "children": [
+        {
+          "name": "{kebab-case}",
+          "children": [
+            {
+              "name": "{kebab-case}.{kebab-case}.ts"
+            }
+          ]
+        },
+        {
+          "name": "{kebab-case}.{kebab-case}.ts"
+        }
+      ]
+    },
+    "src_folder": {
+      "name": "src",
+      "children": [
+        { "name": "{kebab-case}.module.ts" },
+        { "name": "main.ts" },
+        { "name": "{kebab-case}.main.ts" },
+        { "name": "module", "ruleId": "module_folder" }
+      ]
+    },
+    "module_folder": {
+      "name": "module",
+      "children": [
+        { "name": "billing", "ruleId": "domain_module_folder" },
+        { "name": "training-plan", "ruleId": "domain_module_folder" },
+        { "name": "identity", "ruleId": "domain_module_folder" },
+        { "name": "shared", "ruleId": "shared_module_folder" }
+      ]
+    },
+    "domain_module_folder": {
+      "name": "{kebab-case}",
+      "children": [
+        { "name": "{kebab-case}.module.ts" },
+        { "name": "__test__", "ruleId": "test_folder" },
+        { "name": "core", "ruleId": "core_folder" },
+        { "name": "http", "ruleId": "http_folder" },
+        { "name": "persistence", "ruleId": "persistence_folder" },
+        {
+          "name": "integration",
+          "children": [
+            {
+              "name": "provider",
+              "children": [
+                {
+                  "name": "{kebab-case}.provider.ts"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "queue",
+          "ruleId": "queue_folder"
+        }
+      ]
+    },
+    "sub_domain_module_folder": {
+      "name": "{kebab-case}",
+      "children": [
+        { "name": "{kebab-case}.module.ts" },
+        { "name": "__test__", "ruleId": "test_folder" },
+        { "name": "{kebab-case}", "ruleId": "domain_module_folder" }
+      ]
+    },
+    "use_case_folder": {
+      "name": "use-case",
+      "children": [
+        {
+          "name": "__test__",
+          "children": [
+            {
+              "name": "integration",
+              "children": [
+                {
+                  "name": "{kebab-case}.use-case.spec.ts"
+                }
+              ]
+            }
+          ]
+        },
+        { "name": "{kebab-case}.use-case.ts" }
+      ]
+    },
+    "queue_folder": {
+      "name": "queue",
+      "children": [
+        {
+          "name": "producer",
+          "children": [{ "name": "{kebab-case}.queue-producer.ts" }]
+        },
+        {
+          "name": "consumer",
+          "children": [{ "name": "{kebab-case}.queue-consumer.ts" }]
+        },
+        {
+          "name": "queue.constant.ts"
+        }
+      ]
+    },
+    "test_folder": {
+      "name": "__test__",
+      "children": [
+        {
+          "name": "e2e",
+          "children": [
+            {
+              "name": "{kebab-case}",
+              "children": [{ "name": "{kebab-case}.spec.ts" }]
+            },
+            { "name": "{kebab-case}.*.ts" }
+          ]
+        },
+        {
+          "name": "factory",
+          "children": [
+            {
+              "name": "{kebab-case}.factory.ts"
+            }
+          ]
+        },
+        {
+          "name": "{kebab-case}.{kebab-case}.ts"
+        }
+      ]
+    },
+    "file_name": {
+      "name": "{kebab-case}.{folder-name}.ts"
+    },
+    "core_folder": {
+      "name": "core",
+      "children": [
+        {
+          "name": "enum",
+          "children": [{ "ruleId": "file_name" }]
+        },
+        { "name": "model", "children": [{ "ruleId": "file_name" }] },
+        { "name": "service", "children": [{ "ruleId": "file_name" }] },
+        { "name": "use-case", "ruleId": "use_case_folder" },
+        { "name": "exception", "children": [{ "ruleId": "file_name" }] },
+        {
+          "name": "adapter",
+          "children": [{ "name": "{kebab-case}.adapter.interface.ts" }]
+        }
+      ]
+    },
+    "http_folder": {
+      "name": "http",
+      "children": [
+        { "name": "client", "ruleId": "http_client_folder" },
+        {
+          "name": "rest",
+          "children": [
+            {
+              "ruleId": "http_controller_folder"
+            },
+            {
+              "name": "dto",
+              "children": [
+                { "name": "request", "ruleId": "http_request_dto_folder" },
+                { "name": "response", "ruleId": "http_response_dto_folder" }
+              ]
+            },
+            {
+              "name": "interceptor",
+              "children": [
+                {
+                  "name": "{kebab-case}.interceptor.ts"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "graphql",
+          "children": [
+            { "name": "{kebab-case}.resolver.ts" },
+            {
+              "name": "type",
+              "children": [
+                {
+                  "name": "{kebab-case}.type.ts"
+                }
+              ]
+            }
+          ]
+        },
+        { "name": "guard", "children": [{ "ruleId": "file_name" }] }
+      ]
+    },
+
+    "http_client_folder": {
+      "name": "client",
+      "children": [
+        { "name": "*.client.ts" },
+        { "name": "{kebab-case}", "ruleId": "http_client_folder" }
+      ]
+    },
+
+    "http_controller_folder": {
+      "name": "controller",
+      "children": [{ "name": "{kebab-case}.controller.ts" }]
+    },
+
+    "http_request_dto_folder": {
+      "name": "request",
+      "children": [{ "name": "*-request.dto.ts" }]
+    },
+
+    "http_response_dto_folder": {
+      "name": "response",
+      "children": [{ "name": "*-response.dto.ts" }]
+    },
+    "persistence_folder": {
+      "name": "persistence",
+      "children": [
+        { "name": "entity", "children": [{ "ruleId": "file_name" }] },
+        { "name": "repository", "children": [{ "ruleId": "file_name" }] },
+        { "name": "migration", "children": [{ "name": "*-migration.ts" }] },
+        { "name": "{kebab-case}-persistence.module.ts" },
+        { "name": "typeorm-datasource.ts" },
+        { "name": "typeorm-datasource.factory.ts" }
+      ]
+    },
+    "shared_module_folder": {
+      "name": "shared",
+      "children": [
+        { "name": "core", "ruleId": "shared_modules_folder" },
+        { "name": "module", "ruleId": "shared_modules_folder" }
+      ]
+    },
+    "shared_modules_folder": {
+      "name": "module",
+      "children": [{ "name": "{kebab-case}", "ruleId": "nested_module_folder" }]
+    },
+    "nested_module_folder": {
+      "children": [
+        { "name": "{kebab-case}", "ruleId": "nested_module_folder" },
+        { "name": "{kebab-case}.{kebab-case}.ts" }
+      ]
+    }
+  }
+}

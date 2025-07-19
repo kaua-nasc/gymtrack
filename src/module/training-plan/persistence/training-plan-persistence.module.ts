@@ -1,60 +1,44 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@src/shared/module/config/config.module';
-import { TypeOrmPersistenceModule } from '@src/shared/module/persistence/typeorm/typeorm-persistence.module';
-import { DataSource } from 'typeorm';
-import { Day } from './entity/day.entity';
-import { Exercise } from './entity/exercise.entity';
-import { TrainingPlan } from './entity/training-plan.entity';
-import { Training } from './entity/training.entity';
-import { DayRepository } from './repository/day.repository';
-import { ExerciseRepository } from './repository/exercise.repository';
+import { ConfigModule } from '@src/module/shared/module/config/config.module';
+import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { TrainingPlanRepository } from './repository/training-plan.repository';
-import { TrainingRepository } from './repository/training.repository';
+import { ConfigService } from '@src/module/shared/module/config/service/config.service';
+import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
+import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
+import { DayRepository } from './repository/day.repository';
+import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
-  static forRoot(opts?: { migrations?: string[] }): DynamicModule {
-    const { migrations } = opts || {};
+  static forRoot(): DynamicModule {
     return {
       module: TrainingPlanPersistenceModule,
       imports: [
         TypeOrmPersistenceModule.forRoot({
-          migrations,
-          entities: [TrainingPlan, Day, Training, Exercise],
+          name: 'training-plan',
+          imports: [ConfigModule.forRoot()],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) => {
+            return dataSourceOptionsFactory(configService);
+          },
         }),
-        ConfigModule.forRoot(),
       ],
       providers: [
-        {
-          provide: TrainingPlanRepository,
-          useFactory: function (datasource: DataSource) {
-            return new TrainingPlanRepository(datasource.manager);
-          },
-          inject: [DataSource],
-        },
-        {
-          provide: DayRepository,
-          useFactory: (datasource: DataSource) => new DayRepository(datasource.manager),
-          inject: [DataSource],
-        },
-        {
-          provide: TrainingRepository,
-          useFactory: (datasource: DataSource) =>
-            new TrainingRepository(datasource.manager),
-          inject: [DataSource],
-        },
-        {
-          provide: ExerciseRepository,
-          useFactory: (datasource: DataSource) =>
-            new ExerciseRepository(datasource.manager),
-          inject: [DataSource],
-        },
-      ],
-      exports: [
+        PlanSubscriptionRepository,
         TrainingPlanRepository,
         DayRepository,
-        TrainingRepository,
-        ExerciseRepository,
+        PlanDayProgressRepository,
+        // ExerciseRepository,
+        // TrainingPlanProgressRepository,
+      ],
+      exports: [
+        PlanSubscriptionRepository,
+        TrainingPlanRepository,
+        DayRepository,
+        PlanDayProgressRepository,
+        // DayRepository,
+        // ExerciseRepository,
+        //TrainingPlanProgressRepository,
       ],
     };
   }

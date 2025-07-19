@@ -22,9 +22,9 @@
     "noUnusedParameters": true,
     "outDir": "./dist",
     "paths": {
-      "@src/*": ["./src/*"],
+      "@src/*": ["src/*"],
       "@database/*": ["./database/*"],
-      "@testInfra/*": ["./test/*"],
+      "@testInfra/*": ["test/*"],
       "@billingModule/*": ["./src/module/billing/*"],
       "@resource/*": ["./resource/*"]
     },

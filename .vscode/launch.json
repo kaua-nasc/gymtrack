@@ -28,11 +28,31 @@
       "type": "node",
       "request": "launch",
       "name": "Start NestJS with Watch",
-      "runtimeExecutable": "/home/kaua/.asdf/installs/nodejs/23.6.0/bin/npm",
+      "runtimeExecutable": "/home/kaua/.asdf/shims/npm",
       "runtimeArgs": ["run", "start:dev"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "restart": true
+    },
+    {
+      "name": "Jest Unit Tests Watch",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "/home/kaua/.asdf/shims/npm",
+      "runtimeArgs": ["run", "test:unit:watch"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Jest e2e Tests Watch",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "/home/kaua/.asdf/shims/npm",
+      "runtimeArgs": ["run", "test:e2e:watch"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }

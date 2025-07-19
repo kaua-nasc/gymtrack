@@ -1,29 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { DayModel } from '@src/module/training-plan/core/model/day.model';
-import { TrainingModel } from '@src/module/training-plan/core/model/training.model';
 import { DayRepository } from '@src/module/training-plan/persistence/repository/day.repository';
+import { CreateDayRequestDto } from '../../http/rest/dto/request/create-day-request.dto';
+import { Day } from '../../persistence/entity/day.entity';
 
 @Injectable()
 export class DayManagementService {
   constructor(private readonly dayRepository: DayRepository) {}
-  async createDay(day: { trainingPlanId: string; trainings: TrainingModel[] }) {
-    const newTraining = DayModel.create({
-      trainingPlanId: day.trainingPlanId,
-      trainings: day.trainings,
-    });
 
-    return await this.dayRepository.saveDay({ ...newTraining });
+  async create(dayData: CreateDayRequestDto) {
+    return await this.dayRepository.save(new Day({ ...dayData }));
   }
 
-  async getDays(trainingPlanId: string) {
-    return await this.dayRepository.findMany({ where: { trainingPlanId } });
-  }
-
-  async getDay(dayId: string) {
-    return await this.dayRepository.findOneById(dayId);
-  }
-
-  async deleteOne(id: string) {
+  async delete(id: string) {
     return await this.dayRepository.delete({ id });
   }
 }
