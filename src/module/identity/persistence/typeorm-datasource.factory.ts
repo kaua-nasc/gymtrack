@@ -12,6 +12,7 @@ export const dataSourceOptionsFactory = (
   username: configService.get('database.username'),
   password: configService.get('database.password'),
   database: configService.get('database.database'),
+  useUTC: true,
   synchronize: false,
   entities: [join(__dirname, 'entity', '*.entity.{ts,js}')],
   migrations: [join(__dirname, 'migration', '*-migration.{ts,js}')],
