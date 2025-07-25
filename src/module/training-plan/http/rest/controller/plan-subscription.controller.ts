@@ -1,6 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { PlanSubscriptionManagementService } from '@src/module/training-plan/core/service/plan-subscription-management.service';
-import { CreatePlanDayProgressRequestDto } from '../dto/request/create-plan-day-progress-request.dto';
 
 @Controller('training-plan/subscription')
 export class PlanSubscriptionController {
@@ -11,6 +10,19 @@ export class PlanSubscriptionController {
   @Get('/:userId')
   async getInProgressSubscription(@Param('userId') userId: string) {
     return await this.planSubscriptionManagementService.getInProgressSubscription(userId);
+  }
+
+  @Get('/list/:userId')
+  async getSubscriptions(@Param('userId') userId: string) {
+    return await this.planSubscriptionManagementService.getSubscriptions(userId);
+  }
+
+  @Get('/exists/:trainingPlanId/:userId')
+  async exists(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Param('userId') userId: string
+  ) {
+    return await this.planSubscriptionManagementService.exists(trainingPlanId, userId);
   }
 
   @Post('/:trainingPlanId/:userId')
@@ -79,9 +91,15 @@ export class PlanSubscriptionController {
     );
   }
 
-  @Post('add/day/progress')
-  async createDayProgress(@Body() dayProgress: CreatePlanDayProgressRequestDto) {
-    return await this.planSubscriptionManagementService.createDayProgress(dayProgress);
+  @Post('add/day/progress/:planSubscriptionId/:dayId')
+  async createDayProgress(
+    @Param('planSubscriptionId') planSubscriptionId: string,
+    @Param('dayId') dayId: string
+  ) {
+    return await this.planSubscriptionManagementService.createDayProgress(
+      planSubscriptionId,
+      dayId
+    );
   }
 
   @Get('get/day/progress/:userId')

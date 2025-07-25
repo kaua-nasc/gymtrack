@@ -17,6 +17,11 @@ export class TrainingPlanController {
     private readonly trainingPlanManagementService: TrainingPlanManagementService
   ) {}
 
+  @Get('list')
+  async list() {
+    return await this.trainingPlanManagementService.list();
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createTrainingPlan(@Body() contentData: CreateTrainingPlanRequestDto) {
@@ -25,7 +30,7 @@ export class TrainingPlanController {
 
   @Get('list/:authorId')
   async findTrainingPlansByAuthorId(@Param('authorId') authorId: string) {
-    return await this.trainingPlanManagementService.list(authorId);
+    return await this.trainingPlanManagementService.listByUserId(authorId);
   }
 
   @Get(':trainingPlanId')

@@ -24,7 +24,7 @@ export class PlanSubscription extends DefaultEntity<PlanSubscription> {
     (planDayProgress) => planDayProgress.planSubscription,
     { cascade: true }
   )
-  planDayProgress: PlanDayProgress;
+  planDayProgress: PlanDayProgress[];
 
   @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.planSubscriptions, {
     nullable: false,

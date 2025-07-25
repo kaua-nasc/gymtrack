@@ -11,9 +11,9 @@ import { IdentityUserExistsApi } from '@src/module/shared/module/integration/int
 import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
-import { CreatePlanDayProgressRequestDto } from '../../http/rest/dto/request/create-plan-day-progress-request.dto';
 import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 import { DayRepository } from '../../persistence/repository/day.repository';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -28,12 +28,60 @@ export class PlanSubscriptionManagementService {
 
   async getInProgressSubscription(userId: string) {
     return await this.planSubscriptionRepository.find({
-      where: { userId },
+      where: { userId, status: PlanSubscriptionStatus.inProgress },
       relations: {
         planDayProgress: true,
       },
     });
   }
+
+  async getSubscriptions(userId: string) {
+    const subscriptions = await this.planSubscriptionRepository.findMany({
+      where: { userId },
+      relations: {
+        trainingPlan: {
+          days: true,
+        },
+      },
+    });
+
+    if (!subscriptions) return [];
+
+    const inProgressDays: Array<PlanDayProgress | null> = Array(7).fill(null);
+    for (let i = 0; i < subscriptions.length; i++) {
+      if (subscriptions[i].status === PlanSubscriptionStatus.inProgress) {
+        const daysProgress = await this.planDayProgressRepository.getDaysProgressAtWeek(
+          subscriptions[i].id
+        );
+        if (daysProgress) {
+          for (let j = 0; j < daysProgress.length; j++) {
+            inProgressDays[dayjs(daysProgress[j].createdAt).day()] = daysProgress[j];
+          }
+        }
+      }
+    }
+
+    return subscriptions.map((s) => {
+      if (s.status === PlanSubscriptionStatus.inProgress) {
+        return { ...s, planDayProgress: inProgressDays };
+      }
+      return { ...s };
+    });
+  }
+
+  async exists(trainingPlanId: string, userId: string) {
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+      },
+    });
+
+    return {
+      exists: subscription ? true : false,
+    };
+  }
+
   async createSubscription(trainingPlanId: string, userId: string) {
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
       throw new NotFoundException('training plan not found');
@@ -207,10 +255,10 @@ export class PlanSubscriptionManagementService {
     );
   }
 
-  async createDayProgress(planDayProgress: CreatePlanDayProgressRequestDto) {
+  async createDayProgress(planSubscriptionId: string, dayId: string) {
     const subscription = await this.planSubscriptionRepository.find({
       where: {
-        id: planDayProgress.planSubscriptionId,
+        id: planSubscriptionId,
         status: PlanSubscriptionStatus.inProgress,
       },
     });
@@ -219,14 +267,14 @@ export class PlanSubscriptionManagementService {
       throw new NotFoundException('subscription not found');
     }
 
-    const day = await this.dayRepository.findDayById(planDayProgress.dayId);
+    const day = await this.dayRepository.findDayById(dayId);
 
     if (!day) {
       throw new NotFoundException('day not found');
     }
 
     return await this.planDayProgressRepository.create(
-      new PlanDayProgress({ ...planDayProgress })
+      new PlanDayProgress({ dayId, planSubscriptionId })
     );
   }
 

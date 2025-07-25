@@ -37,14 +37,21 @@ export class TrainingPlanManagementService {
   }
 
   async get(id: string) {
-    const trainingPlan = await this.trainingPlanRepository.findOneById(id);
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id },
+      relations: { days: { exercises: true } },
+    });
 
     if (!trainingPlan) throw new NotFoundException();
 
     return { ...trainingPlan };
   }
 
-  async list(userId: string) {
+  async list() {
+    return await this.trainingPlanRepository.findMany({});
+  }
+
+  async listByUserId(userId: string) {
     return await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
   }
 
