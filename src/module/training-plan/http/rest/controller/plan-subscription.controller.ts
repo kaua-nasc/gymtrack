@@ -25,6 +25,17 @@ export class PlanSubscriptionController {
     return await this.planSubscriptionManagementService.exists(trainingPlanId, userId);
   }
 
+  @Get('/exists/in-progress/:trainingPlanId/:userId')
+  async existsInProgress(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Param('userId') userId: string
+  ) {
+    return await this.planSubscriptionManagementService.existsInProgress(
+      trainingPlanId,
+      userId
+    );
+  }
+
   @Post('/:trainingPlanId/:userId')
   async createSubscription(
     @Param('trainingPlanId') trainingPlanId: string,

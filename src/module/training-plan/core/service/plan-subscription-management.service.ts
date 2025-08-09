@@ -13,7 +13,6 @@ import { PlanSubscriptionRepository } from '../../persistence/repository/plan-su
 import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
 import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 import { DayRepository } from '../../persistence/repository/day.repository';
-import dayjs from 'dayjs';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -47,16 +46,14 @@ export class PlanSubscriptionManagementService {
 
     if (!subscriptions) return [];
 
-    const inProgressDays: Array<PlanDayProgress | null> = Array(7).fill(null);
+    let inProgressDays: Array<PlanDayProgress | null> = Array(7).fill(null);
     for (let i = 0; i < subscriptions.length; i++) {
       if (subscriptions[i].status === PlanSubscriptionStatus.inProgress) {
         const daysProgress = await this.planDayProgressRepository.getDaysProgressAtWeek(
           subscriptions[i].id
         );
         if (daysProgress) {
-          for (let j = 0; j < daysProgress.length; j++) {
-            inProgressDays[dayjs(daysProgress[j].createdAt).day()] = daysProgress[j];
-          }
+          inProgressDays = daysProgress;
         }
       }
     }
@@ -74,6 +71,20 @@ export class PlanSubscriptionManagementService {
       where: {
         userId,
         trainingPlanId,
+      },
+    });
+
+    return {
+      exists: subscription ? true : false,
+    };
+  }
+
+  async existsInProgress(trainingPlanId: string, userId: string) {
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+        status: PlanSubscriptionStatus.inProgress,
       },
     });
 

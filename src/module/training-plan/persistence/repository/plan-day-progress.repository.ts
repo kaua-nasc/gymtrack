@@ -1,7 +1,7 @@
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { PlanDayProgress } from '../entity/plan-day-progress.entity';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { Between, DataSource } from 'typeorm';
 import dayjs from 'dayjs';
 
 export class PlanDayProgressRepository extends DefaultTypeOrmRepository<PlanDayProgress> {
@@ -17,19 +17,30 @@ export class PlanDayProgressRepository extends DefaultTypeOrmRepository<PlanDayP
   }
 
   async getDaysProgressAtWeek(planSubscriptionId: string) {
-    const startOfWeek = dayjs().startOf('week').toDate();
-    const endOfWeek = dayjs(startOfWeek).add(6, 'day').endOf('day').toDate();
+    const startOfWeek = dayjs().startOf('week').toDate(); // Domingo 00:00
+    const endOfWeek = dayjs().startOf('week').add(6, 'day').endOf('day').toDate();
 
     const daysProgress = await super.findMany({
       where: {
         planSubscriptionId,
-        createdAt: MoreThanOrEqual(startOfWeek) && LessThanOrEqual(endOfWeek),
+        createdAt: Between(startOfWeek, endOfWeek),
       },
       order: {
         createdAt: 'ASC',
       },
     });
 
-    return daysProgress ?? [];
+    const result: (PlanDayProgress | null)[] = new Array(7).fill(null);
+
+    if (daysProgress == null) return result;
+
+    for (const progress of daysProgress) {
+      const weekDay = dayjs(progress.createdAt).day();
+      if (weekDay <= dayjs().day()) {
+        result[weekDay] = progress;
+      }
+    }
+
+    return result;
   }
 }
