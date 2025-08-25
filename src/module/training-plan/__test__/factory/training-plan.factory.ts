@@ -15,7 +15,6 @@ export const trainingPlanFactory = Factory.Sync.makeFactory<Partial<TrainingPlan
   timeInDays: faker.number.int({ max: 255 }),
   type: faker.helpers.enumValue(TrainingPlanType),
   visibility: faker.helpers.enumValue(TrainingPlanVisibility),
-  lastUpdatedBy: faker.string.uuid(),
   createdAt: faker.date.recent(),
   updatedAt: faker.date.recent(),
   deletedAt: null,
