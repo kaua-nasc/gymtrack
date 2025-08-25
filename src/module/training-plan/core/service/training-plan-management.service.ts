@@ -47,8 +47,17 @@ export class TrainingPlanManagementService {
     return { ...trainingPlan };
   }
 
+  async exists(id: string) {
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id },
+    });
+
+    return trainingPlan ? true : false;
+  }
+
   async list() {
-    return await this.trainingPlanRepository.findMany({});
+    const plans = await this.trainingPlanRepository.findMany({});
+    return plans ?? [];
   }
 
   async listByUserId(userId: string) {
