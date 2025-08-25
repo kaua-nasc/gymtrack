@@ -56,12 +56,9 @@ describe('Day Progress - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
       await testDbClient(Tables.Day).insert(day);
 
-      const res = await request(app.getHttpServer())
-        .post('/training-plan/subscription/add/day/progress')
-        .send({
-          planSubscriptionId: planSubscription.id,
-          dayId: day.id,
-        });
+      const res = await request(app.getHttpServer()).post(
+        `/training-plan/subscription/day/progress/${planSubscription.id}/${day.id}`
+      );
 
       expect(res.status).toBe(HttpStatus.CREATED);
     });
@@ -79,12 +76,9 @@ describe('Day Progress - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
       await testDbClient(Tables.Day).insert(day);
 
-      const res = await request(app.getHttpServer())
-        .post('/training-plan/subscription/add/day/progress')
-        .send({
-          planSubscriptionId: planSubscription.id,
-          dayId: day.id,
-        });
+      const res = await request(app.getHttpServer()).post(
+        `/training-plan/subscription/day/progress/${planSubscription.id}/${day.id}`
+      );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -101,12 +95,9 @@ describe('Day Progress - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.Day).insert(day);
 
-      const res = await request(app.getHttpServer())
-        .post('/training-plan/subscription/add/day/progress')
-        .send({
-          planSubscriptionId: planSubscription.id,
-          dayId: day.id,
-        });
+      const res = await request(app.getHttpServer()).post(
+        `/training-plan/subscription/day/progress/${planSubscription.id}/${day.id}`
+      );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -124,12 +115,9 @@ describe('Day Progress - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      const res = await request(app.getHttpServer())
-        .post('/training-plan/subscription/add/day/progress')
-        .send({
-          planSubscriptionId: planSubscription.id,
-          dayId: day.id,
-        });
+      const res = await request(app.getHttpServer()).post(
+        `/training-plan/subscription/day/progress/${planSubscription.id}/${day.id}`
+      );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });

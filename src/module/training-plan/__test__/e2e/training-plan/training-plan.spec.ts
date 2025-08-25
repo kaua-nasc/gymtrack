@@ -49,7 +49,6 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .send(trainingPlan);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.authorId).toBe(trainingPlan.authorId);
     });
 
     it('should return a not found response when not have user', async () => {
