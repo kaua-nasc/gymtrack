@@ -33,6 +33,9 @@ export class TrainingPlanManagementService {
   }
 
   async delete(id: string) {
+    const exists = await this.exists(id);
+    if (!exists) throw new NotFoundException(`training plan with id ${id} not found`);
+
     return await this.trainingPlanRepository.deleteTrainingPlan(id);
   }
 
