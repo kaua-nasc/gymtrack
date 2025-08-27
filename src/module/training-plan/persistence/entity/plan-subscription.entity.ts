@@ -1,8 +1,10 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 import { PlanDayProgress } from './plan-day-progress.entity';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
+import { PlanSubscriptionType } from '../../core/enum/plan-subscription-type.enum';
+import { PlanSubscriptionPartialAccessInformation } from './plan-subscription-partial-access-information.entity';
 
 @Entity({ name: 'plan_subscription' })
 export class PlanSubscription extends DefaultEntity<PlanSubscription> {
@@ -19,12 +21,19 @@ export class PlanSubscription extends DefaultEntity<PlanSubscription> {
   })
   status: PlanSubscriptionStatus;
 
+  @Column({
+    type: 'enum',
+    enum: PlanSubscriptionType,
+    nullable: false,
+  })
+  type: PlanSubscriptionType;
+
   @OneToMany(
     () => PlanDayProgress,
     (planDayProgress) => planDayProgress.planSubscription,
     { cascade: true }
   )
-  planDayProgress: PlanDayProgress;
+  planDayProgress: PlanDayProgress[];
 
   @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.planSubscriptions, {
     nullable: false,
@@ -32,4 +41,11 @@ export class PlanSubscription extends DefaultEntity<PlanSubscription> {
   })
   @JoinColumn({ name: 'trainingPlanId' })
   trainingPlan: TrainingPlan;
+
+  @OneToOne(
+    () => PlanSubscriptionPartialAccessInformation,
+    (accessInformation) => accessInformation.planSubscription,
+    { onDelete: 'CASCADE', onUpdate: 'CASCADE' }
+  )
+  partialAccessInformation: PlanSubscriptionPartialAccessInformation;
 }

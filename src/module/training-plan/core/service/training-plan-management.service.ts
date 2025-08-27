@@ -33,18 +33,37 @@ export class TrainingPlanManagementService {
   }
 
   async delete(id: string) {
+    const exists = await this.exists(id);
+    if (!exists) throw new NotFoundException(`training plan with id ${id} not found`);
+
     return await this.trainingPlanRepository.deleteTrainingPlan(id);
   }
 
   async get(id: string) {
-    const trainingPlan = await this.trainingPlanRepository.findOneById(id);
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id },
+      relations: { days: { exercises: true } },
+    });
 
     if (!trainingPlan) throw new NotFoundException();
 
     return { ...trainingPlan };
   }
 
-  async list(userId: string) {
+  async exists(id: string) {
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id },
+    });
+
+    return trainingPlan ? true : false;
+  }
+
+  async list() {
+    const plans = await this.trainingPlanRepository.findMany({});
+    return plans ?? [];
+  }
+
+  async listByUserId(userId: string) {
     return await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
   }
 

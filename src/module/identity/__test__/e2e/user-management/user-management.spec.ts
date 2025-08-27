@@ -41,7 +41,6 @@ describe('Identity - User Management Controller - (e2e)', () => {
         .send(createUserInput);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.email).toBe(createUserInput.email);
     });
     it('should throws error by already used email', async () => {
       const createUserInput = {

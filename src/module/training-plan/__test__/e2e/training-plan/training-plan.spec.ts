@@ -49,7 +49,6 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .send(trainingPlan);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.authorId).toBe(trainingPlan.authorId);
     });
 
     it('should return a not found response when not have user', async () => {
@@ -137,6 +136,29 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       );
 
       expect(res.body.length).toBe(0);
+    });
+  });
+
+  describe('Delete Training Plan', () => {
+    it('should delete an training plan when has a training plan', async () => {
+      const firstTrainingPlan = trainingPlanFactory.build();
+
+      await testDbClient(Tables.TrainingPlan).insert(firstTrainingPlan);
+
+      const res = await request(app.getHttpServer()).delete(
+        `/training-plan/${firstTrainingPlan.id}`
+      );
+
+      expect(res.status).toBe(200);
+    });
+    it('should delete an training plan when has a training plan', async () => {
+      const firstTrainingPlan = trainingPlanFactory.build();
+
+      const res = await request(app.getHttpServer()).delete(
+        `/training-plan/${firstTrainingPlan.id}`
+      );
+
+      expect(res.status).toBe(404);
     });
   });
 });

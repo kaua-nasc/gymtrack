@@ -1,10 +1,14 @@
 import { Exercise } from '@src/module/training-plan/persistence/entity/exercise.entity';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
-import { EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 export class ExerciseRepository extends DefaultTypeOrmRepository<Exercise> {
-  constructor(readonly transactionalEntityManager: EntityManager) {
-    super(Exercise, transactionalEntityManager);
+  constructor(
+    @InjectDataSource('training-plan')
+    dataSource: DataSource
+  ) {
+    super(Exercise, dataSource.manager);
   }
 
   async saveExercise(entity: Exercise): Promise<Exercise> {

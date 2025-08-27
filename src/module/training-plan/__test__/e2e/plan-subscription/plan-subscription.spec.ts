@@ -52,9 +52,9 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
           exists: true,
         });
 
-      const res = await request(app.getHttpServer()).post(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
-      );
+      const res = await request(app.getHttpServer())
+        .post(`/training-plan/subscription/${trainingPlan.id}/${user.id}`)
+        .send({ type: 'TOTAL_ACCESS' });
 
       expect(res.status).toBe(HttpStatus.CREATED);
     });
@@ -73,9 +73,9 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
           exists: false,
         });
 
-      const res = await request(app.getHttpServer()).post(
-        `/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`
-      );
+      const res = await request(app.getHttpServer())
+        .post(`/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`)
+        .send({ type: 'TOTAL_ACCESS' });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -92,9 +92,9 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
           exists: false,
         });
 
-      const res = await request(app.getHttpServer()).post(
-        `/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`
-      );
+      const res = await request(app.getHttpServer())
+        .post(`/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`)
+        .send({ type: 'TOTAL_ACCESS' });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -120,9 +120,9 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
           exists: true,
         });
 
-      const res = await request(app.getHttpServer()).post(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
-      );
+      const res = await request(app.getHttpServer())
+        .post(`/training-plan/subscription/${trainingPlan.id}/${user.id}`)
+        .send({ type: 'TOTAL_ACCESS' });
 
       expect(res.status).toBe(HttpStatus.CONFLICT);
     });

@@ -7,6 +7,7 @@ import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
 import { DayRepository } from './repository/day.repository';
 import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
+import { ExerciseRepository } from './repository/exercise.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -28,7 +29,7 @@ export class TrainingPlanPersistenceModule {
         TrainingPlanRepository,
         DayRepository,
         PlanDayProgressRepository,
-        // ExerciseRepository,
+        ExerciseRepository,
         // TrainingPlanProgressRepository,
       ],
       exports: [
@@ -37,7 +38,7 @@ export class TrainingPlanPersistenceModule {
         DayRepository,
         PlanDayProgressRepository,
         // DayRepository,
-        // ExerciseRepository,
+        ExerciseRepository,
         //TrainingPlanProgressRepository,
       ],
     };

@@ -7,11 +7,8 @@ export const dataSourceOptionsFactory = (
 ): PostgresConnectionOptions => ({
   type: 'postgres',
   name: 'identity',
-  host: configService.get('database.host'),
-  port: 5432,
-  username: configService.get('database.username'),
-  password: configService.get('database.password'),
-  database: configService.get('database.database'),
+  url: configService.get('database.url'),
+  useUTC: true,
   synchronize: false,
   entities: [join(__dirname, 'entity', '*.entity.{ts,js}')],
   migrations: [join(__dirname, 'migration', '*-migration.{ts,js}')],

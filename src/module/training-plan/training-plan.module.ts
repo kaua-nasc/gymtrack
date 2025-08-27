@@ -12,6 +12,8 @@ import { PlanSubscriptionController } from './http/rest/controller/plan-subscrip
 import { PlanSubscriptionManagementService } from './core/service/plan-subscription-management.service';
 import { DayManagementService } from './core/service/day-management.service';
 import { DayController } from './http/rest/controller/day.controller';
+import { ExerciseController } from './http/rest/controller/exercise.controller';
+import { ExerciseManagementService } from './core/service/exercise-management.service';
 
 @Module({
   imports: [
@@ -24,13 +26,19 @@ import { DayController } from './http/rest/controller/day.controller';
     TrainingPlanManagementService,
     PlanSubscriptionManagementService,
     DayManagementService,
+    ExerciseManagementService,
     TrainingPlanPublicApiProvider,
     {
       provide: IdentityUserExistsApi,
       useExisting: IdentityHttpClient,
     },
   ],
-  controllers: [TrainingPlanController, PlanSubscriptionController, DayController],
+  controllers: [
+    TrainingPlanController,
+    PlanSubscriptionController,
+    DayController,
+    ExerciseController,
+  ],
   exports: [TrainingPlanPublicApiProvider],
 })
 export class TrainingPlanModule {}

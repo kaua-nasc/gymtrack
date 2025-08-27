@@ -1,32 +1,56 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ExerciseManagementService } from '@src/module/training-plan/core/service/exercise-management.service';
 import { CreateExerciseRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-exercise-request.dto';
+import { ExerciseResponseDto } from '../dto/response/exercise-response.dto';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Exercises')
 @Controller('exercise')
 export class ExerciseController {
   constructor(private readonly exerciseManagementService: ExerciseManagementService) {}
 
   @Post()
-  async createExercise(@Body() contentData: CreateExerciseRequestDto): Promise<Output> {
-    return await this.exerciseManagementService.create({ ...contentData });
+  @ApiOperation({ summary: 'Cria um novo exercício' })
+  @ApiBody({ type: CreateExerciseRequestDto })
+  @ApiResponse({ status: 201, description: 'Exercício criado com sucesso' })
+  async createExercise(@Body() contentData: CreateExerciseRequestDto): Promise<void> {
+    await this.exerciseManagementService.create({ ...contentData });
   }
 
   @Get('list/:trainingId')
-  async findExecisesByDayId(@Param('trainingId') trainingId: string) {
+  @ApiOperation({ summary: 'Lista todos os exercícios de um treinamento' })
+  @ApiParam({ name: 'trainingId', description: 'ID do treinamento' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de exercícios',
+    type: [ExerciseResponseDto],
+  })
+  async findExecisesByDayId(
+    @Param('trainingId') trainingId: string
+  ): Promise<ExerciseResponseDto[]> {
     return await this.exerciseManagementService.execute(trainingId);
   }
 
   @Get(':exerciseId')
-  async findExeciseById(@Param('exerciseId') id: string) {
-    return await this.exerciseManagementService.get(id);
+  @ApiOperation({ summary: 'Busca um exercício pelo ID' })
+  @ApiParam({ name: 'exerciseId', description: 'ID do exercício' })
+  @ApiResponse({
+    status: 200,
+    description: 'Exercício encontrado',
+    type: ExerciseResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Exercício não encontrado' })
+  async findExeciseById(@Param('exerciseId') id: string): Promise<ExerciseResponseDto> {
+    const exercise = await this.exerciseManagementService.get(id);
+    return { ...exercise };
   }
 
   @Delete(':exerciseId')
-  async deleteExerciseById(@Param('exerciseId') id: string) {
+  @ApiOperation({ summary: 'Deleta um exercício pelo ID' })
+  @ApiParam({ name: 'exerciseId', description: 'ID do exercício' })
+  @ApiResponse({ status: 200, description: 'Exercício deletado com sucesso' })
+  @ApiResponse({ status: 404, description: 'Exercício não encontrado' })
+  async deleteExerciseById(@Param('exerciseId') id: string): Promise<void> {
     await this.exerciseManagementService.delete(id);
   }
 }
-
-type Output = {
-  id: string;
-};

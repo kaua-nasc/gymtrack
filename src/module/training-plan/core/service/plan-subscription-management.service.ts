@@ -11,9 +11,9 @@ import { IdentityUserExistsApi } from '@src/module/shared/module/integration/int
 import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
-import { CreatePlanDayProgressRequestDto } from '../../http/rest/dto/request/create-plan-day-progress-request.dto';
 import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 import { DayRepository } from '../../persistence/repository/day.repository';
+import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -26,15 +26,86 @@ export class PlanSubscriptionManagementService {
     private readonly identityUserServiceClient: IdentityUserExistsApi
   ) {}
 
-  async getInProgressSubscription(userId: string) {
-    return await this.planSubscriptionRepository.find({
-      where: { userId },
+  async getInProgressSubscription(userId: string): Promise<PlanSubscription> {
+    const subscription = await this.planSubscriptionRepository.find({
+      where: { userId, status: PlanSubscriptionStatus.inProgress },
       relations: {
         planDayProgress: true,
       },
     });
+
+    if (!subscription) {
+      throw new NotFoundException(
+        `Subscription by user with id ${userId} in progress not found`
+      );
+    }
+
+    return subscription;
   }
-  async createSubscription(trainingPlanId: string, userId: string) {
+
+  async getSubscriptions(userId: string): Promise<PlanSubscription[]> {
+    const subscriptions = await this.planSubscriptionRepository.findMany({
+      where: { userId },
+      relations: {
+        trainingPlan: {
+          days: true,
+        },
+      },
+    });
+
+    if (!subscriptions) return [];
+
+    let inProgressDays: Array<PlanDayProgress | null> = Array(7).fill(null);
+    for (let i = 0; i < subscriptions.length; i++) {
+      if (subscriptions[i].status === PlanSubscriptionStatus.inProgress) {
+        const daysProgress = await this.planDayProgressRepository.getDaysProgressAtWeek(
+          subscriptions[i].id
+        );
+        if (daysProgress) {
+          inProgressDays = daysProgress;
+        }
+      }
+    }
+
+    return subscriptions.map((s) =>
+      s.status === PlanSubscriptionStatus.inProgress
+        ? Object.assign(s, { planDayProgress: inProgressDays })
+        : s
+    );
+  }
+
+  async exists(trainingPlanId: string, userId: string) {
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+      },
+    });
+
+    return {
+      exists: subscription ? true : false,
+    };
+  }
+
+  async existsInProgress(trainingPlanId: string, userId: string) {
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+        status: PlanSubscriptionStatus.inProgress,
+      },
+    });
+
+    return {
+      exists: subscription ? true : false,
+    };
+  }
+
+  async createSubscription(
+    trainingPlanId: string,
+    userId: string,
+    planSubscription: CreatePlanSubscriptionRequestDto
+  ) {
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
       throw new NotFoundException('training plan not found');
     }
@@ -45,8 +116,8 @@ export class PlanSubscriptionManagementService {
     if (
       await this.planSubscriptionRepository.find({
         where: {
-          userId,
-          trainingPlanId,
+          userId: userId,
+          trainingPlanId: trainingPlanId,
         },
       })
     ) {
@@ -55,7 +126,8 @@ export class PlanSubscriptionManagementService {
 
     const subscription = new PlanSubscription({
       trainingPlanId: trainingPlanId,
-      userId,
+      userId: userId,
+      type: planSubscription.type,
     });
     await this.planSubscriptionRepository.save(subscription);
   }
@@ -207,10 +279,10 @@ export class PlanSubscriptionManagementService {
     );
   }
 
-  async createDayProgress(planDayProgress: CreatePlanDayProgressRequestDto) {
+  async createDayProgress(planSubscriptionId: string, dayId: string) {
     const subscription = await this.planSubscriptionRepository.find({
       where: {
-        id: planDayProgress.planSubscriptionId,
+        id: planSubscriptionId,
         status: PlanSubscriptionStatus.inProgress,
       },
     });
@@ -219,18 +291,18 @@ export class PlanSubscriptionManagementService {
       throw new NotFoundException('subscription not found');
     }
 
-    const day = await this.dayRepository.findDayById(planDayProgress.dayId);
+    const day = await this.dayRepository.findDayById(dayId);
 
     if (!day) {
       throw new NotFoundException('day not found');
     }
 
     return await this.planDayProgressRepository.create(
-      new PlanDayProgress({ ...planDayProgress })
+      new PlanDayProgress({ dayId, planSubscriptionId })
     );
   }
 
-  async getDaysProgress(userId: string) {
+  async getDaysProgress(userId: string): Promise<PlanDayProgress[]> {
     const subscription = await this.planSubscriptionRepository.find({
       where: { userId, status: PlanSubscriptionStatus.inProgress },
     });
