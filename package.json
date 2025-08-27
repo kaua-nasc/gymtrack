@@ -32,8 +32,7 @@
     "test:integration:watch": "npm run test:integration -- --watch",
     "test:type": "tsc --noEmit",
     "test:unit": "jest --config ./test/jest.unit.ts",
-    "test:unit:watch": "npm run test:unit -- --watch",
-    "prepare": "husky"
+    "test:unit:watch": "npm run test:unit -- --watch"
   },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
