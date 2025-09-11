@@ -1,0 +1,13 @@
+name: Deploy Service Project to Server
+
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  call-deploy:
+    uses: ./.github/workflows/deploy-server.yml
+    with:
+      port: 3000:3000
+    secrets: inherit

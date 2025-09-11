@@ -40,8 +40,10 @@ export class TrainingPlanController {
   @ApiResponse({ status: 201, description: 'Plano de treino criado com sucesso' })
   async createTrainingPlan(
     @Body() contentData: CreateTrainingPlanRequestDto
-  ): Promise<void> {
-    await this.trainingPlanManagementService.create({ ...contentData });
+  ): Promise<{ id: string }> {
+    const result = await this.trainingPlanManagementService.create({ ...contentData });
+
+    return { id: result.id };
   }
 
   @Get('list/:authorId')

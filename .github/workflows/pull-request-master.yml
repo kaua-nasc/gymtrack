@@ -1,0 +1,13 @@
+name: Pull Request to Master
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run-e2e-tests:
+    uses: ./.github/workflows/run-e2e.yml
+    with:
+      node-version: latest
+    secrets: inherit
