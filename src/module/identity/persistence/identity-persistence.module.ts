@@ -4,9 +4,20 @@ import { ConfigService } from '@src/module/shared/module/config/service/config.s
 import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { UserRepository } from './repository/user.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
+import { CacheModule } from '@src/module/shared/module/cache/cache.module';
 
 @Module({
   imports: [
+    CacheModule.forRootAsync({
+      imports: [ConfigModule.forRoot()],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        host: configService.get('cache.host'),
+        port: configService.get('cache.port'),
+        db: configService.get('cache.db'),
+        password: configService.get('cache.password'),
+      }),
+    }),
     TypeOrmPersistenceModule.forRoot({
       name: 'identity',
       imports: [ConfigModule.forRoot()],
