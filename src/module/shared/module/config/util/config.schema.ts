@@ -13,6 +13,16 @@ export const cacheSchema = z.object({
   password: z.string(),
 });
 
+export const emailAuthSchema = z.object({
+  user: z.email(),
+  pass: z.string(),
+});
+
+export const emailSchema = z.object({
+  service: z.string(),
+  auth: emailAuthSchema,
+});
+
 export const trainingPlanApiSchema = z.object({
   url: z.string(),
 });
@@ -29,6 +39,7 @@ export const configSchema = z.object({
   env: environmentSchema,
   port: z.coerce.number().positive().int(),
   database: databaseSchema,
+  email: emailSchema,
   cache: cacheSchema,
   trainingPlanApi: trainingPlanApiSchema,
   billingApi: billingApiSchema,
