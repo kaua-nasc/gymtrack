@@ -64,4 +64,8 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   async deleteAll() {
     await this.repository.delete({});
   }
+
+  async count(criteria: FindOptionsWhere<T>): Promise<number> {
+    return await this.repository.countBy(criteria);
+  }
 }
