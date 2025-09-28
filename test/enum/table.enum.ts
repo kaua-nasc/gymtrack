@@ -5,4 +5,5 @@ export enum Tables {
   PlanSubscription = 'plan_subscription',
   PlanDayProgress = 'plan_day_progress',
   Day = 'days',
+  TrainingPlanFeedback = 'training_plan_feedbacks',
 }

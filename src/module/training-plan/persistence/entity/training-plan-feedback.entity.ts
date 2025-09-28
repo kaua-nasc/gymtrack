@@ -13,7 +13,7 @@ export class TrainingPlanFeedback extends DefaultEntity<TrainingPlanFeedback> {
   @Column({ type: 'decimal', nullable: false })
   rating: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   message: string | undefined;
 
   @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.feedbacks, {

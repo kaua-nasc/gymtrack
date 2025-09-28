@@ -1,4 +1,4 @@
-import { IsNumber, IsPositive, IsString, IsUUID } from 'class-validator';
+import { IsNumber, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
 
 export class CreateTrainingPlanFeedbackRequestDto {
   @IsUUID()
@@ -11,6 +11,7 @@ export class CreateTrainingPlanFeedbackRequestDto {
   @IsPositive({ always: true })
   rating: number;
 
+  @IsOptional()
   @IsString()
   message: string | undefined;
 }

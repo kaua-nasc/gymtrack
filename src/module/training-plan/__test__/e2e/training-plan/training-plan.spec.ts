@@ -161,4 +161,93 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe('Create Feedback to Training Plan', () => {
+    it('should add a feedback successfully when send valid data', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const feedback = {
+        trainingPlanId: trainingPlan.id,
+        userId: userId,
+        rating: 5,
+      };
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer())
+        .post('/training-plan/feedback')
+        .send(feedback);
+
+      expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should return not found exception when training plan not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const feedback = {
+        trainingPlanId: trainingPlan.id,
+        userId: userId,
+        rating: 5,
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/training-plan/feedback')
+        .send(feedback);
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return bad request when training plan author and feedback author are equals', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const feedback = {
+        trainingPlanId: trainingPlan.id,
+        userId: trainingPlan.authorId,
+        rating: 5,
+      };
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const response = await request(app.getHttpServer())
+        .post('/training-plan/feedback')
+        .send(feedback);
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should return not found when author of feedback not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const feedback = {
+        trainingPlanId: trainingPlan.id,
+        userId: userId,
+        rating: 5,
+      };
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: false,
+        });
+
+      const response = await request(app.getHttpServer())
+        .post('/training-plan/feedback')
+        .send(feedback);
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+  });
 });

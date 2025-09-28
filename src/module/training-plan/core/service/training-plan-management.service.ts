@@ -98,12 +98,16 @@ export class TrainingPlanManagementService {
         'training plan author cannot give feedback to your training plan'
       );
     }
+
     if (!(await this.identityUserServiceClient.userExists(newFeedback.userId))) {
       throw new NotFoundException('user not found');
     }
 
     const feedback = new TrainingPlanFeedback({
-      ...newFeedback,
+      userId: newFeedback.userId,
+      trainingPlanId: newFeedback.trainingPlanId,
+      rating: newFeedback.rating,
+      message: newFeedback.message,
     });
 
     await this.trainingPlanFeedbackRepository.save(feedback);

@@ -108,6 +108,7 @@ export class TrainingPlanController {
   }
 
   @Post('feedback')
+  @HttpCode(HttpStatus.CREATED)
   async giveFeedback(
     @Body() feedback: CreateTrainingPlanFeedbackRequestDto
   ): Promise<void> {
