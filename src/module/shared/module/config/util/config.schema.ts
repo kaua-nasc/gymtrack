@@ -19,6 +19,8 @@ export const emailAuthSchema = z.object({
 });
 
 export const emailSchema = z.object({
+  host: z.string(),
+  port: z.int(),
   service: z.string(),
   auth: emailAuthSchema,
 });

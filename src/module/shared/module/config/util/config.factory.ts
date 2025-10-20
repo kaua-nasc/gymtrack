@@ -16,6 +16,8 @@ export const factory = (): Config => {
       password: process.env.CACHE_PASSWORD,
     },
     email: {
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
       service: process.env.EMAIL_SERVICE,
       auth: {
         user: process.env.EMAIL_AUTH_USER,
