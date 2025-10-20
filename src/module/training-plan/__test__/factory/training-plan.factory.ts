@@ -18,4 +18,5 @@ export const trainingPlanFactory = Factory.Sync.makeFactory<Partial<TrainingPlan
   createdAt: faker.date.recent(),
   updatedAt: faker.date.recent(),
   deletedAt: null,
+  maxSubscriptions: faker.number.int({ min: 1, max: 255 }),
 });

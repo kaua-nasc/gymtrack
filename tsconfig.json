@@ -3,7 +3,6 @@
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "alwaysStrict": true,
-    "baseUrl": ".",
     "checkJs": false,
     "declaration": true,
     "declarationMap": true,
@@ -21,10 +20,13 @@
     "noUnusedParameters": true,
     "outDir": "./dist",
     "paths": {
-      "@src/*": ["src/*"],
+      "@src/*": ["./src/*"],
       "@database/*": ["./database/*"],
-      "@testInfra/*": ["test/*"],
+      "@testInfra/*": ["./test/*"],
       "@billingModule/*": ["./src/module/billing/*"],
+      "@identity/*": ["./src/module/identity/*"],
+      "@trainingPlan/*": ["./src/module/training-plan/*"],
+      "@shared/*": ["./src/module/shared/*"],
       "@resource/*": ["./resource/*"]
     },
     "removeComments": true,

@@ -9,6 +9,9 @@ import { User } from '../../persistence/entity/user.entity';
 import { hash } from 'bcrypt';
 import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserFollows } from '../../persistence/entity/user-follows.entity';
+import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
+import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
+import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
 
 export interface CreateUserDto {
   email: string;
@@ -23,7 +26,8 @@ export const PASSWORD_HASH_SALT = 10;
 export class UserManagementService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly userFollowsRepository: UserFollowsRepository
+    private readonly userFollowsRepository: UserFollowsRepository,
+    private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository
   ) {}
 
   async create(user: CreateUserDto) {
@@ -36,6 +40,15 @@ export class UserManagementService {
     });
 
     await this.userRepository.save(newUser);
+
+    const privacySettings = new UserPrivacySettings({
+      shareEmail: false,
+      shareTrainingProgress: false,
+      shareName: true,
+      user: newUser,
+    });
+
+    await this.userPrivacySettingsRepository.save(privacySettings);
 
     return newUser;
   }
@@ -158,5 +171,38 @@ export class UserManagementService {
     });
 
     return users ?? [];
+  }
+
+  async getPrivacyConfiguration(userId: string) {
+    const privacyConfiguration = await this.userPrivacySettingsRepository.find({
+      where: { user: { id: userId } },
+    });
+
+    if (privacyConfiguration == null) {
+      throw new NotFoundException('configuration not found');
+    }
+
+    return privacyConfiguration;
+  }
+
+  async alterPrivacySettings(userId: string, data: UserPrivacySettingsRequestDto) {
+    const user = await this.userRepository.findOneById(userId);
+    if (user === null) {
+      throw new NotFoundException('user not exists');
+    }
+
+    const privacySettings = await this.userPrivacySettingsRepository.find({
+      where: { user: { id: userId } },
+    });
+    if (privacySettings == null) {
+      throw new NotFoundException('privacy settings not exists');
+    }
+
+    const newPrivacySettings = new UserPrivacySettings({ ...privacySettings, ...data });
+
+    await this.userPrivacySettingsRepository.update(
+      { user: { id: userId } },
+      { ...newPrivacySettings }
+    );
   }
 }

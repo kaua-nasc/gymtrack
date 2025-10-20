@@ -7,6 +7,7 @@ import { createNestApp } from '@testInfra/test-e2e.setup';
 import request from 'supertest';
 import { createUserFactory, userFactory } from '../../factory/user.factory';
 import { userFollowsFactory } from '../../factory/user-follows.factory';
+import { userPrivacySettingsFactory } from '../../factory/user-privacy-settings.factory';
 
 describe('Identity - User Management Controller - (e2e)', () => {
   let app: INestApplication;
@@ -210,6 +211,82 @@ describe('Identity - User Management Controller - (e2e)', () => {
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  describe('Alter user privacy settings', () => {
+    it('should alter user privacy settings successfully', async () => {
+      const user = userFactory.build();
+      const privacySettings = userPrivacySettingsFactory.build();
+
+      await testDbClient(Tables.User).insert(user);
+      await testDbClient(Tables.UserPrivacySettings).insert({
+        id: privacySettings.id,
+        createdAt: privacySettings.createdAt,
+        updatedAt: privacySettings.updatedAt,
+        deletedAt: privacySettings.deletedAt,
+        shareName: true,
+        shareEmail: true,
+        shareTrainingProgress: true,
+        userId: user.id,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/identity/user/privacy/settings/${user.id}`)
+        .send({
+          shareName: true,
+          shareEmail: true,
+          shareTrainingProgress: true,
+        });
+
+      expect(res.status).toBe(200);
+    });
+    it('should alter user privacy settings successfully when send partial data', async () => {
+      const user = userFactory.build();
+      const privacySettings = userPrivacySettingsFactory.build();
+
+      await testDbClient(Tables.User).insert(user);
+      await testDbClient(Tables.UserPrivacySettings).insert({
+        id: privacySettings.id,
+        createdAt: privacySettings.createdAt,
+        updatedAt: privacySettings.updatedAt,
+        deletedAt: privacySettings.deletedAt,
+        shareName: true,
+        shareEmail: true,
+        shareTrainingProgress: true,
+        userId: user.id,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/identity/user/privacy/settings/${user.id}`)
+        .send({
+          shareEmail: true,
+          shareTrainingProgress: true,
+        });
+
+      expect(res.status).toBe(200);
+    });
+    it('should alter user privacy settigns successfully when data is empty', async () => {
+      const user = userFactory.build();
+      const privacySettings = userPrivacySettingsFactory.build();
+
+      await testDbClient(Tables.User).insert(user);
+      await testDbClient(Tables.UserPrivacySettings).insert({
+        id: privacySettings.id,
+        createdAt: privacySettings.createdAt,
+        updatedAt: privacySettings.updatedAt,
+        deletedAt: privacySettings.deletedAt,
+        shareName: true,
+        shareEmail: true,
+        shareTrainingProgress: true,
+        userId: user.id,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/identity/user/privacy/settings/${user.id}`)
+        .send({});
+
+      expect(res.status).toBe(200);
     });
   });
 });

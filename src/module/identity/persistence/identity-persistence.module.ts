@@ -6,6 +6,7 @@ import { UserRepository } from './repository/user.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 import { CacheModule } from '@src/module/shared/module/cache/cache.module';
 import { UserFollowsRepository } from './repository/user-follows.repository';
+import { UserPrivacySettingsRepository } from './repository/user-privacy-settings.repository';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { UserFollowsRepository } from './repository/user-follows.repository';
       },
     }),
   ],
-  providers: [UserRepository, UserFollowsRepository],
-  exports: [UserRepository, UserFollowsRepository],
+  providers: [UserRepository, UserFollowsRepository, UserPrivacySettingsRepository],
+  exports: [UserRepository, UserFollowsRepository, UserPrivacySettingsRepository],
 })
 export class IdentityPersistenceModule {}

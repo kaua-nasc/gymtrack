@@ -6,6 +6,8 @@ import { User } from '@src/module/identity/persistence/entity/user.entity';
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import { UserExistsResponseDto } from '../dto/response/user-exists-response.dto';
 import { UserFollowCountResponseDto } from '../dto/response/user-follow-count-response.dto';
+import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
+import { UserPrivacySettingsResponseDto } from '../dto/response/user-privacy-settings-response.dto';
 
 @ApiTags('Users')
 @Controller('identity/user')
@@ -134,5 +136,24 @@ export class UserController {
     const users = await this.userManagementService.getFollowers(userId);
 
     return users.map((u) => ({ ...u }));
+  }
+
+  @Get('privacy/settings/:userId')
+  @HttpCode(HttpStatus.OK)
+  async getPrivacyConfiguration(
+    @Param('userId') userId: string
+  ): Promise<UserPrivacySettingsResponseDto> {
+    const privacyConfiguration =
+      await this.userManagementService.getPrivacyConfiguration(userId);
+    return { ...privacyConfiguration };
+  }
+
+  @Post('privacy/settings/:userId')
+  @HttpCode(HttpStatus.OK)
+  async alterPrivacySettings(
+    @Param('userId') userId: string,
+    @Body() createDto: UserPrivacySettingsRequestDto
+  ) {
+    await this.userManagementService.alterPrivacySettings(userId, { ...createDto });
   }
 }

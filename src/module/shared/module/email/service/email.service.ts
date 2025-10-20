@@ -5,15 +5,17 @@ import { ConfigService } from '../../config/service/config.service';
 
 @Injectable()
 export class EmailService {
-  constructor(private readonly configService: ConfigService) {}
+  private transporter: nodemailer.Transporter;
 
-  private transporter = nodemailer.createTransport({
-    service: this.configService.get('email.service'),
-    auth: {
-      user: this.configService.get('email.auth.user'),
-      pass: this.configService.get('email.auth.pass'),
-    },
-  });
+  constructor(private readonly configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      service: this.configService.get('email.service'),
+      auth: {
+        user: this.configService.get('email.auth.user'),
+        pass: this.configService.get('email.auth.pass'),
+      },
+    });
+  }
 
   async sendEmail(message: EmailMessageDto) {
     await this.transporter.sendMail({

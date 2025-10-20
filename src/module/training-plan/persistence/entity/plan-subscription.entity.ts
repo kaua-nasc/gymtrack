@@ -4,7 +4,7 @@ import { TrainingPlan } from './training-plan.entity';
 import { PlanDayProgress } from './plan-day-progress.entity';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
 import { PlanSubscriptionType } from '../../core/enum/plan-subscription-type.enum';
-import { PlanSubscriptionPartialAccessInformation } from './plan-subscription-partial-access-information.entity';
+import { PlanSubscriptionPrivacySettings } from './plan-subscription-privacy-settings.entity';
 
 @Entity({ name: 'plan_subscription' })
 export class PlanSubscription extends DefaultEntity<PlanSubscription> {
@@ -43,9 +43,9 @@ export class PlanSubscription extends DefaultEntity<PlanSubscription> {
   trainingPlan: TrainingPlan;
 
   @OneToOne(
-    () => PlanSubscriptionPartialAccessInformation,
+    () => PlanSubscriptionPrivacySettings,
     (accessInformation) => accessInformation.planSubscription,
     { onDelete: 'CASCADE', onUpdate: 'CASCADE' }
   )
-  partialAccessInformation: PlanSubscriptionPartialAccessInformation;
+  privacySettings: PlanSubscriptionPrivacySettings;
 }
