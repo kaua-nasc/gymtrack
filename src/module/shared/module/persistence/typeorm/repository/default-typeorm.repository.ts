@@ -6,6 +6,7 @@ import {
   FindOneOptions,
   FindOptionsWhere,
   Repository,
+  SelectQueryBuilder,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
@@ -63,5 +64,33 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
 
   async deleteAll() {
     await this.repository.delete({});
+  }
+
+  async count(criteria: FindOptionsWhere<T>): Promise<number> {
+    return await this.repository.countBy(criteria);
+  }
+
+  async findManyWithCursor(
+    options: FindOptionsWhere<T> = {},
+    limit: number = 10,
+    cursor?: string,
+    orderBy: keyof T = 'createdAt' as keyof T
+  ): Promise<{ data: T[]; nextCursor: string | null }> {
+    const qb: SelectQueryBuilder<T> = this.repository
+      .createQueryBuilder('entity')
+      .where(options)
+      .orderBy(`entity.${orderBy.toString()}`, 'DESC')
+      .take(limit);
+
+    if (cursor) {
+      qb.andWhere(`entity.${orderBy.toString()} < :cursor`, { cursor });
+    }
+
+    const data = await qb.getMany();
+
+    const nextCursor =
+      data.length > 0 ? (data[data.length - 1][orderBy] as unknown as string) : null;
+
+    return { data, nextCursor };
   }
 }

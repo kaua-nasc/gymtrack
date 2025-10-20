@@ -7,12 +7,15 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
 import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
 import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
 import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
+import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-training-plan-feedback-request.dto';
+import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
 
 @ApiTags('Training Plans')
 @Controller('training-plan')
@@ -40,8 +43,10 @@ export class TrainingPlanController {
   @ApiResponse({ status: 201, description: 'Plano de treino criado com sucesso' })
   async createTrainingPlan(
     @Body() contentData: CreateTrainingPlanRequestDto
-  ): Promise<void> {
-    await this.trainingPlanManagementService.create({ ...contentData });
+  ): Promise<{ id: string }> {
+    const result = await this.trainingPlanManagementService.create({ ...contentData });
+
+    return { id: result.id };
   }
 
   @Get('list/:authorId')
@@ -100,5 +105,31 @@ export class TrainingPlanController {
   @ApiResponse({ status: 404, description: 'Plano não encontrado' })
   async deleteTrainingPlanById(@Param('trainingPlanId') id: string): Promise<void> {
     await this.trainingPlanManagementService.delete(id);
+  }
+
+  @Post('feedback')
+  @HttpCode(HttpStatus.CREATED)
+  async giveFeedback(
+    @Body() feedback: CreateTrainingPlanFeedbackRequestDto
+  ): Promise<void> {
+    await this.trainingPlanManagementService.giveFeedback({ ...feedback });
+  }
+
+  @Get('feedbacks/:trainingPlanId')
+  async getFeedbacks(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Query('limit') limit = 10,
+    @Query('cursor') cursor?: string
+  ): Promise<TrainingPlanFeedbackResponseDto> {
+    const feedbacks = await this.trainingPlanManagementService.getFeedbacks(
+      trainingPlanId,
+      limit,
+      cursor
+    );
+
+    return {
+      ...feedbacks,
+      data: feedbacks.data.map((f) => ({ ...f })),
+    };
   }
 }

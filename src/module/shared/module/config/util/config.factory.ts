@@ -9,6 +9,19 @@ export const factory = (): Config => {
     database: {
       url: process.env.DATABASE_URL,
     },
+    cache: {
+      host: process.env.CACHE_HOST,
+      port: Number(process.env.CACHE_PORT),
+      db: Number(process.env.CACHE_DB),
+      password: process.env.CACHE_PASSWORD,
+    },
+    email: {
+      service: process.env.EMAIL_SERVICE,
+      auth: {
+        user: process.env.EMAIL_AUTH_USER,
+        pass: process.env.EMAIL_AUTH_PASS,
+      },
+    },
     trainingPlanApi: {
       url: process.env.TRAINING_PLAN_API,
     },

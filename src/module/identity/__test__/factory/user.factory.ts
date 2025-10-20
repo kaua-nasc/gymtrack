@@ -14,3 +14,10 @@ export const userFactory = Factory.Sync.makeFactory<Partial<User>>({
   updatedAt: faker.date.recent(),
   deletedAt: undefined,
 });
+
+export const createUserFactory = Factory.Sync.makeFactory<Partial<User>>({
+  firstName: faker.person.firstName(),
+  lastName: faker.person.lastName(),
+  email: faker.internet.email(),
+  password: 'password123',
+});

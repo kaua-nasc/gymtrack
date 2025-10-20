@@ -4,9 +4,22 @@ import { ConfigService } from '@src/module/shared/module/config/service/config.s
 import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { UserRepository } from './repository/user.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
+import { CacheModule } from '@src/module/shared/module/cache/cache.module';
+import { UserFollowsRepository } from './repository/user-follows.repository';
+import { UserPrivacySettingsRepository } from './repository/user-privacy-settings.repository';
 
 @Module({
   imports: [
+    CacheModule.forRootAsync({
+      imports: [ConfigModule.forRoot()],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        host: configService.get('cache.host'),
+        port: configService.get('cache.port'),
+        db: configService.get('cache.db'),
+        password: configService.get('cache.password'),
+      }),
+    }),
     TypeOrmPersistenceModule.forRoot({
       name: 'identity',
       imports: [ConfigModule.forRoot()],
@@ -16,7 +29,7 @@ import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
       },
     }),
   ],
-  providers: [UserRepository],
-  exports: [UserRepository],
+  providers: [UserRepository, UserFollowsRepository, UserPrivacySettingsRepository],
+  exports: [UserRepository, UserFollowsRepository, UserPrivacySettingsRepository],
 })
 export class IdentityPersistenceModule {}

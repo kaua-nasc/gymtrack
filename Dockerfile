@@ -1,10 +1,26 @@
 FROM node:lts-alpine
+
+# Ambiente
 ENV NODE_ENV=production
+
+# Diretório de trabalho
 WORKDIR /usr/src/app
-COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"]
-RUN npm install --production --silent && mv node_modules ../
+
+# Copiar package.json e lock
+COPY package*.json ./
+
+# Instalar dependências
+RUN npm install --production --silent
+
+# Copiar todo o restante do projeto
 COPY . .
+
+# Expor porta
 EXPOSE 3000
-RUN chown -R node /usr/src/app
+
+# Ajustar permissões
+RUN chown -R node:node /usr/src/app
 USER node
-CMD ["npm", "start"]
+
+# Comando de start
+CMD ["npm", "run", "start:prod"]
