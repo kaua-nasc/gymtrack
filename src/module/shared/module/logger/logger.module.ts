@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
-import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { LoggerModule as PinoLoggerModule } from './service/pino-logger2.service';
 
 @Global()
 @Module({
