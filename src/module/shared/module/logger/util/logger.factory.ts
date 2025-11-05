@@ -1,29 +1,28 @@
-import { WinstonModule, utilities as nestWinstonModuleUtilities } from 'nest-winston';
-import { createLogger, format, transports } from 'winston';
+import { LoggerModule, Params } from 'nestjs-pino';
+import { LoggerOptions } from 'pino';
 
-export const initLogger = (appName: string) => {
+export const initPinoLogger = (appName: string): Params => {
   const env = process.env.NODE_ENV;
-  const consoleFormat = format.combine(
-    format.timestamp(),
-    format.ms(),
-    nestWinstonModuleUtilities.format.nestLike(appName, {
-      colors: !process.env.NO_COLOR,
-      prettyPrint: true,
-    })
-  );
+  const isDev = env === 'development';
 
-  const serverFormat = format.combine(format.timestamp(), format.ms(), format.json());
+  const pinoConfig: LoggerOptions = {
+    level: process.env.LOG_LEVEL || 'debug',
+    base: { appName, environment: env },
+    transport: isDev
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
+        }
+      : undefined,
+  };
 
-  return createLogger({
-    //level: env === 'test' ? 'silent' : 'info',
-    level: 'silly',
-    defaultMeta: { environment: env },
-    transports: [
-      new transports.Console({
-        format: env === 'development' ? consoleFormat : serverFormat,
-      }),
-    ],
-  });
+  return {
+    pinoHttp: pinoConfig,
+  };
 };
 
 /**
@@ -32,4 +31,4 @@ export const initLogger = (appName: string) => {
  * But in the App we use the AppLogger instance due to the Dependency Injection.
  */
 export const LoggerFactory = (appName: string) =>
-  WinstonModule.createLogger(initLogger(appName));
+  LoggerModule.forRoot(initPinoLogger(appName));
