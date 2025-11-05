@@ -1,13 +1,32 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { UserManagementService } from '../../../core/service/user-management.service';
 import { UserCreateRequestDto } from '../dto/request/user-create-request.dto';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { User } from '@src/module/identity/persistence/entity/user.entity';
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import { UserExistsResponseDto } from '../dto/response/user-exists-response.dto';
 import { UserFollowCountResponseDto } from '../dto/response/user-follow-count-response.dto';
 import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
 import { UserPrivacySettingsResponseDto } from '../dto/response/user-privacy-settings-response.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Users')
 @Controller('identity/user')
@@ -148,12 +167,37 @@ export class UserController {
     return { ...privacyConfiguration };
   }
 
-  @Post('privacy/settings/:userId')
+  @Put('privacy/settings/:userId')
   @HttpCode(HttpStatus.OK)
   async alterPrivacySettings(
     @Param('userId') userId: string,
     @Body() createDto: UserPrivacySettingsRequestDto
   ) {
     await this.userManagementService.alterPrivacySettings(userId, { ...createDto });
+  }
+
+  @Post('profile/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upload user profile picture' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Profile picture file',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async changeProfile(
+    @Param('userId') userId: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    await this.userManagementService.changeProfile(userId, file.buffer);
   }
 }

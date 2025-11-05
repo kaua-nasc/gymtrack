@@ -24,6 +24,20 @@ export const factory = (): Config => {
         pass: process.env.EMAIL_AUTH_PASS,
       },
     },
+    storage: {
+      aws: {
+        endpoint: process.env.AWS_STORAGE_ENDPOINT,
+        port: Number(process.env.AWS_STORAGE_PORT),
+        accessKey: process.env.AWS_STORAGE_ACCESS_KEY,
+        secretKey: process.env.AWS_STORAGE_SECRET_KEY,
+        region: process.env.AWS_STORAGE_REGION,
+        bucket: process.env.AWS_STORAGE_BUCKET,
+      },
+      azure: {
+        container: process.env.AZURE_STORAGE_CONTAINER,
+        account: process.env.AZURE_STORAGE_ACCOUNT,
+      },
+    },
     trainingPlanApi: {
       url: process.env.TRAINING_PLAN_API,
     },

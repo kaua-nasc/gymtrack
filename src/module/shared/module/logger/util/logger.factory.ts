@@ -1,5 +1,5 @@
-import { LoggerModule, Params } from 'nestjs-pino';
 import { LoggerOptions } from 'pino';
+import { Params, PinoLoggerModule } from '../service/pino-logger.service';
 
 export const initPinoLogger = (appName: string): Params => {
   const env = process.env.NODE_ENV;
@@ -31,4 +31,4 @@ export const initPinoLogger = (appName: string): Params => {
  * But in the App we use the AppLogger instance due to the Dependency Injection.
  */
 export const LoggerFactory = (appName: string) =>
-  LoggerModule.forRoot(initPinoLogger(appName));
+  PinoLoggerModule.forRoot(initPinoLogger(appName));

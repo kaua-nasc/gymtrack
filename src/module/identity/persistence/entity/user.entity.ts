@@ -14,6 +14,12 @@ export class User extends DefaultEntity<User> {
   @Column({ unique: true })
   email: string;
 
+  @Column({ type: 'text', nullable: true })
+  bio?: string;
+
+  @Column({ type: 'text', nullable: true })
+  profilePictureUrl?: string;
+
   @Column()
   password: string;
 

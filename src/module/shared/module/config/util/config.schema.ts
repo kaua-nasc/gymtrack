@@ -25,6 +25,25 @@ export const emailSchema = z.object({
   auth: emailAuthSchema,
 });
 
+export const awsStorageSchema = z.object({
+  endpoint: z.string().nonempty(),
+  port: z.number().int().positive(),
+  accessKey: z.string().nonempty(),
+  secretKey: z.string().nonempty(),
+  region: z.string().nonempty(),
+  bucket: z.string().nonempty(),
+});
+
+export const azureStorageSchema = z.object({
+  container: z.string().nonempty(),
+  account: z.string().nonempty(),
+});
+
+export const storageSchema = z.object({
+  aws: awsStorageSchema,
+  azure: azureStorageSchema,
+});
+
 export const trainingPlanApiSchema = z.object({
   url: z.string(),
 });
@@ -43,6 +62,7 @@ export const configSchema = z.object({
   database: databaseSchema,
   email: emailSchema,
   cache: cacheSchema,
+  storage: storageSchema,
   trainingPlanApi: trainingPlanApiSchema,
   billingApi: billingApiSchema,
   identityApi: identityApiSchema,

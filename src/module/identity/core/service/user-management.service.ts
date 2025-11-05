@@ -12,6 +12,10 @@ import { UserFollows } from '../../persistence/entity/user-follows.entity';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
 import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
+import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
+import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 
 export interface CreateUserDto {
   email: string;
@@ -27,7 +31,9 @@ export class UserManagementService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly userFollowsRepository: UserFollowsRepository,
-    private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository
+    private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository,
+    private readonly storageService: AzureStorageService,
+    private readonly logger: AppLogger
   ) {}
 
   async create(user: CreateUserDto) {
@@ -57,6 +63,12 @@ export class UserManagementService {
     const user = await this.userRepository.findOneById(id);
 
     if (!user) throw new NotFoundException('user not found');
+
+    if (user.profilePictureUrl) {
+      user.profilePictureUrl = await this.storageService.generateSasUrl(
+        user.profilePictureUrl
+      );
+    }
 
     return user;
   }
@@ -203,6 +215,40 @@ export class UserManagementService {
     await this.userPrivacySettingsRepository.update(
       { user: { id: userId } },
       { ...newPrivacySettings }
+    );
+  }
+
+  async alterUserInformation(userId: string, data: UserChangeBioRequestDto) {
+    const user = await this.userRepository.findOneById(userId);
+    if (user === null) {
+      throw new NotFoundException('user not exists');
+    }
+
+    const changedUser = new User({
+      ...user,
+      ...data,
+    });
+
+    await this.userRepository.update({ id: userId }, { ...changedUser });
+  }
+
+  async changeProfile(userId: string, file: Buffer) {
+    const user = await this.userRepository.findOneById(userId);
+    if (user === null) {
+      throw new NotFoundException('user not exists');
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${FilePath.profile}/user-${user.id}_${timestamp}.png`;
+
+    await this.storageService.upload(filename, file);
+
+    await this.userRepository.update(
+      { id: user.id },
+      {
+        ...user,
+        profilePictureUrl: filename,
+      }
     );
   }
 }

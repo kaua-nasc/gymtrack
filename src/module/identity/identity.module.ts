@@ -7,6 +7,7 @@ import { AuthModule } from '../shared/module/auth/auth.module';
 import { AuthController } from './http/rest/controller/auth.controller';
 import { UserController } from './http/rest/controller/user.controller';
 import { EmailModule } from '../shared/module/email/email.module';
+import { StorageModule } from '../shared/module/storage/storage.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { EmailModule } from '../shared/module/email/email.module';
     DomainModuleIntegrationModule,
     AuthModule,
     EmailModule,
+    StorageModule,
   ],
   providers: [AuthService, UserManagementService],
   controllers: [AuthController, UserController],

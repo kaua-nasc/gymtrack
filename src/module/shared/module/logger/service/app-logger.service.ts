@@ -1,5 +1,5 @@
 import { Injectable, LoggerService } from '@nestjs/common';
-import { PinoLogger } from 'nestjs-pino';
+import { PinoLogger } from './pino-logger.service';
 
 type ContextType = Record<string, unknown> & { exception?: unknown };
 
