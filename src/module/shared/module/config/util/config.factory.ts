@@ -36,6 +36,7 @@ export const factory = (): Config => {
       azure: {
         container: process.env.AZURE_STORAGE_CONTAINER,
         account: process.env.AZURE_STORAGE_ACCOUNT,
+        connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
       },
     },
     trainingPlanApi: {
