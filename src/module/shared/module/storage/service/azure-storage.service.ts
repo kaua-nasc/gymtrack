@@ -32,6 +32,15 @@ export class AzureStorageService implements OnModuleInit {
     await blockBlobClient.upload(buffer, buffer.length);
   }
 
+  async delete(fileName: string): Promise<void> {
+    const containerClient = this.client.getContainerClient(
+      this.configService.get('storage.azure.container')
+    );
+
+    const blockBlobClient: BlockBlobClient = containerClient.getBlockBlobClient(fileName);
+    await blockBlobClient.deleteIfExists();
+  }
+
   async generateSasUrl(blobName: string, expiryMinutes = 10) {
     const now = new Date();
     const expiresOn = new Date(now.valueOf() + expiryMinutes * 60 * 1000);
