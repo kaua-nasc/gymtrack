@@ -11,6 +11,8 @@ import { IdentityUserExistsApi } from '@src/module/shared/module/integration/int
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
+import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 
 @Injectable()
 export class TrainingPlanManagementService {
@@ -19,7 +21,8 @@ export class TrainingPlanManagementService {
     private readonly trainingPlanFeedbackRepository: TrainingPlanFeedbackRepository,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
-    private readonly logger: AppLogger
+    private readonly logger: AppLogger,
+    private readonly storageService: AzureStorageService
   ) {}
 
   async traningPlanExists(trainingPlanId: string) {
@@ -38,7 +41,7 @@ export class TrainingPlanManagementService {
       throw new NotFoundException('user not found');
     }
 
-    const trainingPlan = await this.trainingPlanRepository.saveTrainingPlan(
+    const trainingPlan = await this.trainingPlanRepository.save(
       new TrainingPlan({ ...trainingPlanData })
     );
 
@@ -225,5 +228,26 @@ export class TrainingPlanManagementService {
       nextCursor,
       hasNextPage: !!nextCursor,
     };
+  }
+
+  async addImage(trainingPlanId: string, file: Buffer) {
+    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
+    if (!trainingPlan) {
+      throw new NotFoundException('training plan not exists');
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${FilePath.trainingPlan}/training-plan-${trainingPlan.id}_${timestamp}.png`;
+
+    await this.storageService.upload(filename, file);
+
+    if (trainingPlan.imageUrl) {
+      await this.storageService.delete(trainingPlan.imageUrl);
+    }
+
+    await this.trainingPlanRepository.update(
+      { id: trainingPlan.id },
+      { imageUrl: filename }
+    );
   }
 }

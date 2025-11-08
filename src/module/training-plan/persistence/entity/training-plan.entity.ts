@@ -41,6 +41,9 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   @Column({ type: 'int', nullable: true })
   maxSubscriptions?: number;
 
+  @Column({ type: 'text', nullable: true })
+  imageUrl: string | null;
+
   @OneToMany(() => PlanSubscription, (subscription) => subscription.trainingPlan, {
     cascade: true,
   })

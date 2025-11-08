@@ -63,4 +63,10 @@ export class TrainingPlanResponseDto {
     required: false,
   })
   maxSubscriptions?: number;
+
+  @ApiProperty({
+    description: 'Imagem do plano de treino',
+    example: 100,
+  })
+  imageUrl: string | null;
 }

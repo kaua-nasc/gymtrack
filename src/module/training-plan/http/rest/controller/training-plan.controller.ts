@@ -8,9 +8,12 @@ import {
   Param,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -23,6 +26,7 @@ import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exi
 import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-training-plan-feedback-request.dto';
 import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Training Plans')
 @Controller('training-plan')
@@ -198,5 +202,30 @@ export class TrainingPlanController {
       ...feedbacks,
       data: feedbacks.data.map((f) => ({ ...f })),
     };
+  }
+
+  @Post('image/:trainingPlanId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upload training plan image' })
+  @ApiResponse({ status: 200, description: 'Image updated successfully' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Training Plan picture file',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async addImage(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    await this.trainingPlanManagementService.addImage(trainingPlanId, file.buffer);
   }
 }

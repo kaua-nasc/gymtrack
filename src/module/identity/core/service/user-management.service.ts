@@ -262,14 +262,13 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    console.log(user.profilePictureUrl);
     if (user.profilePictureUrl) {
       await this.storageService.delete(user.profilePictureUrl);
     }
     await this.userRepository.update(
       { id: user.id },
       {
-        profilePictureUrl: null,
+        profilePictureUrl: undefined,
       }
     );
   }
