@@ -5,7 +5,7 @@ export class TrainingPlanFeedbackDataResponseDto {
 
   rating: number;
 
-  message: string | undefined;
+  message: string | null;
 }
 
 export class TrainingPlanFeedbackResponseDto {

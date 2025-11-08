@@ -127,7 +127,7 @@ export class TrainingPlanManagementService {
     trainingPlanId: string;
     userId: string;
     rating: number;
-    message: string | undefined;
+    message: string | null;
   }) {
     this.logger.log('Giving feedback to training plan', {
       trainingPlanId: newFeedback.trainingPlanId,
@@ -184,7 +184,7 @@ export class TrainingPlanManagementService {
       trainingPlanId: string;
       userId: string;
       rating: number;
-      message: string | undefined;
+      message: string | null;
     }[];
     nextCursor: string | null;
     hasNextPage: boolean;
@@ -218,7 +218,10 @@ export class TrainingPlanManagementService {
     });
 
     return {
-      data: feedbacks ?? [],
+      data:
+        feedbacks.map((f) => ({
+          ...f,
+        })) ?? [],
       nextCursor,
       hasNextPage: !!nextCursor,
     };
