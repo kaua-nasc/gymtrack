@@ -243,11 +243,32 @@ export class UserManagementService {
 
     await this.storageService.upload(filename, file);
 
+    if (user.profilePictureUrl) {
+      await this.storageService.delete(user.profilePictureUrl);
+    }
+
     await this.userRepository.update(
       { id: user.id },
       {
         ...user,
         profilePictureUrl: filename,
+      }
+    );
+  }
+
+  async removeProfile(userId: string): Promise<void> {
+    const user = await this.userRepository.findOneById(userId);
+    if (user === null) {
+      throw new NotFoundException('user not exists');
+    }
+
+    if (user.profilePictureUrl) {
+      await this.storageService.delete(user.profilePictureUrl);
+    }
+    await this.userRepository.update(
+      { id: user.id },
+      {
+        profilePictureUrl: undefined,
       }
     );
   }

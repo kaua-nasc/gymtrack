@@ -17,10 +17,6 @@ export class TrainingPlanRepository extends DefaultTypeOrmRepository<TrainingPla
     return this.existsBy({ id: trainingPlanId });
   }
 
-  async saveTrainingPlan(entity: TrainingPlan): Promise<TrainingPlan> {
-    return await super.save(entity);
-  }
-
   async findTrainingPlansByAuthorId(authorId: string): Promise<TrainingPlan[]> {
     const trainingPlans = await this.findMany({ where: { authorId } });
 

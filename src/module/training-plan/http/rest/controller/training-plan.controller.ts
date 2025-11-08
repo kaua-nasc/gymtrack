@@ -8,14 +8,25 @@ import {
   Param,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
 import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
 import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
 import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-training-plan-feedback-request.dto';
 import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Training Plans')
 @Controller('training-plan')
@@ -100,15 +111,47 @@ export class TrainingPlanController {
 
   @Delete(':trainingPlanId')
   @ApiOperation({ summary: 'Deleta um plano de treino pelo ID' })
-  @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiResponse({ status: 200, description: 'Plano deletado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Plano não encontrado' })
+  @ApiParam({
+    name: 'trainingPlanId',
+    description: 'ID do plano de treino a ser deletado',
+    example: 'c4b65c51-89a3-4f32-93e2-8a9f78b26c71',
+  })
+  @ApiResponse({ status: 200, description: 'Plano deletado com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Plano não encontrado.' })
   async deleteTrainingPlanById(@Param('trainingPlanId') id: string): Promise<void> {
     await this.trainingPlanManagementService.delete(id);
   }
 
   @Post('feedback')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Envia um feedback sobre um plano de treino',
+    description:
+      'Permite que um usuário envie feedback textual e/ou nota para um plano de treino específico.',
+  })
+  @ApiBody({
+    type: CreateTrainingPlanFeedbackRequestDto,
+    description: 'Dados do feedback a ser enviado',
+    examples: {
+      default: {
+        summary: 'Exemplo de envio de feedback',
+        value: {
+          trainingPlanId: 'c4b65c51-89a3-4f32-93e2-8a9f78b26c71',
+          userId: '0d5f4e8d-9f9c-47a2-96c1-d3a02fcb0a50',
+          rating: 5,
+          message: 'Plano excelente, bem estruturado e progressivo!',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Feedback enviado com sucesso.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos no corpo da requisição.',
+  })
   async giveFeedback(
     @Body() feedback: CreateTrainingPlanFeedbackRequestDto
   ): Promise<void> {
@@ -116,6 +159,34 @@ export class TrainingPlanController {
   }
 
   @Get('feedbacks/:trainingPlanId')
+  @ApiOperation({
+    summary: 'Lista feedbacks de um plano de treino',
+    description:
+      'Retorna uma lista paginada de feedbacks associados a um plano de treino, com suporte a cursor e limite.',
+  })
+  @ApiParam({
+    name: 'trainingPlanId',
+    description: 'ID do plano de treino',
+    example: 'c4b65c51-89a3-4f32-93e2-8a9f78b26c71',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Número máximo de feedbacks a retornar (padrão: 10)',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description:
+      'Cursor de paginação — use o valor retornado na resposta anterior para buscar a próxima página.',
+    example: '2025-11-08T12:45:00.000Z',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de feedbacks retornada com sucesso.',
+    type: TrainingPlanFeedbackResponseDto,
+  })
   async getFeedbacks(
     @Param('trainingPlanId') trainingPlanId: string,
     @Query('limit') limit = 10,
@@ -131,5 +202,30 @@ export class TrainingPlanController {
       ...feedbacks,
       data: feedbacks.data.map((f) => ({ ...f })),
     };
+  }
+
+  @Post('image/:trainingPlanId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upload training plan image' })
+  @ApiResponse({ status: 200, description: 'Image updated successfully' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Training Plan picture file',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async addImage(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    await this.trainingPlanManagementService.addImage(trainingPlanId, file.buffer);
   }
 }

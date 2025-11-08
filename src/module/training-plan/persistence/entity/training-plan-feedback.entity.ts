@@ -14,7 +14,7 @@ export class TrainingPlanFeedback extends DefaultEntity<TrainingPlanFeedback> {
   rating: number;
 
   @Column({ type: 'text', nullable: true })
-  message: string | undefined;
+  message: string | null;
 
   @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.feedbacks, {
     nullable: false,

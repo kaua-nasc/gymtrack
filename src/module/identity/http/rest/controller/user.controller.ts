@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -34,6 +35,12 @@ export class UserController {
   constructor(private readonly userManagementService: UserManagementService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Listar todos os usuários' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuários retornada com sucesso',
+    type: [UserResponseDto],
+  })
   async getAll() {
     const users = await this.userManagementService.getUsers();
 
@@ -50,15 +57,48 @@ export class UserController {
 
     return { ...user };
   }
-
   @Post()
-  @ApiBody({ type: UserCreateRequestDto })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Cria um novo usuário',
+    description:
+      'Cria um novo registro de usuário com nome, e-mail e senha. O e-mail deve ser único no sistema.',
+  })
+  @ApiBody({
+    type: UserCreateRequestDto,
+    description: 'Dados necessários para criar o usuário',
+    examples: {
+      default: {
+        summary: 'Exemplo de criação de usuário',
+        value: {
+          firstName: 'João',
+          lastName: 'Silva',
+          email: 'joao.silva@email.com',
+          password: 'Senha@123',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
-    description: 'Usuário criado com sucesso',
-    type: User,
+    description: 'Usuário criado com sucesso.',
+    schema: {
+      example: {
+        id: 'a8216f60-34b3-4b6e-91e0-1a9d93b1a924',
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao.silva@email.com',
+        profilePictureUrl: null,
+        bio: null,
+        createdAt: '2025-11-08T12:30:00Z',
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Dados inválidos — por exemplo, e-mail em formato incorreto ou já existente.',
+  })
   async createUser(@Body() user: UserCreateRequestDto): Promise<void> {
     await this.userManagementService.create({ ...user });
   }
@@ -159,6 +199,13 @@ export class UserController {
 
   @Get('privacy/settings/:userId')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obtém as configurações de privacidade de um usuário' })
+  @ApiParam({ name: 'userId', description: 'ID do usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Configurações retornadas com sucesso',
+    type: UserPrivacySettingsResponseDto,
+  })
   async getPrivacyConfiguration(
     @Param('userId') userId: string
   ): Promise<UserPrivacySettingsResponseDto> {
@@ -169,6 +216,24 @@ export class UserController {
 
   @Put('privacy/settings/:userId')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Altera as configurações de privacidade de um usuário',
+    description:
+      'Permite atualizar as preferências de privacidade, como exibir nome, e-mail e progresso de treino.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID do usuário cujas configurações serão alteradas',
+    example: 'b8a35db4-61e7-4c13-9f8d-3dfefc26b25f',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Configurações de privacidade atualizadas com sucesso.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuário não encontrado.',
+  })
   async alterPrivacySettings(
     @Param('userId') userId: string,
     @Body() createDto: UserPrivacySettingsRequestDto
@@ -199,5 +264,14 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File
   ) {
     await this.userManagementService.changeProfile(userId, file.buffer);
+  }
+
+  @Delete('profile/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove user profile picture' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async removeProfile(@Param('userId') userId: string) {
+    await this.userManagementService.removeProfile(userId);
   }
 }

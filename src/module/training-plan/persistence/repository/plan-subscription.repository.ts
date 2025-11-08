@@ -11,10 +11,6 @@ export class PlanSubscriptionRepository extends DefaultTypeOrmRepository<PlanSub
     super(PlanSubscription, dataSource.manager);
   }
 
-  async save(entity: PlanSubscription): Promise<PlanSubscription> {
-    return await super.save(entity);
-  }
-
   async remove(entity: PlanSubscription): Promise<void> {
     return await super.delete({ id: entity.id });
   }
