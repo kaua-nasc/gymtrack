@@ -265,4 +265,13 @@ export class UserController {
   ) {
     await this.userManagementService.changeProfile(userId, file.buffer);
   }
+
+  @Delete('profile/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove user profile picture' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async removeProfile(@Param('userId') userId: string) {
+    await this.userManagementService.removeProfile(userId);
+  }
 }
