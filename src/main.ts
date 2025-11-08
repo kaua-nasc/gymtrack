@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger } from './module/shared/module/logger/service/pino-logger2.service';
+import { AppLogger } from './module/shared/module/logger/service/app-logger.service';
 
 async function bootstrap() {
   initializeTransactionalContext();
@@ -13,7 +13,7 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-  app.useLogger(app.get(Logger));
+  app.useLogger(app.get(AppLogger));
   await app.listen(3000);
 }
 bootstrap();

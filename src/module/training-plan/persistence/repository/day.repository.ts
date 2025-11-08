@@ -33,12 +33,6 @@ export class DayRepository extends DefaultTypeOrmRepository<Day> {
     return day;
   }
 
-  async save(day: Day) {
-    const saveDay = await super.save(day);
-
-    return saveDay;
-  }
-
   async deleteDayById(id: string) {
     await this.delete({ id });
   }
