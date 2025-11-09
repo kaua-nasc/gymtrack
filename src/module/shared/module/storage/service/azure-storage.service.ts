@@ -51,15 +51,13 @@ export class AzureStorageService implements OnModuleInit {
         permissions: AccountSASPermissions.parse('r'),
         resourceTypes: AccountSASResourceTypes.parse('o').toString(),
         services: AccountSASServices.parse('b').toString(),
-        protocol: SASProtocol.Https,
+        protocol: SASProtocol.HttpsAndHttp,
       },
       (this.client as any).credential
     ).toString();
 
-    const sasUrl = `https://${this.configService.get(
-      'storage.azure.account'
-    )}.blob.core.windows.net/${this.configService.get(
-      'storage.azure.container'
+    const sasUrl = `${this.configService.get(
+      'storage.azure.url'
     )}/${blobName}?${sasToken}`;
 
     return sasUrl;
