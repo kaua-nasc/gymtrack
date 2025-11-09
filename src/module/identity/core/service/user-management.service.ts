@@ -158,7 +158,7 @@ export class UserManagementService {
       where: { followerId: user.id },
     });
 
-    if (userFollows) {
+    if (!userFollows) {
       this.logger.warn(
         `Unfollow attempt failed: User ${userId} does not follow ${followedId}.`
       );
