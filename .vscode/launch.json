@@ -6,7 +6,7 @@
   "configurations": [
     {
       "name": "Jest file",
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/jest",
       "args": [
@@ -36,7 +36,7 @@
     },
     {
       "name": "Jest Unit Tests Watch",
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "runtimeExecutable": "/home/kaua/.asdf/shims/npm",
       "runtimeArgs": ["run", "test:unit:watch"],
@@ -46,7 +46,7 @@
     },
     {
       "name": "Jest e2e Tests Watch",
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "runtimeExecutable": "/home/kaua/.asdf/shims/npm",
       "runtimeArgs": ["run", "test:e2e:watch"],
