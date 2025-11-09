@@ -14,6 +14,7 @@ import { PlanDayProgressRepository } from '../../persistence/repository/plan-day
 import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 import { DayRepository } from '../../persistence/repository/day.repository';
 import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -23,10 +24,12 @@ export class PlanSubscriptionManagementService {
     private readonly planDayProgressRepository: PlanDayProgressRepository,
     private readonly dayRepository: DayRepository,
     @Inject(IdentityUserExistsApi)
-    private readonly identityUserServiceClient: IdentityUserExistsApi
+    private readonly identityUserServiceClient: IdentityUserExistsApi,
+    private readonly logger: AppLogger
   ) {}
 
   async getInProgressSubscription(userId: string): Promise<PlanSubscription> {
+    this.logger.log('Fetching in-progress subscription for user', { userId });
     const subscription = await this.planSubscriptionRepository.find({
       where: { userId, status: PlanSubscriptionStatus.inProgress },
       relations: {
@@ -35,15 +38,21 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('In-progress subscription not found for user', { userId });
       throw new NotFoundException(
         `Subscription by user with id ${userId} in progress not found`
       );
     }
 
+    this.logger.log('Successfully fetched in-progress subscription', {
+      userId,
+      subscriptionId: subscription.id,
+    });
     return subscription;
   }
 
   async getSubscriptions(userId: string): Promise<PlanSubscription[]> {
+    this.logger.log('Fetching all subscriptions for user', { userId });
     const subscriptions = await this.planSubscriptionRepository.findMany({
       where: { userId },
       relations: {
@@ -53,11 +62,17 @@ export class PlanSubscriptionManagementService {
       },
     });
 
-    if (!subscriptions) return [];
+    if (!subscriptions || subscriptions.length === 0) {
+      this.logger.log('No subscriptions found for user', { userId });
+      return [];
+    }
 
     let inProgressDays: Array<PlanDayProgress | null> = Array(7).fill(null);
     for (let i = 0; i < subscriptions.length; i++) {
       if (subscriptions[i].status === PlanSubscriptionStatus.inProgress) {
+        this.logger.log('Fetching day progress for in-progress subscription', {
+          subscriptionId: subscriptions[i].id,
+        });
         const daysProgress = await this.planDayProgressRepository.getDaysProgressAtWeek(
           subscriptions[i].id
         );
@@ -67,6 +82,12 @@ export class PlanSubscriptionManagementService {
       }
     }
 
+    this.logger.log(
+      `Successfully fetched ${subscriptions.length} subscriptions for user`,
+      {
+        userId,
+      }
+    );
     return subscriptions.map((s) =>
       s.status === PlanSubscriptionStatus.inProgress
         ? Object.assign(s, { planDayProgress: inProgressDays })
@@ -75,6 +96,7 @@ export class PlanSubscriptionManagementService {
   }
 
   async exists(trainingPlanId: string, userId: string) {
+    this.logger.log('Checking if subscription exists', { userId, trainingPlanId });
     const subscription = await this.planSubscriptionRepository.find({
       where: {
         userId,
@@ -82,12 +104,20 @@ export class PlanSubscriptionManagementService {
       },
     });
 
-    return {
-      exists: subscription ? true : false,
-    };
+    const exists = subscription ? true : false;
+    this.logger.log('Subscription existence check complete', {
+      userId,
+      trainingPlanId,
+      exists,
+    });
+    return { exists };
   }
 
   async existsInProgress(trainingPlanId: string, userId: string) {
+    this.logger.log('Checking if in-progress subscription exists', {
+      userId,
+      trainingPlanId,
+    });
     const subscription = await this.planSubscriptionRepository.find({
       where: {
         userId,
@@ -96,9 +126,13 @@ export class PlanSubscriptionManagementService {
       },
     });
 
-    return {
-      exists: subscription ? true : false,
-    };
+    const exists = subscription ? true : false;
+    this.logger.log('In-progress subscription existence check complete', {
+      userId,
+      trainingPlanId,
+      exists,
+    });
+    return { exists };
   }
 
   async createSubscription(
@@ -106,10 +140,15 @@ export class PlanSubscriptionManagementService {
     userId: string,
     planSubscription: CreatePlanSubscriptionRequestDto
   ) {
+    this.logger.log('Attempting to create subscription', { userId, trainingPlanId });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      this.logger.warn('Create subscription failed: Training plan not found', {
+        trainingPlanId,
+      });
       throw new NotFoundException('training plan not found');
     }
     if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Create subscription failed: User not found', { userId });
       throw new NotFoundException('user not found');
     }
 
@@ -121,6 +160,10 @@ export class PlanSubscriptionManagementService {
         },
       })
     ) {
+      this.logger.warn('Create subscription failed: User already subscribed', {
+        userId,
+        trainingPlanId,
+      });
       throw new ConflictException('user already subscribed in this training plan');
     }
 
@@ -130,13 +173,23 @@ export class PlanSubscriptionManagementService {
       type: planSubscription.type,
     });
     await this.planSubscriptionRepository.save(subscription);
+    this.logger.log('Successfully created subscription', {
+      userId,
+      trainingPlanId,
+      subscriptionId: subscription.id,
+    });
   }
 
   async removeSubscription(trainingPlanId: string, userId: string) {
+    this.logger.log('Attempting to remove subscription', { userId, trainingPlanId });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      this.logger.warn('Remove subscription failed: Training plan not found', {
+        trainingPlanId,
+      });
       throw new NotFoundException('training plan not found');
     }
     if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Remove subscription failed: User not found', { userId });
       throw new NotFoundException('user not found');
     }
 
@@ -148,6 +201,10 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('Remove subscription failed: Subscription not found', {
+        userId,
+        trainingPlanId,
+      });
       throw new NotFoundException('subscription not found');
     }
 
@@ -155,19 +212,36 @@ export class PlanSubscriptionManagementService {
       subscription.status !== PlanSubscriptionStatus.canceled &&
       subscription.status !== PlanSubscriptionStatus.notStarted
     ) {
+      this.logger.warn('Remove subscription failed: Invalid status for removal', {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+      });
       throw new BadRequestException(
         'Subscription status must be "not started" or "canceled"'
       );
     }
 
     await this.planSubscriptionRepository.remove(subscription);
+    this.logger.log('Successfully removed subscription', {
+      userId,
+      trainingPlanId,
+      subscriptionId: subscription.id,
+    });
   }
 
   async updateStatusToInProgress(trainingPlanId: string, userId: string) {
+    this.logger.log('Updating subscription status to IN_PROGRESS', {
+      userId,
+      trainingPlanId,
+    });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      this.logger.warn('Update status failed: Training plan not found', {
+        trainingPlanId,
+      });
       throw new NotFoundException('training plan not found');
     }
     if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Update status failed: User not found', { userId });
       throw new NotFoundException('user not found');
     }
 
@@ -179,10 +253,18 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('Update status failed: Subscription not found', {
+        userId,
+        trainingPlanId,
+      });
       throw new NotFoundException('subscription not found');
     }
 
     if (subscription.status !== PlanSubscriptionStatus.notStarted) {
+      this.logger.warn('Update status failed: Status not NOT_STARTED', {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+      });
       throw new BadRequestException('Subscription status must be "not started"');
     }
 
@@ -190,13 +272,24 @@ export class PlanSubscriptionManagementService {
       { id: subscription.id },
       { status: PlanSubscriptionStatus.inProgress }
     );
+    this.logger.log('Successfully updated subscription status to IN_PROGRESS', {
+      subscriptionId: subscription.id,
+    });
   }
 
   async updateStatusToFinished(trainingPlanId: string, userId: string) {
+    this.logger.log('Updating subscription status to FINISHED', {
+      userId,
+      trainingPlanId,
+    });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      this.logger.warn('Update status failed: Training plan not found', {
+        trainingPlanId,
+      });
       throw new NotFoundException('training plan not found');
     }
     if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Update status failed: User not found', { userId });
       throw new NotFoundException('user not found');
     }
 
@@ -208,10 +301,18 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('Update status failed: Subscription not found', {
+        userId,
+        trainingPlanId,
+      });
       throw new NotFoundException('subscription not found');
     }
 
     if (subscription.status !== PlanSubscriptionStatus.inProgress) {
+      this.logger.warn('Update status failed: Status not IN_PROGRESS', {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+      });
       throw new BadRequestException('Subscription status must be "in progress".');
     }
 
@@ -219,13 +320,24 @@ export class PlanSubscriptionManagementService {
       { id: subscription.id },
       { status: PlanSubscriptionStatus.completed }
     );
+    this.logger.log('Successfully updated subscription status to FINISHED', {
+      subscriptionId: subscription.id,
+    });
   }
 
   async updateStatusToCanceled(trainingPlanId: string, userId: string) {
+    this.logger.log('Updating subscription status to CANCELED', {
+      userId,
+      trainingPlanId,
+    });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      this.logger.warn('Update status failed: Training plan not found', {
+        trainingPlanId,
+      });
       throw new NotFoundException('training plan not found');
     }
     if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Update status failed: User not found', { userId });
       throw new NotFoundException('user not found');
     }
 
@@ -237,10 +349,18 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('Update status failed: Subscription not found', {
+        userId,
+        trainingPlanId,
+      });
       throw new NotFoundException('subscription not found');
     }
 
     if (subscription.status !== PlanSubscriptionStatus.inProgress) {
+      this.logger.warn('Update status failed: Status not IN_PROGRESS', {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+      });
       throw new BadRequestException('Subscription status must be "in progress".');
     }
 
@@ -248,13 +368,24 @@ export class PlanSubscriptionManagementService {
       { id: subscription.id },
       { status: PlanSubscriptionStatus.canceled }
     );
+    this.logger.log('Successfully updated subscription status to CANCELED', {
+      subscriptionId: subscription.id,
+    });
   }
 
   async updateStatusToNotStarted(trainingPlanId: string, userId: string) {
+    this.logger.log('Updating subscription status to NOT_STARTED', {
+      userId,
+      trainingPlanId,
+    });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
+      this.logger.warn('Update status failed: Training plan not found', {
+        trainingPlanId,
+      });
       throw new NotFoundException('training plan not found');
     }
     if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Update status failed: User not found', { userId });
       throw new NotFoundException('user not found');
     }
 
@@ -266,10 +397,18 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('Update status failed: Subscription not found', {
+        userId,
+        trainingPlanId,
+      });
       throw new NotFoundException('subscription not found');
     }
 
     if (subscription.status !== PlanSubscriptionStatus.canceled) {
+      this.logger.warn('Update status failed: Status not CANCELED', {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+      });
       throw new BadRequestException('Subscription status must be "canceled".');
     }
 
@@ -277,9 +416,13 @@ export class PlanSubscriptionManagementService {
       { id: subscription.id },
       { status: PlanSubscriptionStatus.notStarted }
     );
+    this.logger.log('Successfully updated subscription status to NOT_STARTED', {
+      subscriptionId: subscription.id,
+    });
   }
 
   async createDayProgress(planSubscriptionId: string, dayId: string) {
+    this.logger.log('Attempting to create day progress', { planSubscriptionId, dayId });
     const subscription = await this.planSubscriptionRepository.find({
       where: {
         id: planSubscriptionId,
@@ -288,26 +431,44 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!subscription) {
+      this.logger.warn('Create day progress failed: In-progress subscription not found', {
+        planSubscriptionId,
+      });
       throw new NotFoundException('subscription not found');
     }
 
     const day = await this.dayRepository.findDayById(dayId);
 
     if (!day) {
+      this.logger.warn('Create day progress failed: Day not found', { dayId });
       throw new NotFoundException('day not found');
     }
 
-    return await this.planDayProgressRepository.create(
+    const newDayProgress = await this.planDayProgressRepository.create(
       new PlanDayProgress({ dayId, planSubscriptionId })
     );
+
+    this.logger.log('Successfully created day progress', {
+      planSubscriptionId,
+      dayId,
+      dayProgressId: newDayProgress.id,
+    });
+    return newDayProgress;
   }
 
   async getDaysProgress(userId: string): Promise<PlanDayProgress[]> {
+    this.logger.log('Fetching days progress for user', { userId });
     const subscription = await this.planSubscriptionRepository.find({
       where: { userId, status: PlanSubscriptionStatus.inProgress },
     });
 
     if (!subscription) {
+      this.logger.warn(
+        'Get days progress failed: In-progress subscription not found for user',
+        {
+          userId,
+        }
+      );
       throw new NotFoundException('subscription not found');
     }
 
@@ -315,6 +476,11 @@ export class PlanSubscriptionManagementService {
       where: { planSubscriptionId: subscription.id },
     });
 
+    this.logger.log('Successfully fetched days progress', {
+      userId,
+      subscriptionId: subscription.id,
+      progressCount: daysProgress?.length ?? 0,
+    });
     return daysProgress ?? [];
   }
 }

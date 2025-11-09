@@ -36,8 +36,10 @@ export class UserManagementService {
     private readonly logger: AppLogger
   ) {}
 
-  async create(user: CreateUserDto) {
+  async create(user: CreateUserDto): Promise<User> {
+    this.logger.log(`Attempting to create user with email: ${user.email}`);
     if (await this.userRepository.findOneByEmail(user.email)) {
+      this.logger.warn(`User creation failed: Email already in use: ${user.email}`);
       throw new ConflictException('email already in use');
     }
     const newUser = new User({
@@ -56,29 +58,42 @@ export class UserManagementService {
 
     await this.userPrivacySettingsRepository.save(privacySettings);
 
+    this.logger.log(`Successfully created user: ${newUser.id} for email: ${user.email}`);
     return newUser;
   }
 
-  async getUserById(id: string) {
+  async getUserById(id: string): Promise<User> {
+    this.logger.log(`Fetching user by ID: ${id}`);
     const user = await this.userRepository.findOneById(id);
 
-    if (!user) throw new NotFoundException('user not found');
+    if (!user) {
+      this.logger.warn(`Failed to fetch user: User not found with ID: ${id}`);
+      throw new NotFoundException('user not found');
+    }
 
     if (user.profilePictureUrl) {
+      this.logger.log(`Generating SAS URL for profile picture for user: ${id}`);
       user.profilePictureUrl = await this.storageService.generateSasUrl(
         user.profilePictureUrl
       );
     }
 
+    this.logger.log(`Successfully fetched user: ${id}`);
     return user;
   }
 
   async getUsers() {
+    this.logger.log('Fetching all users with relations...');
     const users = await this.userRepository.findMany({
       relations: ['following', 'following.following', 'followers', 'followers.follower'],
     });
 
-    if (!users) return [];
+    if (!users || users.length === 0) {
+      this.logger.log('No users found. Returning empty array.');
+      return [];
+    }
+
+    this.logger.log(`Successfully fetched and mapped ${users.length} users.`);
     return users.map((user) => ({
       id: user.id,
       firstName: user.firstName,
@@ -89,15 +104,22 @@ export class UserManagementService {
     }));
   }
 
-  async exists(userId: string) {
+  async exists(userId: string): Promise<boolean> {
+    this.logger.log(`Checking existence of user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
-    return user ? true : false;
+    const exists = user ? true : false;
+    this.logger.log(`User ${userId} existence check result: ${exists}`);
+    return exists;
   }
 
-  async followUser(userId: string, followedId: string) {
+  async followUser(userId: string, followedId: string): Promise<void> {
+    this.logger.log(`User ${userId} attempting to follow user ${followedId}`);
     const user = await this.userRepository.findOneById(userId);
     const followedUser = await this.userRepository.findOneById(followedId);
     if (user === null || followedUser === null) {
+      this.logger.warn(
+        `Follow attempt failed: User ${userId} or ${followedId} not found.`
+      );
       throw new NotFoundException('user(s) not exists');
     }
 
@@ -106,20 +128,29 @@ export class UserManagementService {
     });
 
     if (userFollows) {
+      this.logger.warn(
+        `Follow attempt failed: User ${userId} already follows ${followedId}.`
+      );
       throw new BadRequestException('user already follow this user');
     }
 
     const following = new UserFollows({ followerId: userId, followingId: followedId });
     await this.userFollowsRepository.save(following);
+    this.logger.log(`User ${userId} successfully followed ${followedId}`);
   }
 
-  async unfollowUser(userId: string, followedId: string) {
+  async unfollowUser(userId: string, followedId: string): Promise<void> {
+    this.logger.log(`User ${userId} attempting to unfollow user ${followedId}`);
     if (userId === followedId) {
+      this.logger.warn(`Unfollow attempt failed: User ${userId} tried to unfollow self.`);
       throw new BadRequestException('userId and followedId cannot be equal');
     }
     const user = await this.userRepository.findOneById(userId);
     const followedUser = await this.userRepository.findOneById(followedId);
     if (user === null || followedUser === null) {
+      this.logger.warn(
+        `Unfollow attempt failed: User ${userId} or ${followedId} not found.`
+      );
       throw new NotFoundException('user(s) not exists');
     }
 
@@ -127,7 +158,10 @@ export class UserManagementService {
       where: { followerId: user.id },
     });
 
-    if (!userFollows) {
+    if (userFollows) {
+      this.logger.warn(
+        `Unfollow attempt failed: User ${userId} does not follow ${followedId}.`
+      );
       throw new BadRequestException('user not follow this user');
     }
 
@@ -135,33 +169,44 @@ export class UserManagementService {
       followerId: user.id,
       followingId: followedUser.id,
     });
+    this.logger.log(`User ${userId} successfully unfollowed ${followedId}`);
   }
 
   async countFollowing(userId: string): Promise<number> {
+    this.logger.log(`Counting following for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Count following failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
-    return await this.userFollowsRepository.count({
+    const count = await this.userFollowsRepository.count({
       followerId: user.id,
     });
+    this.logger.log(`User ${userId} is following ${count} users.`);
+    return count;
   }
 
   async countFollowers(userId: string): Promise<number> {
+    this.logger.log(`Counting followers for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Count followers failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
-    return await this.userFollowsRepository.count({
+    const count = await this.userFollowsRepository.count({
       followingId: user.id,
     });
+    this.logger.log(`User ${userId} has ${count} followers.`);
+    return count;
   }
 
-  async getFollowing(userId: string) {
+  async getFollowing(userId: string): Promise<User[]> {
+    this.logger.log(`Getting following list for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Get following failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
@@ -169,12 +214,17 @@ export class UserManagementService {
       where: { followers: { id: user.id } },
     });
 
+    this.logger.log(
+      `Successfully fetched ${users?.length ?? 0} following for user: ${userId}`
+    );
     return users ?? [];
   }
 
   async getFollowers(userId: string) {
+    this.logger.log(`Getting followers list for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Get followers failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
@@ -182,31 +232,46 @@ export class UserManagementService {
       where: { following: { id: user.id } },
     });
 
+    this.logger.log(
+      `Successfully fetched ${users?.length ?? 0} followers for user: ${userId}`
+    );
     return users ?? [];
   }
 
-  async getPrivacyConfiguration(userId: string) {
+  async getPrivacyConfiguration(userId: string): Promise<UserPrivacySettings> {
+    this.logger.log(`Getting privacy configuration for user: ${userId}`);
     const privacyConfiguration = await this.userPrivacySettingsRepository.find({
       where: { user: { id: userId } },
     });
 
-    if (privacyConfiguration == null) {
+    if (!privacyConfiguration) {
+      this.logger.warn(`Get privacy configuration failed: Not found for user: ${userId}`);
       throw new NotFoundException('configuration not found');
     }
 
+    this.logger.log(`Successfully fetched privacy configuration for user: ${userId}`);
     return privacyConfiguration;
   }
 
-  async alterPrivacySettings(userId: string, data: UserPrivacySettingsRequestDto) {
+  async alterPrivacySettings(
+    userId: string,
+    data: UserPrivacySettingsRequestDto
+  ): Promise<void> {
+    this.logger.log(`Altering privacy settings for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Alter privacy settings failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
     const privacySettings = await this.userPrivacySettingsRepository.find({
       where: { user: { id: userId } },
     });
-    if (privacySettings == null) {
+
+    if (!privacySettings) {
+      this.logger.warn(
+        `Alter privacy settings failed: Settings not found for user: ${userId}`
+      );
       throw new NotFoundException('privacy settings not exists');
     }
 
@@ -216,11 +281,17 @@ export class UserManagementService {
       { user: { id: userId } },
       { ...newPrivacySettings }
     );
+    this.logger.log(`Successfully altered privacy settings for user: ${userId}`);
   }
 
-  async alterUserInformation(userId: string, data: UserChangeBioRequestDto) {
+  async alterUserInformation(
+    userId: string,
+    data: UserChangeBioRequestDto
+  ): Promise<void> {
+    this.logger.log(`Altering user information for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Alter user information failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
@@ -230,20 +301,27 @@ export class UserManagementService {
     });
 
     await this.userRepository.update({ id: userId }, { ...changedUser });
+    this.logger.log(`Successfully altered user information for user: ${userId}`);
   }
 
-  async changeProfile(userId: string, file: Buffer) {
+  async changeProfile(userId: string, file: Buffer): Promise<void> {
+    this.logger.log(`User ${userId} attempting to change profile picture.`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Change profile failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${FilePath.profile}/user-${user.id}_${timestamp}.png`;
 
+    this.logger.log(`Uploading new profile picture to ${filename} for user ${userId}.`);
     await this.storageService.upload(filename, file);
 
     if (user.profilePictureUrl) {
+      this.logger.log(
+        `Deleting old profile picture ${user.profilePictureUrl} for user ${userId}.`
+      );
       await this.storageService.delete(user.profilePictureUrl);
     }
 
@@ -254,22 +332,34 @@ export class UserManagementService {
         profilePictureUrl: filename,
       }
     );
+    this.logger.log(
+      `Successfully changed profile picture for user ${userId}. New file: ${filename}`
+    );
   }
 
   async removeProfile(userId: string): Promise<void> {
+    this.logger.log(`User ${userId} attempting to remove profile picture.`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
+      this.logger.warn(`Remove profile failed: User not found: ${userId}`);
       throw new NotFoundException('user not exists');
     }
 
     if (user.profilePictureUrl) {
+      this.logger.log(
+        `Deleting profile picture ${user.profilePictureUrl} for user ${userId}.`
+      );
       await this.storageService.delete(user.profilePictureUrl);
+    } else {
+      this.logger.log(`User ${userId} had no profile picture to remove.`);
     }
+
     await this.userRepository.update(
       { id: user.id },
       {
         profilePictureUrl: undefined,
       }
     );
+    this.logger.log(`Successfully removed profile picture for user ${userId}.`);
   }
 }

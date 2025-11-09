@@ -231,23 +231,32 @@ export class TrainingPlanManagementService {
   }
 
   async addImage(trainingPlanId: string, file: Buffer) {
+    this.logger.log(`Attempting to add image for training plan: ${trainingPlanId}`);
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
+      this.logger.warn(`Add image failed: Training plan not found: ${trainingPlanId}`);
       throw new NotFoundException('training plan not exists');
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${FilePath.trainingPlan}/training-plan-${trainingPlan.id}_${timestamp}.png`;
 
+    this.logger.log(`Uploading new image for plan ${trainingPlanId} to: ${filename}`);
     await this.storageService.upload(filename, file);
 
     if (trainingPlan.imageUrl) {
+      this.logger.log(
+        `Deleting old image ${trainingPlan.imageUrl} for plan ${trainingPlanId}`
+      );
       await this.storageService.delete(trainingPlan.imageUrl);
     }
 
     await this.trainingPlanRepository.update(
       { id: trainingPlan.id },
       { imageUrl: filename }
+    );
+    this.logger.log(
+      `Successfully added/updated image for plan ${trainingPlanId}. New file: ${filename}`
     );
   }
 }

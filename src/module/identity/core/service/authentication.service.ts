@@ -8,19 +8,26 @@ import { UserRepository } from '../../persistence/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcrypt';
 import { EmailService } from '@src/module/shared/module/email/service/email.service';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly logger: AppLogger
   ) {}
 
   async signIn(email: string, password: string): Promise<{ accessToken: string }> {
+    this.logger.log(`Sign-in attempt for email: ${email}`);
+
     const user = await this.userRepository.findOneByEmail(email);
 
     if (!user || !(await this.comparePassword(password, user.password))) {
+      this.logger.warn(
+        `Failed sign-in for email ${email}: User not found or password mismatch.`
+      );
       throw new UnauthorizedException(`cannot authorize user: ${email}`);
     }
 
@@ -28,6 +35,7 @@ export class AuthService {
       sub: user.id,
     };
 
+    this.logger.log(`Sign-in successful for user ID: ${user.id}`);
     return {
       accessToken: await this.jwtService.signAsync(payload, {
         algorithm: 'HS256',
@@ -43,9 +51,13 @@ export class AuthService {
   }
 
   async requestResetPassword({ email }: { email: string }): Promise<void> {
+    this.logger.log(`Password reset request received for email: ${email}`);
     const user = await this.userRepository.findOneByEmail(email);
 
     if (!user) {
+      this.logger.warn(
+        `Password reset request failed: User not found for email ${email}.`
+      );
       throw new NotFoundException(`cannot authorize user: ${email}`);
     }
     const code = this.generateResetCode();
@@ -58,6 +70,8 @@ export class AuthService {
       text: `Seu código de redefinição de senha é: ${code}`,
       html: htmlEmail(user.email, code),
     });
+
+    this.logger.log(`Password reset code generated and sent for user ID: ${user.id}`);
   }
 
   private generateResetCode(length: number = 6): string {
@@ -72,34 +86,50 @@ export class AuthService {
   }
 
   async verifyResetPassword(data: { token: string; email: string }): Promise<void> {
+    this.logger.log(`Verifying password reset code for email: ${data.email}`);
     const user = await this.userRepository.findOneByEmail(data.email);
 
     if (!user) {
+      this.logger.warn(
+        `Reset code verification failed: User not found for email ${data.email}.`
+      );
       throw new NotFoundException(`cannot authorize user: ${data.email}`);
     }
 
     const token = await this.userRepository.findResetCode(data.email);
 
     if (data.token !== token?.toString()) {
+      this.logger.warn(
+        `Reset code verification failed for user ID ${user.id}: Token mismatch.`
+      );
       throw new BadRequestException('token does not match');
     }
 
     await this.userRepository.removeResetCode(data.email);
+    this.logger.log(`Reset code verified successfully for user ID: ${user.id}`);
   }
 
   async changePasswordByReset(data: {
     newPassword: string;
     userId: string;
   }): Promise<void> {
+    this.logger.log(`Attempting password change via reset for user ID: ${data.userId}`);
     const user = await this.userRepository.findOneById(data.userId);
 
     if (!user || (await this.comparePassword(data.newPassword, user.password))) {
+      this.logger.warn(
+        `Password change failed for user ID ${data.userId}: User not found or new password is the same as old.`
+      );
       throw new UnauthorizedException(`cannot authorize user: ${data.newPassword}`);
     }
 
+    this.logger.warn(
+      `Saving new password for user ID: ${data.userId}. Ensure hashing logic is in place (e.g., repository hook).`
+    );
     user.password = data.newPassword;
 
     await this.userRepository.save(user);
+    this.logger.log(`Password changed successfully for user ID: ${data.userId}`);
   }
 }
 
