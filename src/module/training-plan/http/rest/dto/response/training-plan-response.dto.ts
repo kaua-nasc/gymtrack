@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TrainingPlanLevel } from '@src/module/training-plan/core/enum/training-plan-level.enum';
 import { TrainingPlanType } from '@src/module/training-plan/core/enum/training-plan-type.enum';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
+import { IsOptional, IsString } from 'class-validator';
 
 export class TrainingPlanResponseDto {
   @ApiProperty({
@@ -69,4 +70,12 @@ export class TrainingPlanResponseDto {
     example: 100,
   })
   imageUrl: string | null;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Descricao do plano',
+    example: 'Treino novo',
+  })
+  readonly description: string | null;
 }

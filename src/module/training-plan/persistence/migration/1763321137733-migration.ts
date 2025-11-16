@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class Migration1762639973113 implements MigrationInterface {
-    name = 'Migration1762639973113'
+export class Migration1763321137733 implements MigrationInterface {
+    name = 'Migration1763321137733'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TYPE "public"."exercises_type_enum" AS ENUM('WARMUP', 'RECOGNITION', 'WORK', 'CARDIO')`);
@@ -15,11 +15,13 @@ export class Migration1762639973113 implements MigrationInterface {
         await queryRunner.query(`CREATE TYPE "public"."plan_access_request_status_enum" AS ENUM('APPROVED', 'PENDING', 'REJECTED', 'CANCELED')`);
         await queryRunner.query(`CREATE TABLE "plan_access_request" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "userId" uuid NOT NULL, "trainingPlanId" uuid NOT NULL, "status" "public"."plan_access_request_status_enum" NOT NULL, CONSTRAINT "PK_f03dddf7f62547e17bd18fc8df0" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "plan_participant" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "userId" uuid NOT NULL, "trainingPlanId" uuid NOT NULL, "expiration_date" TIMESTAMP NOT NULL, "approved_at" TIMESTAMP NOT NULL, CONSTRAINT "PK_cf83d1fc076ed13fc7447d55076" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "training_plan_feedbacks" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "trainingPlanId" uuid NOT NULL, "userId" uuid NOT NULL, "rating" numeric NOT NULL, "message" text, CONSTRAINT "PK_220c6f963204b4ee178c6e3bd16" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "training_plan_likes" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "likedBy" uuid NOT NULL, "trainingPlanId" uuid NOT NULL, CONSTRAINT "PK_1034857b4d99c260c6a4d9218e5" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_bc27334c64090429f15a8bc5ac" ON "training_plan_likes" ("trainingPlanId", "likedBy") `);
         await queryRunner.query(`CREATE TYPE "public"."training_plans_type_enum" AS ENUM('HYPERTROPHY', 'STRENGTH', 'MIXED')`);
         await queryRunner.query(`CREATE TYPE "public"."training_plans_visibility_enum" AS ENUM('PUBLIC', 'PROTECTED', 'PRIVATE')`);
         await queryRunner.query(`CREATE TYPE "public"."training_plans_level_enum" AS ENUM('BEGINNER', 'INTERMEDIARY', 'ADVANCED')`);
-        await queryRunner.query(`CREATE TABLE "training_plans" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "name" character varying NOT NULL, "authorId" uuid NOT NULL, "timeInDays" integer NOT NULL, "type" "public"."training_plans_type_enum" NOT NULL, "observation" text, "pathology" text, "visibility" "public"."training_plans_visibility_enum" NOT NULL, "level" "public"."training_plans_level_enum" NOT NULL, "maxSubscriptions" integer, "imageUrl" text, CONSTRAINT "UQ_6f760e830ee5bfe961944dde962" UNIQUE ("name"), CONSTRAINT "PK_246975cb895b51662b90515a390" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "training_plan_feedbacks" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "trainingPlanId" uuid NOT NULL, "userId" uuid NOT NULL, "rating" numeric NOT NULL, "message" text, CONSTRAINT "PK_220c6f963204b4ee178c6e3bd16" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "training_plans" ("id" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "name" character varying NOT NULL, "authorId" uuid NOT NULL, "timeInDays" integer NOT NULL, "type" "public"."training_plans_type_enum" NOT NULL, "observation" text, "pathology" text, "visibility" "public"."training_plans_visibility_enum" NOT NULL, "level" "public"."training_plans_level_enum" NOT NULL, "maxSubscriptions" integer, "imageUrl" text, "description" text, CONSTRAINT "UQ_6f760e830ee5bfe961944dde962" UNIQUE ("name"), CONSTRAINT "PK_246975cb895b51662b90515a390" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "exercises" ADD CONSTRAINT "FK_85531791853605820c4f905ec7a" FOREIGN KEY ("dayId") REFERENCES "days"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "plan_subscription_privacy_settings" ADD CONSTRAINT "FK_f0fe6f036ae32d5bfe1af9dc133" FOREIGN KEY ("planSubscriptionId") REFERENCES "plan_subscription"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "plan_subscription" ADD CONSTRAINT "FK_7c57629907dcde0a2029c5dc68a" FOREIGN KEY ("trainingPlanId") REFERENCES "training_plans"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
@@ -29,9 +31,11 @@ export class Migration1762639973113 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "plan_access_request" ADD CONSTRAINT "FK_3bec98ff9eea3e72081314a4a59" FOREIGN KEY ("trainingPlanId") REFERENCES "training_plans"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "plan_participant" ADD CONSTRAINT "FK_98e114e0b05861ac9d025e9c0af" FOREIGN KEY ("trainingPlanId") REFERENCES "training_plans"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "training_plan_feedbacks" ADD CONSTRAINT "FK_f1cfb6d6ba2120341efcac05041" FOREIGN KEY ("trainingPlanId") REFERENCES "training_plans"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "training_plan_likes" ADD CONSTRAINT "FK_2c85f41f867f9d0703b165425e9" FOREIGN KEY ("trainingPlanId") REFERENCES "training_plans"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "training_plan_likes" DROP CONSTRAINT "FK_2c85f41f867f9d0703b165425e9"`);
         await queryRunner.query(`ALTER TABLE "training_plan_feedbacks" DROP CONSTRAINT "FK_f1cfb6d6ba2120341efcac05041"`);
         await queryRunner.query(`ALTER TABLE "plan_participant" DROP CONSTRAINT "FK_98e114e0b05861ac9d025e9c0af"`);
         await queryRunner.query(`ALTER TABLE "plan_access_request" DROP CONSTRAINT "FK_3bec98ff9eea3e72081314a4a59"`);
@@ -41,11 +45,13 @@ export class Migration1762639973113 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "plan_subscription" DROP CONSTRAINT "FK_7c57629907dcde0a2029c5dc68a"`);
         await queryRunner.query(`ALTER TABLE "plan_subscription_privacy_settings" DROP CONSTRAINT "FK_f0fe6f036ae32d5bfe1af9dc133"`);
         await queryRunner.query(`ALTER TABLE "exercises" DROP CONSTRAINT "FK_85531791853605820c4f905ec7a"`);
-        await queryRunner.query(`DROP TABLE "training_plan_feedbacks"`);
         await queryRunner.query(`DROP TABLE "training_plans"`);
         await queryRunner.query(`DROP TYPE "public"."training_plans_level_enum"`);
         await queryRunner.query(`DROP TYPE "public"."training_plans_visibility_enum"`);
         await queryRunner.query(`DROP TYPE "public"."training_plans_type_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_bc27334c64090429f15a8bc5ac"`);
+        await queryRunner.query(`DROP TABLE "training_plan_likes"`);
+        await queryRunner.query(`DROP TABLE "training_plan_feedbacks"`);
         await queryRunner.query(`DROP TABLE "plan_participant"`);
         await queryRunner.query(`DROP TABLE "plan_access_request"`);
         await queryRunner.query(`DROP TYPE "public"."plan_access_request_status_enum"`);

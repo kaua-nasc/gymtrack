@@ -141,30 +141,25 @@ export class TrainingPlanManagementService {
     });
   }
 
-  async listByUserId(userId: string) {
+  async listByUserId(userId: string): Promise<TrainingPlan[]> {
     this.logger.log('Listing training plans by user ID', { userId });
-    let plans = await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
 
-    if (!plans) return [];
+    const plans = await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
+    if (!plans?.length) return [];
 
-    const aux: TrainingPlan[] = [];
-    for (let i = 0; i < plans.length; i++) {
-      const plan = plans[i];
-      plan.likesCount = await this.trainingPlanLikeRepository.count({
-        trainingPlanId: plan.id,
-      });
+    const plansWithLikes = await Promise.all(
+      plans.map(async (plan) => {
+        plan.likesCount = await this.trainingPlanLikeRepository.count({
+          trainingPlanId: plan.id,
+        });
+        plan.imageUrl = plan.imageUrl
+          ? this.storageService.generateSasUrl(plan.imageUrl)
+          : null;
+        return plan;
+      })
+    );
 
-      aux.push(plan);
-    }
-    plans = aux;
-
-    return plans.map((p) => {
-      if (p.imageUrl) {
-        return { ...p, imageUrl: this.storageService.generateSasUrl(p.imageUrl) };
-      }
-
-      return { ...p };
-    });
+    return plansWithLikes;
   }
 
   async giveFeedback(newFeedback: {

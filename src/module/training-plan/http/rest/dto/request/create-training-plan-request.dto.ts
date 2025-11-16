@@ -66,4 +66,12 @@ export class CreateTrainingPlanRequestDto {
     example: TrainingPlanVisibility.public,
   })
   readonly visibility: TrainingPlanVisibility;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Descricao do plano',
+    example: 'Treino novo',
+  })
+  readonly description?: string;
 }

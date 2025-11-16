@@ -45,6 +45,9 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   @Column({ type: 'text', nullable: true })
   imageUrl: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
   @OneToMany(() => PlanSubscription, (subscription) => subscription.trainingPlan, {
     cascade: true,
   })
