@@ -228,4 +228,46 @@ export class TrainingPlanController {
   ) {
     await this.trainingPlanManagementService.addImage(trainingPlanId, file.buffer);
   }
+
+  @Post('like/:trainingPlanId/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Like a training plan' })
+  @ApiResponse({ status: 200, description: 'Training plan liked successfully' })
+  @ApiParam({
+    name: 'trainingPlanId',
+    required: true,
+    description: 'ID of the training plan',
+  })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'ID of the user liking the training plan',
+  })
+  async like(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Param('userId') userId: string
+  ) {
+    await this.trainingPlanManagementService.like(trainingPlanId, userId);
+  }
+
+  @Delete('like/:trainingPlanId/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove like from a training plan' })
+  @ApiResponse({ status: 200, description: 'Like removed successfully' })
+  @ApiParam({
+    name: 'trainingPlanId',
+    required: true,
+    description: 'ID of the training plan',
+  })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    description: 'ID of the user removing the like',
+  })
+  async removeLike(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Param('userId') userId: string
+  ) {
+    await this.trainingPlanManagementService.removeLike(trainingPlanId, userId);
+  }
 }

@@ -73,9 +73,7 @@ export class UserManagementService {
 
     if (user.profilePictureUrl) {
       this.logger.log(`Generating SAS URL for profile picture for user: ${id}`);
-      user.profilePictureUrl = await this.storageService.generateSasUrl(
-        user.profilePictureUrl
-      );
+      user.profilePictureUrl = this.storageService.generateSasUrl(user.profilePictureUrl);
     }
 
     this.logger.log(`Successfully fetched user: ${id}`);

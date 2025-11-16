@@ -8,17 +8,21 @@ import { TrainingPlanRepository } from '@src/module/training-plan/persistence/re
 import { CreateTrainingPlanRequestDto } from '../../http/rest/dto/request/create-training-plan-request.dto';
 import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
-import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
+import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
+import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
+import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
+import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 
 @Injectable()
 export class TrainingPlanManagementService {
   constructor(
     private readonly trainingPlanRepository: TrainingPlanRepository,
     private readonly trainingPlanFeedbackRepository: TrainingPlanFeedbackRepository,
+    private readonly trainingPlanLikeRepository: TrainingPlanLikeRepository,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
     private readonly logger: AppLogger,
@@ -85,6 +89,15 @@ export class TrainingPlanManagementService {
       throw new NotFoundException();
     }
 
+    if (trainingPlan.imageUrl) {
+      this.logger.log(`Generating SAS URL for profile picture for user: ${id}`);
+      trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
+    }
+
+    trainingPlan.likesCount = await this.trainingPlanLikeRepository.count({
+      trainingPlanId: id,
+    });
+
     this.logger.log('Training plan fetched successfully', { trainingPlanId: id });
     return { ...trainingPlan };
   }
@@ -103,27 +116,55 @@ export class TrainingPlanManagementService {
   async list() {
     this.logger.log('Listing all training plans');
 
-    const plans = await this.trainingPlanRepository.findMany({});
+    let plans = await this.trainingPlanRepository.findMany({});
     this.logger.log('Training plans listed', { count: plans?.length ?? 0 });
 
-    return plans ?? [];
+    if (!plans) return [];
+
+    const aux: TrainingPlan[] = [];
+    for (let i = 0; i < plans.length; i++) {
+      const plan = plans[i];
+      plan.likesCount = await this.trainingPlanLikeRepository.count({
+        trainingPlanId: plan.id,
+      });
+
+      aux.push(plan);
+    }
+
+    plans = aux;
+    return plans?.map((p) => {
+      if (p.imageUrl) {
+        return { ...p, imageUrl: this.storageService.generateSasUrl(p.imageUrl) };
+      }
+
+      return { ...p };
+    });
   }
 
   async listByUserId(userId: string) {
     this.logger.log('Listing training plans by user ID', { userId });
-    const plans = await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
-    this.logger.log('Training plans listed by user ID', {
-      userId,
-      count: plans?.length ?? 0,
-    });
-    return plans;
-  }
+    let plans = await this.trainingPlanRepository.findTrainingPlansByAuthorId(userId);
 
-  async listAll() {
-    this.logger.log('Listing all training plans (with relations)');
-    const plans = await this.trainingPlanRepository.findTrainingPlans();
-    this.logger.log('Training plans fully listed', { count: plans?.length ?? 0 });
-    return plans;
+    if (!plans) return [];
+
+    const aux: TrainingPlan[] = [];
+    for (let i = 0; i < plans.length; i++) {
+      const plan = plans[i];
+      plan.likesCount = await this.trainingPlanLikeRepository.count({
+        trainingPlanId: plan.id,
+      });
+
+      aux.push(plan);
+    }
+    plans = aux;
+
+    return plans.map((p) => {
+      if (p.imageUrl) {
+        return { ...p, imageUrl: this.storageService.generateSasUrl(p.imageUrl) };
+      }
+
+      return { ...p };
+    });
   }
 
   async giveFeedback(newFeedback: {
@@ -258,5 +299,94 @@ export class TrainingPlanManagementService {
     this.logger.log(
       `Successfully added/updated image for plan ${trainingPlanId}. New file: ${filename}`
     );
+  }
+
+  async like(trainingPlanId: string, userId: string) {
+    this.logger.log(
+      `Starting like operation. trainingPlanId=${trainingPlanId}, userId=${userId}`
+    );
+
+    this.logger.log(`Checking if user exists: ${userId}`);
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn(`User does not exist: ${userId}`);
+      throw new NotFoundException('user not exists');
+    }
+
+    this.logger.log(`Fetching training plan: ${trainingPlanId}`);
+    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
+    if (!trainingPlan) {
+      this.logger.warn(`Training plan not found: ${trainingPlanId}`);
+      throw new NotFoundException('training plan not exists');
+    }
+
+    this.logger.log(`Validating training plan visibility for user: ${userId}`);
+
+    if (trainingPlan.visibility === TrainingPlanVisibility.private) {
+      this.logger.warn(
+        `User attempted to like a private training plan: ${trainingPlanId}`
+      );
+      throw new NotFoundException('training plan not exists');
+    }
+
+    if (
+      trainingPlan.visibility === TrainingPlanVisibility.protected &&
+      !trainingPlan.privateParticipants.some((v) => v.userId === userId)
+    ) {
+      this.logger.warn(
+        `User ${userId} attempted to like a protected training plan without permission: ${trainingPlanId}`
+      );
+      throw new NotFoundException('training plan not exists');
+    }
+
+    this.logger.log(`Checking if like already exists`);
+    const alreadyLiked = await this.trainingPlanLikeRepository.find({
+      where: {
+        trainingPlanId,
+        likedBy: userId,
+      },
+    });
+
+    if (alreadyLiked) {
+      this.logger.log(`User already liked this training plan. No action taken.`);
+      return;
+    }
+
+    this.logger.log(
+      `Saving like for userId=${userId} on trainingPlanId=${trainingPlanId}`
+    );
+    await this.trainingPlanLikeRepository.save(
+      new TrainingPlanLike({
+        likedBy: userId,
+        trainingPlanId,
+      })
+    );
+
+    this.logger.log(`Like operation completed successfully.`);
+  }
+
+  async removeLike(trainingPlanId: string, userId: string) {
+    this.logger.log(
+      `Starting removeLike operation. trainingPlanId=${trainingPlanId}, userId=${userId}`
+    );
+
+    this.logger.log(`Checking if user exists: ${userId}`);
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn(`User does not exist: ${userId}`);
+      throw new NotFoundException('user not exists');
+    }
+
+    this.logger.log(`Fetching training plan: ${trainingPlanId}`);
+    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
+    if (!trainingPlan) {
+      this.logger.warn(`Training plan not found: ${trainingPlanId}`);
+      throw new NotFoundException('training plan not exists');
+    }
+
+    this.logger.log(
+      `Attempting to remove like. trainingPlanId=${trainingPlanId}, userId=${userId}`
+    );
+    await this.trainingPlanLikeRepository.delete({ trainingPlanId, likedBy: userId });
+
+    this.logger.log(`Remove like operation completed successfully.`);
   }
 }
