@@ -41,7 +41,7 @@ export class AzureStorageService implements OnModuleInit {
     await blockBlobClient.deleteIfExists();
   }
 
-  async generateSasUrl(blobName: string, expiryMinutes = 10) {
+  generateSasUrl(blobName: string, expiryMinutes = 10): string {
     const now = new Date();
     const expiresOn = new Date(now.valueOf() + expiryMinutes * 60 * 1000);
 
@@ -51,15 +51,13 @@ export class AzureStorageService implements OnModuleInit {
         permissions: AccountSASPermissions.parse('r'),
         resourceTypes: AccountSASResourceTypes.parse('o').toString(),
         services: AccountSASServices.parse('b').toString(),
-        protocol: SASProtocol.Https,
+        protocol: SASProtocol.HttpsAndHttp,
       },
       (this.client as any).credential
     ).toString();
 
-    const sasUrl = `https://${this.configService.get(
-      'storage.azure.account'
-    )}.blob.core.windows.net/${this.configService.get(
-      'storage.azure.container'
+    const sasUrl = `${this.configService.get(
+      'storage.azure.url'
     )}/${blobName}?${sasToken}`;
 
     return sasUrl;

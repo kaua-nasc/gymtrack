@@ -9,6 +9,7 @@ import { DayRepository } from './repository/day.repository';
 import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
 import { ExerciseRepository } from './repository/exercise.repository';
 import { TrainingPlanFeedbackRepository } from './repository/training-plan-feedback.repository';
+import { TrainingPlanLikeRepository } from './repository/training-plan-like.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -33,6 +34,7 @@ export class TrainingPlanPersistenceModule {
         ExerciseRepository,
         TrainingPlanFeedbackRepository,
         // TrainingPlanProgressRepository,
+        TrainingPlanLikeRepository,
       ],
       exports: [
         PlanSubscriptionRepository,
@@ -43,6 +45,7 @@ export class TrainingPlanPersistenceModule {
         TrainingPlanFeedbackRepository,
         ExerciseRepository,
         //TrainingPlanProgressRepository,
+        TrainingPlanLikeRepository,
       ],
     };
   }

@@ -12,9 +12,8 @@
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "lib": ["ES2021"],
-    "target": "ES2021",
-    "module": "commonjs",
+    "lib": ["ES2020"],
+    "module": "CommonJS",
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -38,7 +37,7 @@
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
-    "noImplicitOverride": true
+    "target": "ES2020"
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": ["src/**/*", "test/**/*", "database/**/*"]
 }

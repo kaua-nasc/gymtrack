@@ -232,7 +232,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .post(`/identity/user/privacy/settings/${user.id}`)
+        .put(`/identity/user/privacy/settings/${user.id}`)
         .send({
           shareName: true,
           shareEmail: true,
@@ -258,7 +258,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .post(`/identity/user/privacy/settings/${user.id}`)
+        .put(`/identity/user/privacy/settings/${user.id}`)
         .send({
           shareEmail: true,
           shareTrainingProgress: true,
@@ -283,7 +283,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
       });
 
       const res = await request(app.getHttpServer())
-        .post(`/identity/user/privacy/settings/${user.id}`)
+        .put(`/identity/user/privacy/settings/${user.id}`)
         .send({});
 
       expect(res.status).toBe(200);

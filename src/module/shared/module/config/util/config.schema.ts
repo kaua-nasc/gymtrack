@@ -38,6 +38,7 @@ export const azureStorageSchema = z.object({
   container: z.string().nonempty(),
   account: z.string().nonempty(),
   connectionString: z.string().nonempty(),
+  url: z.string().nonempty(),
 });
 
 export const storageSchema = z.object({
