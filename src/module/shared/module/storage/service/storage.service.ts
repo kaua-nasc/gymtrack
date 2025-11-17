@@ -32,14 +32,4 @@ export class AwsStorageService implements OnModuleInit {
   async delete(bucket: string, fileName: string) {
     await this.client.removeObject(bucket, fileName);
   }
-
-  //   async list(bucket: string) {
-  // const stream = this.client.listObjects(bucket, '', true);
-  // const files: string[] = [];
-  // return new Promise<string[]>((resolve, reject) => {
-  //   stream.on('data', (obj) => files.push(obj.name));
-  //   stream.on('end', () => resolve(files));
-  //   stream.on('error', reject);
-  // });
-  //   }
 }

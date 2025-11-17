@@ -4,6 +4,8 @@ import { AppModule } from '@src/app.module';
 import { MockLoggerModule } from '@testInfra/mock/logger.mock';
 import { LoggerModule } from '@src/module/shared/module/logger/logger.module';
 import { initializeTransactionalContext } from 'typeorm-transactional';
+import { StorageModule } from '@src/module/shared/module/storage/storage.module';
+import { MockStorageModule } from './mock/storage.mock';
 
 type Override = { provide: any; useValue: any } | { provide: any; useClass: any };
 
@@ -16,6 +18,7 @@ export const createNestApp = async (
   const builder = Test.createTestingModule({ imports: [LoggerModule, ...modules] });
 
   builder.overrideModule(LoggerModule).useModule(MockLoggerModule);
+  builder.overrideModule(StorageModule).useModule(MockStorageModule);
 
   for (const override of overrides) {
     if ('useValue' in override) {

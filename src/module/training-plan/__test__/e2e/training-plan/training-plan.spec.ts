@@ -5,8 +5,13 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import request from 'supertest';
-import { trainingPlanFactory } from '../../factory/training-plan.factory';
+import {
+  planParticipantFactory,
+  trainingPlanFactory,
+  trainingPlanLikeFactory,
+} from '../../factory/training-plan.factory';
 import nock from 'nock';
+import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 
 describe('Training Plan - Training Plan Controller - (e2e)', () => {
   let app: INestApplication;
@@ -248,6 +253,247 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .send(feedback);
 
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('Like Training Plan', () => {
+    it('should like successfully when send valid data', async () => {
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.public })
+        .build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.OK);
+    });
+
+    it('should return not found when user not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: false,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return not found when training plan not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return not found when training plan visibility is private', async () => {
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.private })
+        .build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return not found when training plan visibility is protected and user is not in list', async () => {
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.protected })
+        .build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const planParticipant = planParticipantFactory
+        .extend({
+          trainingPlanId: trainingPlan.id,
+        })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should like successfully when training plan visibility is protected and user is in private list', async () => {
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.protected })
+        .build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const planParticipant = planParticipantFactory
+        .extend({
+          userId,
+          trainingPlanId: trainingPlan.id,
+        })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      console.log(response.text);
+      expect(response.status).toBe(HttpStatus.OK);
+    });
+
+    it('should like successfully when send duplicated valid data', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const planParticipant = planParticipantFactory
+        .extend({
+          userId,
+          trainingPlanId: trainingPlan.id,
+        })
+        .build();
+      const like = trainingPlanLikeFactory
+        .extend({ likedBy: userId, trainingPlanId: trainingPlan.id })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
+      await testDbClient(Tables.TrainingPlanLikes).insert(like);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.OK);
+    });
+
+    it('should remove like successfully when send valid data', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const planParticipant = planParticipantFactory
+        .extend({
+          userId,
+          trainingPlanId: trainingPlan.id,
+        })
+        .build();
+      const like = trainingPlanLikeFactory
+        .extend({ likedBy: userId, trainingPlanId: trainingPlan.id })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
+      await testDbClient(Tables.TrainingPlanLikes).insert(like);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).delete(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.OK);
+    });
+
+    it('should return not found when like not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).delete(
+        `/training-plan/like/${trainingPlan.id}/${userId}`
+      );
+
+      expect(response.status).toBe(HttpStatus.OK);
     });
   });
 });

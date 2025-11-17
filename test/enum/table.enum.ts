@@ -7,4 +7,6 @@ export enum Tables {
   PlanDayProgress = 'plan_day_progress',
   Day = 'days',
   TrainingPlanFeedback = 'training_plan_feedbacks',
+  TrainingPlanParticipants = 'plan_participant',
+  TrainingPlanLikes = 'training_plan_likes',
 }
