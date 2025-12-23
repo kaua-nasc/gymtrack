@@ -270,4 +270,15 @@ export class TrainingPlanController {
   ) {
     await this.trainingPlanManagementService.removeLike(trainingPlanId, userId);
   }
+
+  @Post('clone/:userId/:trainingPlanId')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Clona um plano de treino existente' })
+  @ApiResponse({ status: 201, description: 'Plano de treino clonado com sucesso' })
+  async cloneTrainingPlan(
+    @Param('userId') userId: string,
+    @Param('trainingPlanId') trainingPlanId: string
+  ): Promise<void> {
+    return await this.trainingPlanManagementService.clone(userId, trainingPlanId);
+  }
 }

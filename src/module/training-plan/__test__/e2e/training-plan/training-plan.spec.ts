@@ -53,6 +53,8 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan')
         .send(trainingPlan);
 
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+      expect(plans).toHaveLength(1);
       expect(response.status).toBe(HttpStatus.CREATED);
     });
 
@@ -72,6 +74,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan')
         .send(trainingPlan);
 
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(0);
       expect(response.body.message).toBe('user not found');
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -94,6 +99,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan')
         .send(trainingPlan);
 
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
@@ -115,6 +123,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan')
         .send(trainingPlan);
 
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
   });
@@ -129,6 +140,11 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/list/${firstTrainingPlan.authorId}`
       );
 
+      const plans = await testDbClient(Tables.TrainingPlan).select('*').where({
+        authorId: firstTrainingPlan.authorId,
+      });
+
+      expect(plans).toHaveLength(1);
       expect(res.body.length).toBe(1);
       expect(res.body[0].authorId).toBe(firstTrainingPlan.authorId);
     });
@@ -163,6 +179,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/${firstTrainingPlan.id}`
       );
 
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(0);
       expect(res.status).toBe(404);
     });
   });
@@ -192,6 +211,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan/feedback')
         .send(feedback);
 
+      const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
+
+      expect(feedbacks).toHaveLength(1);
       expect(response.status).toBe(HttpStatus.CREATED);
     });
 
@@ -208,6 +230,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan/feedback')
         .send(feedback);
 
+      const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
+
+      expect(feedbacks).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
@@ -225,6 +250,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan/feedback')
         .send(feedback);
 
+      const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
+
+      expect(feedbacks).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
@@ -252,6 +280,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .post('/training-plan/feedback')
         .send(feedback);
 
+      const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
+
+      expect(feedbacks).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
   });
@@ -278,6 +309,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(1);
       expect(response.status).toBe(HttpStatus.OK);
     });
 
@@ -296,6 +330,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
           exists: false,
         });
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(0);
       const response = await request(app.getHttpServer()).post(
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
@@ -320,6 +357,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
@@ -342,6 +382,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
@@ -372,6 +415,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
@@ -380,7 +426,6 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .extend({ visibility: TrainingPlanVisibility.protected })
         .build();
       const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
-
       const planParticipant = planParticipantFactory
         .extend({
           userId,
@@ -404,12 +449,16 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
-      console.log(response.text);
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(1);
       expect(response.status).toBe(HttpStatus.OK);
     });
 
     it('should like successfully when send duplicated valid data', async () => {
-      const trainingPlan = trainingPlanFactory.build();
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.public })
+        .build();
       const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
       const planParticipant = planParticipantFactory
         .extend({
@@ -438,6 +487,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(1);
       expect(response.status).toBe(HttpStatus.OK);
     });
 
@@ -471,6 +523,9 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.OK);
     });
 
@@ -493,7 +548,267 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         `/training-plan/like/${trainingPlan.id}/${userId}`
       );
 
+      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+
+      expect(likes).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.OK);
+    });
+  });
+
+  describe('Clone Training Plan', () => {
+    it('should clone a training plan successfully when send valid data', async () => {
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.public })
+        .build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(2);
+      expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should return not found when user not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: false,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(1);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return not found when training plan not exists', async () => {
+      const trainingPlan = trainingPlanFactory.build();
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(0);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should clone a training plan privately successfully when send valid data', async () => {
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.public, authorId: userId })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(2);
+      expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should return not found with training plan privately when is not author', async () => {
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.private })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(1);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should clone a training plan privately successfully when send valid data and user is author', async () => {
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.protected, authorId: userId })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(2);
+      expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should clone a training plan privately successfully when send valid data and user is in private participants', async () => {
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.protected })
+        .build();
+
+      const planParticipant = planParticipantFactory
+        .extend({
+          trainingPlanId: trainingPlan.id,
+          userId,
+        })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(2);
+      expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should return not found with training plan protected when is not author', async () => {
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.protected })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(1);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return not found with training plan protected when user is not in private participants', async () => {
+      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+
+      const trainingPlan = trainingPlanFactory
+        .extend({ visibility: TrainingPlanVisibility.protected })
+        .build();
+      const planParticipant = planParticipantFactory
+        .extend({
+          trainingPlanId: trainingPlan.id,
+        })
+        .build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
+
+      nock('http://localhost:3000', {
+        encodedQueryParams: true,
+      })
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(`/identity/user/exists/${userId}`)
+        .reply(200, {
+          exists: true,
+        });
+
+      const response = await request(app.getHttpServer()).post(
+        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      );
+
+      const plans = await testDbClient(Tables.TrainingPlan).select('*');
+
+      expect(plans).toHaveLength(1);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
   });
 });

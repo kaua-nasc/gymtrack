@@ -12,7 +12,7 @@ import { TrainingPlanLike } from './training-plan-like.entity';
 
 @Entity({ name: 'training_plans' })
 export class TrainingPlan extends DefaultEntity<TrainingPlan> {
-  @Column({ type: 'varchar', nullable: false, unique: true, width: 255 })
+  @Column({ type: 'varchar', nullable: false, width: 255 })
   name: string;
 
   @OneToMany(() => Day, (day) => day.trainingPlan, { cascade: true })

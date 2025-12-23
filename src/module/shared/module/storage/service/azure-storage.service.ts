@@ -32,6 +32,16 @@ export class AzureStorageService implements OnModuleInit {
     await blockBlobClient.upload(buffer, buffer.length);
   }
 
+  async copy(sourceBlobName: string, targetBlobName: string): Promise<void> {
+    const containerClient = this.client.getContainerClient(
+      this.configService.get('storage.azure.container')
+    );
+
+    const targetBlobClient = containerClient.getBlockBlobClient(targetBlobName);
+
+    await targetBlobClient.beginCopyFromURL(this.generateSasUrl(sourceBlobName, 5));
+  }
+
   async delete(fileName: string): Promise<void> {
     const containerClient = this.client.getContainerClient(
       this.configService.get('storage.azure.container')
