@@ -19,7 +19,7 @@
     "docker:stop": "docker-compose stop",
     "docker:up": "docker-compose up --detach",
     "start:dev": "bun --watch src/main.ts",
-    "start:prod": "bun dist/main",
+    "start:prod": "bun dist/src/main.js",
     "test:db:drop": "dotenv -e .env.test -- npm run db:drop",
     "test:db:setup": "dotenv -e .env.test -- npm run db:setup",
     "test:e2e": "bun test --workers=1 ./src/module/*/__test__/e2e/*/*.spec.ts",
