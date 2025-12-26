@@ -16,6 +16,8 @@ import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
+import { Day } from '../../persistence/entity/day.entity';
+import { Exercise } from '../../persistence/entity/exercise.entity';
 
 @Injectable()
 export class TrainingPlanManagementService {
@@ -38,7 +40,8 @@ export class TrainingPlanManagementService {
     this.logger.log('Creating new training plan', {
       authorId: trainingPlanData.authorId,
     });
-    if (!(await this.identityUserServiceClient.userExists(trainingPlanData.authorId))) {
+    const a = await this.identityUserServiceClient.userExists(trainingPlanData.authorId);
+    if (!a) {
       this.logger.warn('User not found when creating training plan', {
         authorId: trainingPlanData.authorId,
       });
@@ -116,7 +119,14 @@ export class TrainingPlanManagementService {
   async list() {
     this.logger.log('Listing all training plans');
 
-    let plans = await this.trainingPlanRepository.findMany({});
+    let plans = await this.trainingPlanRepository.findMany({
+      relations: {
+        privateParticipants: true,
+        feedbacks: true,
+        planSubscriptions: { planDayProgress: true, privacySettings: true },
+        days: { exercises: true },
+      },
+    });
     this.logger.log('Training plans listed', { count: plans?.length ?? 0 });
 
     if (!plans) return [];
@@ -308,7 +318,10 @@ export class TrainingPlanManagementService {
     }
 
     this.logger.log(`Fetching training plan: ${trainingPlanId}`);
-    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id: trainingPlanId },
+      relations: { privateParticipants: true },
+    });
     if (!trainingPlan) {
       this.logger.warn(`Training plan not found: ${trainingPlanId}`);
       throw new NotFoundException('training plan not exists');
@@ -316,7 +329,10 @@ export class TrainingPlanManagementService {
 
     this.logger.log(`Validating training plan visibility for user: ${userId}`);
 
-    if (trainingPlan.visibility === TrainingPlanVisibility.private) {
+    if (
+      trainingPlan.visibility === TrainingPlanVisibility.private &&
+      trainingPlan.authorId !== userId
+    ) {
       this.logger.warn(
         `User attempted to like a private training plan: ${trainingPlanId}`
       );
@@ -325,7 +341,8 @@ export class TrainingPlanManagementService {
 
     if (
       trainingPlan.visibility === TrainingPlanVisibility.protected &&
-      !trainingPlan.privateParticipants.some((v) => v.userId === userId)
+      !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
+      trainingPlan.authorId !== userId
     ) {
       this.logger.warn(
         `User ${userId} attempted to like a protected training plan without permission: ${trainingPlanId}`
@@ -383,5 +400,70 @@ export class TrainingPlanManagementService {
     await this.trainingPlanLikeRepository.delete({ trainingPlanId, likedBy: userId });
 
     this.logger.log(`Remove like operation completed successfully.`);
+  }
+
+  async clone(userId: string, trainingPlanId: string) {
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      throw new NotFoundException('user not found');
+    }
+
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id: trainingPlanId },
+      relations: { privateParticipants: true, days: { exercises: true } },
+    });
+
+    if (!trainingPlan) {
+      throw new NotFoundException('training plan not found');
+    }
+
+    if (trainingPlan?.visibility === TrainingPlanVisibility.private) {
+      throw new NotFoundException('training plan not found');
+    }
+
+    if (
+      trainingPlan.visibility === TrainingPlanVisibility.protected &&
+      !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
+      trainingPlan.authorId !== userId
+    ) {
+      throw new NotFoundException('training plan not found');
+    }
+
+    const clonedTrainingPlan = new TrainingPlan({
+      authorId: userId,
+      level: trainingPlan.level,
+      maxSubscriptions: trainingPlan.maxSubscriptions,
+      observation: trainingPlan.observation,
+      timeInDays: trainingPlan.timeInDays,
+      visibility: TrainingPlanVisibility.private,
+      type: trainingPlan.type,
+      pathology: trainingPlan.pathology,
+      name: trainingPlan.name,
+      description: trainingPlan.description,
+      days: trainingPlan.days.map((day) => {
+        return new Day({
+          name: day.name,
+          exercises: day.exercises.map((exercise) => {
+            return new Exercise({
+              name: exercise.name,
+              description: exercise.description,
+              observation: exercise.observation,
+              type: exercise.type,
+              repsNumber: exercise.repsNumber,
+              setsNumber: exercise.setsNumber,
+            });
+          }),
+        });
+      }),
+    });
+
+    if (trainingPlan.imageUrl) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `${FilePath.trainingPlan}/training-plan-${trainingPlan.id}_${timestamp}.png`;
+      clonedTrainingPlan.imageUrl = filename;
+
+      await this.storageService.copy(trainingPlan.imageUrl, clonedTrainingPlan.imageUrl);
+    }
+
+    await this.trainingPlanRepository.save(clonedTrainingPlan);
   }
 }

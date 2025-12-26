@@ -28,6 +28,7 @@ import { UserFollowCountResponseDto } from '../dto/response/user-follow-count-re
 import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
 import { UserPrivacySettingsResponseDto } from '../dto/response/user-privacy-settings-response.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import 'multer';
 
 @ApiTags('Users')
 @Controller('identity/user')

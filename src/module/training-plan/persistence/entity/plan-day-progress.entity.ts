@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { PlanSubscription } from './plan-subscription.entity';
 import { Day } from './day.entity';
 
@@ -23,5 +23,5 @@ export class PlanDayProgress extends DefaultEntity<PlanDayProgress> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'dayId' })
-  day: Day;
+  day: Relation<Day>;
 }

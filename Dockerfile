@@ -1,26 +1,27 @@
-FROM node:lts-alpine
+# --- Stage 1: Build ---
+FROM oven/bun:1 AS builder
 
-# Ambiente
-ENV NODE_ENV=production
-
-# Diretório de trabalho
 WORKDIR /usr/src/app
 
-# Copiar package.json e lock
-COPY package*.json ./
+COPY package.json bun.lockb ./
 
-# Instalar dependências
-RUN npm install --production --silent
+RUN bun install --frozen-lockfile
 
-# Copiar todo o restante do projeto
 COPY . .
 
-# Expor porta
+RUN bun run build
+
+FROM oven/bun:1 AS production
+
+WORKDIR /usr/src/app
+
+COPY package.json bun.lockb ./
+
+RUN bun install --frozen-lockfile --production
+
+COPY --from=builder /usr/src/app/dist ./dist
+
+ENV NODE_ENV=production
 EXPOSE 3000
 
-# Ajustar permissões
-RUN chown -R node:node /usr/src/app
-USER node
-
-# Comando de start
-CMD ["npm", "run", "start:prod"]
+ENTRYPOINT [ "bun", "run", "dist/main.js" ]

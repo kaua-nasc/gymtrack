@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 
 @Index(['trainingPlanId', 'likedBy'], { unique: true })
@@ -16,5 +16,5 @@ export class TrainingPlanLike extends DefaultEntity<TrainingPlanLike> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'trainingPlanId' })
-  trainingPlan: TrainingPlan;
+  trainingPlan: Relation<TrainingPlan>;
 }

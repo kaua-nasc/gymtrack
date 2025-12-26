@@ -1,24 +1,21 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
-import { AxiosError } from 'axios';
-import { catchError, firstValueFrom } from 'rxjs';
 import { HttpClientException } from '@src/module/shared/module/http-client/exception/http-client.exception';
 
 @Injectable()
 export class HttpClient {
-  constructor(private readonly httpService: HttpService) {}
+  async get<T>(url: string, options: RequestInit = {}): Promise<T> {
+    try {
+      const response = await fetch(url, options);
 
-  async get<T extends Record<string, any>>(
-    url: string,
-    options: Record<string, any>
-  ): Promise<T> {
-    const { data } = await firstValueFrom(
-      this.httpService.get<T>(url, options).pipe(
-        catchError((error: AxiosError) => {
-          throw new HttpClientException(`Error fetching data from ${url}: ${error}`);
-        })
-      )
-    );
-    return data;
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`[${response.status}] ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      throw new HttpClientException(`Error fetching data from ${url}: ${error}`);
+    }
   }
 }

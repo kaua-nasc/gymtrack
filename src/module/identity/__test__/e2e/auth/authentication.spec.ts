@@ -1,3 +1,12 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { IdentityModule } from '@src/module/identity/identity.module';
@@ -5,17 +14,24 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { testCacheClient } from '@testInfra/test-cache.setup';
 import { createNestApp } from '@testInfra/test-e2e.setup';
+import { SetupServerApi } from 'msw/node';
 import request from 'supertest';
 import { userFactory } from '../../factory/user.factory';
 
 describe('Auth Controller (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
+  let url: string;
+  let server: SetupServerApi;
 
   beforeAll(async () => {
-    const nestTestSetup = await createNestApp([IdentityModule]);
-    app = nestTestSetup.app;
-    module = nestTestSetup.module;
+    const setup = await createNestApp([IdentityModule]);
+    app = setup.app;
+    module = setup.module;
+    server = setup.server;
+    await app.listen(0);
+
+    url = await app.getUrl();
   });
 
   beforeEach(async () => {
@@ -23,23 +39,38 @@ describe('Auth Controller (e2e)', () => {
     await testCacheClient.clean();
   });
 
+  afterEach(() => {
+    server.resetHandlers();
+  });
+
   afterAll(async () => {
-    await testDbClient(Tables.User).del();
-    await module.close();
-    await app.close();
-    await testCacheClient.disconnect();
-    await testDbClient.destroy();
+    if (module) {
+      await testDbClient(Tables.User).del();
+      await testCacheClient.clean();
+      await module.close();
+    }
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('Authentication - signIn', () => {
     it('should do login and return token', async () => {
       const user = userFactory.build();
 
-      await request(app.getHttpServer()).post('/identity/user').send(user);
+      await fetch(`${url}/identity/user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
 
-      const res = await request(app.getHttpServer()).post('/identity/auth').send({
-        email: user.email,
-        password: user.password,
+      const res = await fetch(`${url}/identity/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          password: user.password,
+        }),
       });
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -50,23 +81,31 @@ describe('Auth Controller (e2e)', () => {
 
       await request(app.getHttpServer()).post('/identity/user').send(user);
 
-      const res = await request(app.getHttpServer()).post('/identity/auth').send({
-        email: user.email,
-        password: '12345678',
+      const res = await fetch(`${url}/identity/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          password: '12345678',
+        }),
       });
 
       expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 
-  describe.skip('Authentication - Request Reset Password', () => {
-    it('should return ok when request an reset password with valid email', async () => {
+  describe('Authentication - Request Reset Password', () => {
+    it.skip('should return ok when request an reset password with valid email', async () => {
       const user = userFactory.build();
       await testDbClient(Tables.User).insert(user);
 
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/request')
-        .send({ email: user.email });
+      const res = await fetch(`${url}/identity/auth/reset-password/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.OK);
     });
@@ -75,25 +114,34 @@ describe('Auth Controller (e2e)', () => {
       const user = userFactory.build();
       await testDbClient(Tables.User).insert(user);
 
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/request')
-        .send({ email: 'johndao@example.com' });
+      const res = await fetch(`${url}/identity/auth/reset-password/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'johndao@example.com',
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
 
     it('should return bad request status code when request reset password without any user email', async () => {
-      const res = await request(app.getHttpServer()).post(
-        '/identity/auth/reset-password/request'
-      );
+      const res = await fetch(`${url}/identity/auth/reset-password/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
     it('should return bad request status code when request reset password without any user email', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/request')
-        .send({ email: 'johndao@' });
+      const res = await fetch(`${url}/identity/auth/reset-password/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'johndao@',
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -106,17 +154,26 @@ describe('Auth Controller (e2e)', () => {
       await testDbClient(Tables.User).insert(user);
       await testCacheClient.set(user.email!, token);
 
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/verify')
-        .send({ email: user.email, token: token });
+      const res = await fetch(`${url}/identity/auth/reset-password/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          token: token,
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.OK);
     });
     it('should return not found when user not exists ', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/verify')
-        .send({ email: 'johndoe@example.com', token: '1234' });
-
+      const res = await fetch(`${url}/identity/auth/reset-password/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'johndoe@example.com',
+          token: '1234',
+        }),
+      });
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
     it('should return bad request when token doest match', async () => {
@@ -126,9 +183,14 @@ describe('Auth Controller (e2e)', () => {
       await testDbClient(Tables.User).insert(user);
       await testCacheClient.set(user.email!, token);
 
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/verify')
-        .send({ userId: user.id, token: '1234' });
+      const res = await fetch(`${url}/identity/auth/reset-password/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          token: '1234',
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -139,9 +201,14 @@ describe('Auth Controller (e2e)', () => {
 
       await testDbClient(Tables.User).insert(user);
 
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/create')
-        .send({ userId: user.id, newPassword: 'password12345' });
+      const res = await fetch(`${url}/identity/auth/reset-password/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          newPassword: 'password12345',
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.CREATED);
     });
@@ -152,20 +219,27 @@ describe('Auth Controller (e2e)', () => {
 
       await testDbClient(Tables.User).insert(user);
 
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/create')
-        .send({ userId: user.id, newPassword: plainPassword });
+      const res = await fetch(`${url}/identity/auth/reset-password/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          newPassword: plainPassword,
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('should return unauthorized when user not exists', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/identity/auth/reset-password/create')
-        .send({
+      const res = await fetch(`${url}/identity/auth/reset-password/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           userId: '5e2a62de-6ead-4678-a12f-8c17e91513a3',
           newPassword: 'password12345',
-        });
+        }),
+      });
 
       expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });

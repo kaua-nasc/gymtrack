@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, type Relation } from 'typeorm';
 import { Exercise } from './exercise.entity';
 import { TrainingPlan } from './training-plan.entity';
 import { PlanDayProgress } from './plan-day-progress.entity';
@@ -17,7 +17,7 @@ export class Day extends DefaultEntity<Day> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'trainingPlanId' })
-  trainingPlan: TrainingPlan;
+  trainingPlan: Relation<TrainingPlan>;
 
   @OneToMany(() => Exercise, (exercise) => exercise.day, { cascade: true })
   exercises: Exercise[];

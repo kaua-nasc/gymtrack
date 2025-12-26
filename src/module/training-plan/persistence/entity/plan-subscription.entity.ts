@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 import { PlanDayProgress } from './plan-day-progress.entity';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
@@ -40,7 +40,7 @@ export class PlanSubscription extends DefaultEntity<PlanSubscription> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'trainingPlanId' })
-  trainingPlan: TrainingPlan;
+  trainingPlan: Relation<TrainingPlan>;
 
   @OneToOne(
     () => PlanSubscriptionPrivacySettings,

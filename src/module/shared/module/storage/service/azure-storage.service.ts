@@ -8,10 +8,19 @@ import {
   AccountSASResourceTypes,
   AccountSASServices,
   SASProtocol,
+  StorageSharedKeyCredential,
 } from '@azure/storage-blob';
 
+export interface StorageService {
+  upload(fileName: string, buffer: Buffer): Promise<void>;
+  copy(sourceBlobName: string, targetBlobName: string): Promise<void>;
+  delete(fileName: string): Promise<void>;
+  generateSasUrl(blobName: string, expiryMinutes?: number): string;
+}
+
+
 @Injectable()
-export class AzureStorageService implements OnModuleInit {
+export class AzureStorageService implements StorageService, OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
 
   private client: BlobServiceClient;
@@ -30,6 +39,16 @@ export class AzureStorageService implements OnModuleInit {
 
     const blockBlobClient: BlockBlobClient = containerClient.getBlockBlobClient(fileName);
     await blockBlobClient.upload(buffer, buffer.length);
+  }
+
+  async copy(sourceBlobName: string, targetBlobName: string): Promise<void> {
+    const containerClient = this.client.getContainerClient(
+      this.configService.get('storage.azure.container')
+    );
+
+    const targetBlobClient = containerClient.getBlockBlobClient(targetBlobName);
+
+    await targetBlobClient.beginCopyFromURL(this.generateSasUrl(sourceBlobName, 5));
   }
 
   async delete(fileName: string): Promise<void> {
@@ -53,7 +72,7 @@ export class AzureStorageService implements OnModuleInit {
         services: AccountSASServices.parse('b').toString(),
         protocol: SASProtocol.HttpsAndHttp,
       },
-      (this.client as any).credential
+      this.client.credential as StorageSharedKeyCredential
     ).toString();
 
     const sasUrl = `${this.configService.get(

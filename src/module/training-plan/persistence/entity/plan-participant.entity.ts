@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 
 @Entity('plan_participant')
@@ -15,7 +15,7 @@ export class PlanParticipant extends DefaultEntity<PlanParticipant> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'trainingPlanId' })
-  trainingPlan: TrainingPlan;
+  trainingPlan: Relation<TrainingPlan>;
 
   @Column({ type: 'timestamp' })
   expiration_date: Date;
