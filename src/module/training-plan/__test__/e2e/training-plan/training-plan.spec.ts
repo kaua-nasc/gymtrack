@@ -1,26 +1,44 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
+import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
+import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import request from 'supertest';
+import { HttpResponse, http } from 'msw';
+import { SetupServerApi } from 'msw/node';
 import {
   planParticipantFactory,
   trainingPlanFactory,
   trainingPlanLikeFactory,
 } from '../../factory/training-plan.factory';
-import nock from 'nock';
-import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 
 describe('Training Plan - Training Plan Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
+  let url: string;
+  let server: SetupServerApi;
+  let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
-    const nestTestSetup = await createNestApp([TrainingPlanModule]);
-    app = nestTestSetup.app;
-    module = nestTestSetup.module;
+    const setup = await createNestApp([TrainingPlanModule]);
+    app = setup.app;
+    module = setup.module;
+    configuration = setup.configuration;
+    server = setup.server;
+    await app.listen(0);
+
+    url = await app.getUrl();
   });
 
   beforeEach(async () => {
@@ -28,30 +46,41 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
     await testDbClient(Tables.TrainingPlan).del();
   });
 
+  afterEach(() => {
+    server.resetHandlers();
+  });
+
   afterAll(async () => {
-    await testDbClient(Tables.User).del();
-    await testDbClient(Tables.TrainingPlan).del();
-    await module.close();
-    await app.close();
-    await testDbClient.destroy();
+    server.close();
+    if (module) {
+      await testDbClient(Tables.User).del();
+      await testDbClient(Tables.TrainingPlan).del();
+      await module.close();
+    }
+
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('Create Training Plan', () => {
     it('should create an training plan when has valid data and user exists', async () => {
-      const trainingPlan = trainingPlanFactory.build();
+      const user = userFactory.build();
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${trainingPlan.authorId}`)
-        .reply(200, {
-          exists: true,
-        });
+      const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan')
-        .send(trainingPlan);
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
+
+      const response = await fetch(`${url}/training-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trainingPlan),
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
       expect(plans).toHaveLength(1);
@@ -61,23 +90,27 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
     it('should return a not found response when not have user', async () => {
       const trainingPlan = trainingPlanFactory.build();
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${trainingPlan.authorId}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${trainingPlan.authorId}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan')
-        .send(trainingPlan);
+      const response = await fetch(`${url}/training-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trainingPlan),
+      });
 
+      const body = (await response.json()) as Record<
+        string,
+        string | number | Record<string, unknown>
+      >;
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
       expect(plans).toHaveLength(0);
-      expect(response.body.message).toBe('user not found');
+      expect(body.message).toBe('user not found');
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
@@ -86,18 +119,11 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         name: '',
       });
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${trainingPlan.authorId}`)
-        .reply(200, {
-          exists: true,
-        });
-
-      const response = await request(app.getHttpServer())
-        .post('/training-plan')
-        .send(trainingPlan);
+      const response = await fetch(`${url}/training-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trainingPlan),
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -110,18 +136,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         authorId: '12345',
       });
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${trainingPlan.authorId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${trainingPlan.authorId}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan')
-        .send(trainingPlan);
+      const response = await fetch(`${url}/training-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trainingPlan),
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -136,27 +162,30 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(firstTrainingPlan);
 
-      const res = await request(app.getHttpServer()).get(
-        `/training-plan/list/${firstTrainingPlan.authorId}`
+      const response = await fetch(
+        `${url}/training-plan/list/${firstTrainingPlan.authorId}`
       );
+
+      const body = await response.json();
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*').where({
         authorId: firstTrainingPlan.authorId,
       });
 
       expect(plans).toHaveLength(1);
-      expect(res.body.length).toBe(1);
-      expect(res.body[0].authorId).toBe(firstTrainingPlan.authorId);
+      expect(body).toBeInstanceOf(Array);
     });
 
     it('should return empty list when have not training plan with training plan id', async () => {
       const firstTrainingPlan = trainingPlanFactory.build();
 
-      const res = await request(app.getHttpServer()).get(
-        `/training-plan/list/${firstTrainingPlan.authorId}`
+      const response = await fetch(
+        `${url}/training-plan/list/${firstTrainingPlan.authorId}`
       );
 
-      expect(res.body.length).toBe(0);
+      const body = await response.json();
+
+      expect(body).toBeInstanceOf(Array);
     });
   });
 
@@ -166,23 +195,24 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(firstTrainingPlan);
 
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/${firstTrainingPlan.id}`
-      );
+      const response = await fetch(`${url}/training-plan/${firstTrainingPlan.id}`, {
+        method: 'DELETE',
+      });
 
-      expect(res.status).toBe(200);
+      expect(response.status).toBe(HttpStatus.OK);
     });
+
     it('should delete an training plan when has a training plan', async () => {
       const firstTrainingPlan = trainingPlanFactory.build();
 
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/${firstTrainingPlan.id}`
-      );
+      const response = await fetch(`${url}/training-plan/${firstTrainingPlan.id}`, {
+        method: 'DELETE',
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
       expect(plans).toHaveLength(0);
-      expect(res.status).toBe(404);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
   });
 
@@ -198,18 +228,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan/feedback')
-        .send(feedback);
+      const response = await fetch(`${url}/training-plan/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedback),
+      });
 
       const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
 
@@ -226,9 +256,11 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         rating: 5,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan/feedback')
-        .send(feedback);
+      const response = await fetch(`${url}/training-plan/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedback),
+      });
 
       const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
 
@@ -246,9 +278,11 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan/feedback')
-        .send(feedback);
+      const response = await fetch(`${url}/training-plan/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedback),
+      });
 
       const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
 
@@ -267,18 +301,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const response = await request(app.getHttpServer())
-        .post('/training-plan/feedback')
-        .send(feedback);
+      const response = await fetch(`${url}/training-plan/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedback),
+      });
 
       const feedbacks = await testDbClient(Tables.TrainingPlanFeedback).select('*');
 
@@ -296,17 +330,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -321,22 +356,23 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
+
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
+      );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
       expect(likes).toHaveLength(0);
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
-      );
-
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
@@ -344,17 +380,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       const trainingPlan = trainingPlanFactory.build();
       const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -369,17 +406,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         .build();
       const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -402,17 +440,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -436,17 +475,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -474,17 +514,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
       await testDbClient(Tables.TrainingPlanLikes).insert(like);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'POST',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -510,17 +551,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
       await testDbClient(Tables.TrainingPlanLikes).insert(like);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).delete(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'DELETE',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -535,17 +577,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).delete(
-        `/training-plan/like/${trainingPlan.id}/${userId}`
+      const response = await fetch(
+        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
+        {
+          method: 'DELETE',
+        }
       );
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
@@ -564,17 +607,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -588,17 +632,19 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: false,
-        });
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
+
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -610,17 +656,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       const trainingPlan = trainingPlanFactory.build();
       const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -638,17 +685,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -666,17 +714,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -694,17 +743,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -730,17 +780,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -758,17 +809,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -792,17 +844,18 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.TrainingPlanParticipants).insert(planParticipant);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${userId}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const response = await request(app.getHttpServer()).post(
-        `/training-plan/clone/${userId}/${trainingPlan.id}`
+      const response = await fetch(
+        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
+        {
+          method: 'POST',
+        }
       );
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');

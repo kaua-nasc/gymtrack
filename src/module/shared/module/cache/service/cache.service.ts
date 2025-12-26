@@ -5,7 +5,7 @@ import Redis from 'ioredis';
 export class CacheService {
   constructor(@Inject('REDIS_CLIENT') private readonly client: Redis) {}
 
-  async set(key: string, value: any, ttl?: number) {
+  async set(key: string, value: unknown, ttl?: number) {
     const payload = typeof value === 'string' ? value : JSON.stringify(value);
     if (ttl) {
       await this.client.set(key, payload, 'EX', ttl);
@@ -14,7 +14,7 @@ export class CacheService {
     }
   }
 
-  async get<T = any>(key: string): Promise<T | null> {
+  async get<T = unknown>(key: string): Promise<T | null> {
     const value = await this.client.get(key);
     if (!value) return null;
 

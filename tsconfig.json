@@ -27,7 +27,11 @@
       "@identity/*": ["./src/module/identity/*"],
       "@trainingPlan/*": ["./src/module/training-plan/*"],
       "@shared/*": ["./src/module/shared/*"],
-      "@resource/*": ["./resource/*"]
+      "@resource/*": ["./resource/*"],
+      "@contentModule/*": ["./src/module/content/*"],
+      "@identityModule/*": ["./src/module/identity/*"],
+      "@sharedModules/*": ["./src/module/shared/module/*"],
+      "@sharedLibs/*": ["./src/module/shared/*"],
     },
     "removeComments": true,
     "resolveJsonModule": true,
@@ -37,7 +41,16 @@
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
-    "target": "ES2020"
+    "target": "ES2021",
+    "types": ["bun"],
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*", "test/**/*", "database/**/*"]
+"include": [
+    "src/**/*",
+    "test/**/*.spec.ts",
+    "test/**/*.test.ts"
+  ],
+  "exclude": [
+    "**/*.e2e.ts"
+  ]
 }

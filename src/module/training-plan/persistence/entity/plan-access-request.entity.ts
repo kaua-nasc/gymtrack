@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 import { PlanAccessRequestStatus } from '../../core/enum/plan-access-request-status.enum';
 
@@ -16,7 +16,7 @@ export class PlanAccessRequest extends DefaultEntity<PlanAccessRequest> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'trainingPlanId' })
-  trainingPlan: TrainingPlan;
+  trainingPlan: Relation<TrainingPlan>;
 
   @Column({ type: 'enum', nullable: false, enum: PlanAccessRequestStatus })
   status: PlanAccessRequestStatus;

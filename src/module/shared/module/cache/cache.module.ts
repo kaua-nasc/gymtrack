@@ -1,11 +1,25 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { CacheService } from './service/cache.service';
+import {
+  DynamicModule,
+  ForwardReference,
+  InjectionToken,
+  Module,
+  OptionalFactoryDependency,
+  Provider,
+  Type,
+} from '@nestjs/common';
 import Redis, { RedisOptions } from 'ioredis';
 import { ConfigModule } from '../config/config.module';
+import { CacheService } from './service/cache.service';
 
 export interface CacheModuleAsyncOptions {
-  imports?: any[];
-  inject?: any[];
+  imports?: (
+    | Type<unknown>
+    | DynamicModule
+    | Promise<DynamicModule>
+    | ForwardReference<unknown>
+  )[];
+  inject?: (InjectionToken | OptionalFactoryDependency)[];
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   useFactory: (...args: any[]) => RedisOptions | Promise<RedisOptions>;
 }
 
@@ -15,7 +29,7 @@ export class CacheModule {
     const redisProvider: Provider = {
       provide: 'REDIS_CLIENT',
       inject: options.inject || [],
-      useFactory: async (...args: any[]) => {
+      useFactory: async (...args: unknown[]) => {
         const redisOptions: RedisOptions = await options.useFactory(...args);
         return new Redis(redisOptions);
       },

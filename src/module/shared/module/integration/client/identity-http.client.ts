@@ -18,7 +18,7 @@ export class IdentityHttpClient implements IdentityUserExistsApi {
         //Authorization: `Bearer PUT SOMETHING`,
       },
     };
-    const url = `${this.configService.get('identityApi').url}/identity/user/exists/${userId}`;
+    const url = `${this.configService.get('identityApi.url')}/identity/user/exists/${userId}`;
 
     const response = await this.httpClient.get<IdentityApiUserExistsResponseDto>(
       url,

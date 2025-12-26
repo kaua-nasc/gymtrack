@@ -4,11 +4,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserRepository } from '../../persistence/repository/user.repository';
 import { JwtService } from '@nestjs/jwt';
-import { compare } from 'bcrypt';
 import { EmailService } from '@src/module/shared/module/email/service/email.service';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { compare } from 'bcrypt';
+import { UserRepository } from '../../persistence/repository/user.repository';
 
 @Injectable()
 export class AuthService {

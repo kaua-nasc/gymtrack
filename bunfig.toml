@@ -1,0 +1,11 @@
+# bunfig.toml
+
+[test]
+# Equivalente ao "setupFiles" do Jest
+preload = ["./test/test.setup.ts"]
+
+# Equivalente ao "testEnvironment: node" (O Bun já é compatível com Node, mas se precisar de DOM use 'happy-dom')
+# environment = "node" 
+
+# O Bun procura arquivos .test.ts e .spec.ts automaticamente, 
+# mas você pode ignorar pastas se precisar.

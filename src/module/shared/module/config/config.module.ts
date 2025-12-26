@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-imports */
 import { DynamicModule } from '@nestjs/common';
 import {
   ConfigModule as NestConfigModule,

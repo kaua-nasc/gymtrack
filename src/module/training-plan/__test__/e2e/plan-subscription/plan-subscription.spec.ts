@@ -1,39 +1,62 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
+import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
+import { PlanSubscriptionStatus } from '@src/module/training-plan/core/enum/plan-subscription-status.enum';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { trainingPlanFactory } from '../../factory/training-plan.factory';
-import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
-import request from 'supertest';
-import nock from 'nock';
+import { HttpResponse, http } from 'msw';
+import { SetupServerApi } from 'msw/node';
 import { planSubscriptionFactory } from '../../factory/plan-subscription.factory';
-import { PlanSubscriptionStatus } from '@src/module/training-plan/core/enum/plan-subscription-status.enum';
+import { trainingPlanFactory } from '../../factory/training-plan.factory';
 
 describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
+  let url: string;
+  let server: SetupServerApi;
+  let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
-    const nestTestSetup = await createNestApp([TrainingPlanModule]);
-    app = nestTestSetup.app;
-    module = nestTestSetup.module;
+    const setup = await createNestApp([TrainingPlanModule]);
+    app = setup.app;
+    module = setup.module;
+    configuration = setup.configuration;
+    server = setup.server;
+    await app.listen(0);
+
+    url = await app.getUrl();
   });
 
   beforeEach(async () => {
     await testDbClient(Tables.TrainingPlan).del();
     await testDbClient(Tables.PlanSubscription).del();
-    nock.cleanAll();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   afterAll(async () => {
-    await testDbClient(Tables.TrainingPlan).del();
-    await testDbClient(Tables.PlanSubscription).del();
-    await module.close();
-    await app.close();
-    await testDbClient.destroy();
-    nock.cleanAll();
+    if (module) {
+      await testDbClient(Tables.TrainingPlan).del();
+      await testDbClient(Tables.PlanSubscription).del();
+      await module.close();
+    }
+
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('Create Subscription', () => {
@@ -43,39 +66,47 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer())
-        .post(`/training-plan/subscription/${trainingPlan.id}/${user.id}`)
-        .send({ type: 'TOTAL_ACCESS' });
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+        }
+      );
 
       expect(res.status).toBe(HttpStatus.CREATED);
     });
 
     it('should return a not found status code when have not user with filled id', async () => {
-      const trainingPlan = trainingPlanFactory.build();
+      const trainingPlan = trainingPlanFactory.build({
+        authorId: '00000000-0000-0000-0000-000000000001',
+      });
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${trainingPlan.authorId}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${trainingPlan.authorId}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer())
-        .post(`/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`)
-        .send({ type: 'TOTAL_ACCESS' });
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+        }
+      );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -83,18 +114,21 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       const trainingPlan = trainingPlanFactory.build();
       const user = userFactory.build();
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer())
-        .post(`/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`)
-        .send({ type: 'TOTAL_ACCESS' });
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+        }
+      );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -111,18 +145,21 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer())
-        .post(`/training-plan/subscription/${trainingPlan.id}/${user.id}`)
-        .send({ type: 'TOTAL_ACCESS' });
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+        }
+      );
 
       expect(res.status).toBe(HttpStatus.CONFLICT);
     });
@@ -141,17 +178,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -168,17 +207,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -195,17 +236,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -222,21 +265,25 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
-
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
       );
 
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const body = (await res.json()) as { message: string };
+
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
-      expect(res.body.message).toBe('user not found');
+      expect(body.message).toBe('user not found');
     });
     it('should return not found status code when delete a subscription with invalid plan subscription id', async () => {
       const user = userFactory.build();
@@ -244,21 +291,24 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
-
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
       );
 
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      const body = (await res.json()) as { message: string };
+
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
-      expect(res.body.message).toBe('subscription not found');
+      expect(body.message).toBe('subscription not found');
     });
     it('should return bad request status code when delete a subscription with subscription status is in progress', async () => {
       const user = userFactory.build();
@@ -272,21 +322,25 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
-
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
       );
 
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const body = (await res.json()) as { message: string };
+
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(res.body.message).toBe(
+      expect(body.message).toBe(
         'Subscription status must be "not started" or "canceled"'
       );
     });
@@ -302,21 +356,25 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
-
-      const res = await request(app.getHttpServer()).delete(
-        `/training-plan/subscription/${trainingPlan.id}/${user.id}`
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
       );
 
+      const res = await fetch(
+        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const body = (await res.json()) as { message: string };
+
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(res.body.message).toBe(
+      expect(body.message).toBe(
         'Subscription status must be "not started" or "canceled"'
       );
     });
@@ -335,24 +393,28 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
     });
 
     it('should return a not found status code when plan subscription to in progress badly with invalid user id', async () => {
-      const user = userFactory.build();
+      const user = userFactory.build({
+        id: '00000000-0000-0000-0000-000000000001',
+      });
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
         userId: user.id,
@@ -363,17 +425,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -385,17 +449,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -413,17 +479,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -441,17 +509,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -469,17 +539,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -499,17 +571,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -527,17 +601,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -549,17 +625,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -577,17 +655,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -605,17 +685,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -633,17 +715,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -663,17 +747,18 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
-
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -691,17 +776,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -713,17 +800,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -741,17 +830,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -769,17 +860,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -797,17 +890,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -827,17 +922,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.OK);
@@ -855,17 +952,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -877,17 +976,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: false,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -905,17 +1006,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -933,17 +1036,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -961,17 +1066,19 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
-      nock('http://localhost:3000', {
-        encodedQueryParams: true,
-      })
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(`/identity/user/exists/${user.id}`)
-        .reply(200, {
-          exists: true,
-        });
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
-      const res = await request(app.getHttpServer()).put(
-        `/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`
+      const res = await fetch(
+        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);

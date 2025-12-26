@@ -1,13 +1,14 @@
-// src/module/identity/__test__/mock/logger.mock.ts
+import { mock } from 'bun:test';
 import { Module } from '@nestjs/common';
-import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
+import { AzureStorageService, StorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 
-export class MockAzureStorageService {
-  upload = jest.fn().mockResolvedValue(undefined);
-  delete = jest.fn().mockResolvedValue(undefined);
-  generateSasUrl = jest.fn((blobName: string) => {
-    return `https://fake.local/${blobName}?mockedToken=123`;
-  });
+export class MockAzureStorageService implements StorageService {
+  upload = mock<StorageService['upload']>().mockResolvedValue(undefined);
+  copy = mock<StorageService['copy']>().mockResolvedValue(undefined);
+  delete = mock<StorageService['delete']>().mockResolvedValue(undefined);
+  generateSasUrl = mock<StorageService['generateSasUrl']>().mockImplementation(
+    (blobName: string) => `https://fake.local/${blobName}?mockedToken=123`
+  );
 }
 
 @Module({

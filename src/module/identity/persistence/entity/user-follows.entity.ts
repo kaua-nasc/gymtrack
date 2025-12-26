@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({ name: 'user_follows' })
@@ -13,10 +13,10 @@ export class UserFollows extends DefaultEntity<UserFollows> {
   @ManyToOne(() => User, (user) => user.following, {
     onDelete: 'CASCADE',
   })
-  follower: User;
+  follower: Relation<User>;
 
   @ManyToOne(() => User, (user) => user.followers, {
     onDelete: 'CASCADE',
   })
-  following: User;
+  following: Relation<User>;
 }

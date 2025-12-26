@@ -18,7 +18,7 @@ export class TrainingPlanHttpClient {
         //Authorization: `Bearer PUT SOMETHING`,
       },
     };
-    const url = `${this.configService.get('trainingPlanApi').url}/training-plan/exists/${trainingPlanId}`;
+    const url = `${this.configService.get('trainingPlanApi.url')}/training-plan/exists/${trainingPlanId}`;
 
     const response = await this.httpClient.get<TrainingPlanApiExistsResponseDto>(
       url,

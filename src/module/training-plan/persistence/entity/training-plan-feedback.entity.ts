@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 
 @Entity({ name: 'training_plan_feedbacks' })
@@ -21,5 +21,5 @@ export class TrainingPlanFeedback extends DefaultEntity<TrainingPlanFeedback> {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'trainingPlanId' })
-  trainingPlan: TrainingPlan;
+  trainingPlan: Relation<TrainingPlan>;
 }

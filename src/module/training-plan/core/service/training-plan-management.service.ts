@@ -40,7 +40,8 @@ export class TrainingPlanManagementService {
     this.logger.log('Creating new training plan', {
       authorId: trainingPlanData.authorId,
     });
-    if (!(await this.identityUserServiceClient.userExists(trainingPlanData.authorId))) {
+    const a = await this.identityUserServiceClient.userExists(trainingPlanData.authorId);
+    if (!a) {
       this.logger.warn('User not found when creating training plan', {
         authorId: trainingPlanData.authorId,
       });
