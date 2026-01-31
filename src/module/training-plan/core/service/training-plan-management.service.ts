@@ -4,20 +4,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
+import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { CreateTrainingPlanRequestDto } from '../../http/rest/dto/request/create-training-plan-request.dto';
-import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
-import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
-import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
-import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
-import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
-import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
-import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
-import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
-import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { Day } from '../../persistence/entity/day.entity';
 import { Exercise } from '../../persistence/entity/exercise.entity';
+import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
+import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
+import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
+import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
+import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
+import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 
 @Injectable()
 export class TrainingPlanManagementService {
@@ -80,7 +80,7 @@ export class TrainingPlanManagementService {
     this.logger.log('Training plan deleted successfully', { trainingPlanId: id });
   }
 
-  async get(id: string) {
+  async get(id: string, userId: string | null = null) {
     this.logger.log('Fetching training plan details', { trainingPlanId: id });
     const trainingPlan = await this.trainingPlanRepository.find({
       where: { id },
@@ -97,11 +97,61 @@ export class TrainingPlanManagementService {
       trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
     }
 
-    trainingPlan.likesCount = await this.trainingPlanLikeRepository.count({
-      trainingPlanId: id,
-    });
+    const [likesCount] = await Promise.all([
+      this.trainingPlanLikeRepository.count({
+        trainingPlanId: id,
+      }),
+    ]);
+
+    trainingPlan.likesCount = likesCount;
+
+    if (userId && likesCount > 0) {
+      const user = await this.trainingPlanLikeRepository.find({
+        where: {
+          trainingPlanId: id,
+          likedBy: userId,
+        },
+      });
+      trainingPlan.likes = user ? [user] : [];
+    }
 
     this.logger.log('Training plan fetched successfully', { trainingPlanId: id });
+    return { ...trainingPlan };
+  }
+
+  async getLiked(id: string, userId: string) {
+    this.logger.log(' plan details', { trainingPlanId: id });
+    const trainingPlan = await this.trainingPlanRepository.find({
+      where: { id },
+      relations: { days: { exercises: true } },
+    });
+
+    if (!trainingPlan) {
+      this.logger.warn('Training plan not found', { trainingPlanId: id });
+      throw new NotFoundException();
+    }
+
+    if (trainingPlan.imageUrl) {
+      this.logger.log(`Generating SAS URL for profile picture for user: ${id}`);
+      trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
+    }
+
+    const [likesCount, userLiked] = await Promise.all([
+      this.trainingPlanLikeRepository.count({
+        trainingPlanId: id,
+      }),
+      this.trainingPlanLikeRepository.find({
+        where: {
+          trainingPlanId: id,
+          likedBy: userId,
+        },
+      }),
+    ]);
+
+    trainingPlan.likesCount = likesCount;
+    trainingPlan.likes = userLiked ? [userLiked] : [];
+    this.logger.log('Training', { trainingPlanId: id });
+    this.logger.log('Training', { trainingPlan: trainingPlan });
     return { ...trainingPlan };
   }
 

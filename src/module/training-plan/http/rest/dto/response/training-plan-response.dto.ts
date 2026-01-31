@@ -3,6 +3,7 @@ import { TrainingPlanLevel } from '@src/module/training-plan/core/enum/training-
 import { TrainingPlanType } from '@src/module/training-plan/core/enum/training-plan-type.enum';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { IsOptional, IsString } from 'class-validator';
+import { TrainingPlanLikeResponseDto } from './training-plan-like-response.dto';
 
 export class TrainingPlanResponseDto {
   @ApiProperty({
@@ -78,4 +79,16 @@ export class TrainingPlanResponseDto {
     example: 'Treino novo',
   })
   readonly description: string | null;
+
+  @ApiProperty({
+    description: 'Número total de likes do plano de treino',
+    example: 42,
+  })
+  likesCount: number | undefined | null;
+
+  @ApiProperty({
+    description: 'Lista de likes do plano de treino',
+    type: [TrainingPlanLikeResponseDto],
+  })
+  likes: TrainingPlanLikeResponseDto[] | undefined | null;
 }
