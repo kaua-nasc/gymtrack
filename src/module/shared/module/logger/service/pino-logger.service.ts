@@ -191,7 +191,6 @@ export class PinoLogger implements PinoMethods {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore args are union of tuple types
     this.logger[method](...args);
   }

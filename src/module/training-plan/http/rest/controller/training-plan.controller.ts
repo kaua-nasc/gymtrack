@@ -78,6 +78,11 @@ export class TrainingPlanController {
   @Get(':trainingPlanId')
   @ApiOperation({ summary: 'Busca um plano de treino pelo ID' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description: 'ID do usuário (opcional, usado para verificar se curtiu)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Plano de treino encontrado',
@@ -85,10 +90,15 @@ export class TrainingPlanController {
   })
   @ApiResponse({ status: 404, description: 'Plano de treino não encontrado' })
   async findOneTrainingPlanById(
-    @Param('trainingPlanId') trainingPlanId: string
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Query('userId') userId: string | null = null
   ): Promise<TrainingPlanResponseDto> {
-    const plan = await this.trainingPlanManagementService.get(trainingPlanId);
-    return { ...plan };
+    const plan = await this.trainingPlanManagementService.get(trainingPlanId, userId);
+    return {
+      ...plan,
+      likes: plan.likes.map((like) => ({ ...like })),
+      likesCount: plan.likesCount ?? null,
+    };
   }
 
   @Get('exists/:trainingPlanId')

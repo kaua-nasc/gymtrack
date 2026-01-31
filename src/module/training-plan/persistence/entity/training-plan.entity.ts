@@ -1,12 +1,12 @@
+import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { TrainingPlanLevel } from '@src/module/training-plan/core/enum/training-plan-level.enum';
 import { TrainingPlanType } from '@src/module/training-plan/core/enum/training-plan-type.enum';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
-import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { Day } from './day.entity';
-import { PlanSubscription } from './plan-subscription.entity';
 import { PlanAccessRequest } from './plan-access-request.entity';
 import { PlanParticipant } from './plan-participant.entity';
+import { PlanSubscription } from './plan-subscription.entity';
 import { TrainingPlanFeedback } from './training-plan-feedback.entity';
 import { TrainingPlanLike } from './training-plan-like.entity';
 
@@ -15,7 +15,11 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   @Column({ type: 'varchar', nullable: false, width: 255 })
   name: string;
 
-  @OneToMany(() => Day, (day) => day.trainingPlan, { cascade: true })
+  @OneToMany(
+    () => Day,
+    (day) => day.trainingPlan,
+    { cascade: true }
+  )
   days: Day[];
 
   @Column({ type: 'uuid', nullable: false })
@@ -48,14 +52,22 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @OneToMany(() => PlanSubscription, (subscription) => subscription.trainingPlan, {
-    cascade: true,
-  })
+  @OneToMany(
+    () => PlanSubscription,
+    (subscription) => subscription.trainingPlan,
+    {
+      cascade: true,
+    }
+  )
   planSubscriptions: PlanSubscription[];
 
-  @OneToMany(() => PlanAccessRequest, (request) => request.trainingPlan, {
-    cascade: true,
-  })
+  @OneToMany(
+    () => PlanAccessRequest,
+    (request) => request.trainingPlan,
+    {
+      cascade: true,
+    }
+  )
   accessRequests: PlanAccessRequest[];
 
   @OneToMany(
@@ -65,12 +77,20 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   )
   privateParticipants: PlanParticipant[];
 
-  @OneToMany(() => TrainingPlanFeedback, (feedback) => feedback.trainingPlan, {
-    cascade: true,
-  })
+  @OneToMany(
+    () => TrainingPlanFeedback,
+    (feedback) => feedback.trainingPlan,
+    {
+      cascade: true,
+    }
+  )
   feedbacks: TrainingPlanFeedback[];
 
-  @OneToMany(() => TrainingPlanLike, (like) => like.trainingPlan, { cascade: true })
+  @OneToMany(
+    () => TrainingPlanLike,
+    (like) => like.trainingPlan,
+    { cascade: true }
+  )
   likes: TrainingPlanLike[];
 
   likesCount: number;
