@@ -75,32 +75,6 @@ export class TrainingPlanController {
     return plans.map((p) => ({ ...p }));
   }
 
-  @Get(':trainingPlanId')
-  @ApiOperation({ summary: 'Busca um plano de treino pelo ID' })
-  @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiQuery({
-    name: 'userId',
-    required: false,
-    description: 'ID do usuário (opcional, usado para verificar se curtiu)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Plano de treino encontrado',
-    type: TrainingPlanResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Plano de treino não encontrado' })
-  async findOneTrainingPlanById(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Query('userId') userId: string | null = null
-  ): Promise<TrainingPlanResponseDto> {
-    const plan = await this.trainingPlanManagementService.get(trainingPlanId, userId);
-    return {
-      ...plan,
-      likes: plan.likes.map((like) => ({ ...like })),
-      likesCount: plan.likesCount ?? null,
-    };
-  }
-
   @Get('exists/:trainingPlanId')
   @ApiOperation({ summary: 'Verifica se um plano de treino existe' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
@@ -117,19 +91,6 @@ export class TrainingPlanController {
     return {
       exists: exists,
     };
-  }
-
-  @Delete(':trainingPlanId')
-  @ApiOperation({ summary: 'Deleta um plano de treino pelo ID' })
-  @ApiParam({
-    name: 'trainingPlanId',
-    description: 'ID do plano de treino a ser deletado',
-    example: 'c4b65c51-89a3-4f32-93e2-8a9f78b26c71',
-  })
-  @ApiResponse({ status: 200, description: 'Plano deletado com sucesso.' })
-  @ApiResponse({ status: 404, description: 'Plano não encontrado.' })
-  async deleteTrainingPlanById(@Param('trainingPlanId') id: string): Promise<void> {
-    await this.trainingPlanManagementService.delete(id);
   }
 
   @Post('feedback')
@@ -290,5 +251,44 @@ export class TrainingPlanController {
     @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
     return await this.trainingPlanManagementService.clone(userId, trainingPlanId);
+  }
+
+  @Get(':trainingPlanId')
+  @ApiOperation({ summary: 'Busca um plano de treino pelo ID' })
+  @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description: 'ID do usuário (opcional, usado para verificar se curtiu)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Plano de treino encontrado',
+    type: TrainingPlanResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Plano de treino não encontrado' })
+  async findOneTrainingPlanById(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Query('userId') userId: string | null = null
+  ): Promise<TrainingPlanResponseDto> {
+    const plan = await this.trainingPlanManagementService.get(trainingPlanId, userId);
+    return {
+      ...plan,
+      likes: plan.likes.map((like) => ({ ...like })),
+      likesCount: plan.likesCount ?? null,
+    };
+  }
+
+  @Delete(':trainingPlanId')
+  @ApiOperation({ summary: 'Deleta um plano de treino pelo ID' })
+  @ApiParam({
+    name: 'trainingPlanId',
+    description: 'ID do plano de treino a ser deletado',
+    example: 'c4b65c51-89a3-4f32-93e2-8a9f78b26c71',
+  })
+  @ApiResponse({ status: 200, description: 'Plano deletado com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Plano não encontrado.' })
+  async deleteTrainingPlanById(@Param('trainingPlanId') id: string): Promise<void> {
+    await this.trainingPlanManagementService.delete(id);
   }
 }
