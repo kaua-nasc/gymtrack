@@ -119,42 +119,6 @@ export class TrainingPlanManagementService {
     return { ...trainingPlan };
   }
 
-  async getLiked(id: string, userId: string) {
-    this.logger.log(' plan details', { trainingPlanId: id });
-    const trainingPlan = await this.trainingPlanRepository.find({
-      where: { id },
-      relations: { days: { exercises: true } },
-    });
-
-    if (!trainingPlan) {
-      this.logger.warn('Training plan not found', { trainingPlanId: id });
-      throw new NotFoundException();
-    }
-
-    if (trainingPlan.imageUrl) {
-      this.logger.log(`Generating SAS URL for profile picture for user: ${id}`);
-      trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
-    }
-
-    const [likesCount, userLiked] = await Promise.all([
-      this.trainingPlanLikeRepository.count({
-        trainingPlanId: id,
-      }),
-      this.trainingPlanLikeRepository.find({
-        where: {
-          trainingPlanId: id,
-          likedBy: userId,
-        },
-      }),
-    ]);
-
-    trainingPlan.likesCount = likesCount;
-    trainingPlan.likes = userLiked ? [userLiked] : [];
-    this.logger.log('Training', { trainingPlanId: id });
-    this.logger.log('Training', { trainingPlan: trainingPlan });
-    return { ...trainingPlan };
-  }
-
   async exists(id: string) {
     const trainingPlan = await this.trainingPlanRepository.find({
       where: { id },
