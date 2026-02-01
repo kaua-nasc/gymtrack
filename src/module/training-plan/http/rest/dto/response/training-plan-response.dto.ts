@@ -90,5 +90,5 @@ export class TrainingPlanResponseDto {
     description: 'Lista de likes do plano de treino',
     type: [TrainingPlanLikeResponseDto],
   })
-  likes: TrainingPlanLikeResponseDto[] | undefined | null;
+  likes?: TrainingPlanLikeResponseDto[] | undefined | null;
 }

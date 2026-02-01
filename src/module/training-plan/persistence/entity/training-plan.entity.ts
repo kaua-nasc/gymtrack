@@ -91,7 +91,7 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
     (like) => like.trainingPlan,
     { cascade: true }
   )
-  likes: TrainingPlanLike[];
+  likes?: TrainingPlanLike[];
 
   likesCount: number;
 }

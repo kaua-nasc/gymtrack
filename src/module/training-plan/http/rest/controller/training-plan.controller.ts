@@ -272,9 +272,10 @@ export class TrainingPlanController {
     @Query('userId') userId: string | null = null
   ): Promise<TrainingPlanResponseDto> {
     const plan = await this.trainingPlanManagementService.get(trainingPlanId, userId);
+    console.log(plan);
     return {
       ...plan,
-      likes: plan.likes.map((like) => ({ ...like })),
+      likes: plan.likes?.map((like) => ({ ...like })),
       likesCount: plan.likesCount ?? null,
     };
   }
