@@ -1,14 +1,19 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import {
+  Brackets,
   EntityManager,
   EntityTarget,
   FindManyOptions,
   FindOneOptions,
   FindOptionsWhere,
   Repository,
-  SelectQueryBuilder,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity.js';
+
+export interface Cursor {
+  value: string | number | Date;
+  id: string;
+}
 
 export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   protected repository: Repository<T>;
@@ -29,7 +34,7 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
 
   async findOneById(id: string, relations?: string[]): Promise<T | null> {
     return this.repository.findOne({
-      where: { id } as FindOptionsWhere<T>,
+      where: { id } as unknown as FindOptionsWhere<T>,
       relations,
     });
   }
@@ -44,7 +49,7 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
 
   async exists(id: string): Promise<boolean> {
     return this.repository.exists({
-      where: { id } as FindOptionsWhere<T>,
+      where: { id } as unknown as FindOptionsWhere<T>,
     });
   }
 
@@ -55,7 +60,7 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   }
 
   async delete(options: FindOptionsWhere<T>): Promise<void> {
-    await this.repository.delete(options);
+    await this.repository.softDelete(options);
   }
 
   async update(criteria: FindOptionsWhere<T>, partialEntity: QueryDeepPartialEntity<T>) {
@@ -73,23 +78,36 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   async findManyWithCursor(
     options: FindOptionsWhere<T> = {},
     limit: number = 10,
-    cursor?: string,
+    cursor?: Cursor,
     orderBy: keyof T = 'createdAt' as keyof T
-  ): Promise<{ data: T[]; nextCursor: string | null }> {
-    const qb: SelectQueryBuilder<T> = this.repository
+  ): Promise<{ data: T[]; nextCursor: Cursor | null }> {
+    const qb = this.repository
       .createQueryBuilder('entity')
       .where(options)
       .orderBy(`entity.${orderBy.toString()}`, 'DESC')
+      .addOrderBy('entity.id', 'DESC')
       .take(limit);
 
     if (cursor) {
-      qb.andWhere(`entity.${orderBy.toString()} < :cursor`, { cursor });
+      qb.andWhere(
+        new Brackets((or) => {
+          or.where(`entity.${orderBy.toString()} < :val`, { val: cursor.value }).orWhere(
+            `entity.${orderBy.toString()} = :val AND entity.id < :id`,
+            { val: cursor.value, id: cursor.id }
+          );
+        })
+      );
     }
 
     const data = await qb.getMany();
 
     const nextCursor =
-      data.length > 0 ? (data[data.length - 1][orderBy] as unknown as string) : null;
+      data.length === limit
+        ? {
+            value: data[data.length - 1][orderBy] as unknown as string | number | Date,
+            id: (data[data.length - 1] as unknown as DefaultEntity<T>).id,
+          }
+        : null;
 
     return { data, nextCursor };
   }

@@ -1,15 +1,16 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@src/module/shared/module/config/config.module';
-import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
-import { TrainingPlanRepository } from './repository/training-plan.repository';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
-import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
-import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
+import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { DayRepository } from './repository/day.repository';
-import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
 import { ExerciseRepository } from './repository/exercise.repository';
+import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
+import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
+import { TrainingPlanRepository } from './repository/training-plan.repository';
+import { TrainingPlanCommentRepository } from './repository/training-plan-comment.repository';
 import { TrainingPlanFeedbackRepository } from './repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from './repository/training-plan-like.repository';
+import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -33,19 +34,18 @@ export class TrainingPlanPersistenceModule {
         PlanDayProgressRepository,
         ExerciseRepository,
         TrainingPlanFeedbackRepository,
-        // TrainingPlanProgressRepository,
         TrainingPlanLikeRepository,
+        TrainingPlanCommentRepository,
       ],
       exports: [
         PlanSubscriptionRepository,
         TrainingPlanRepository,
         DayRepository,
         PlanDayProgressRepository,
-        // DayRepository,
         TrainingPlanFeedbackRepository,
         ExerciseRepository,
-        //TrainingPlanProgressRepository,
         TrainingPlanLikeRepository,
+        TrainingPlanCommentRepository,
       ],
     };
   }

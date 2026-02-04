@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { Cursor } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
@@ -13,8 +14,10 @@ import { CreateTrainingPlanRequestDto } from '../../http/rest/dto/request/create
 import { Day } from '../../persistence/entity/day.entity';
 import { Exercise } from '../../persistence/entity/exercise.entity';
 import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
+import { TrainingPlanComment } from '../../persistence/entity/training-plan-comment.entity';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
+import { TrainingPlanCommentRepository } from '../../persistence/repository/training-plan-comment.repository';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
@@ -25,6 +28,7 @@ export class TrainingPlanManagementService {
     private readonly trainingPlanRepository: TrainingPlanRepository,
     private readonly trainingPlanFeedbackRepository: TrainingPlanFeedbackRepository,
     private readonly trainingPlanLikeRepository: TrainingPlanLikeRepository,
+    private readonly trainingPlanCommentRepository: TrainingPlanCommentRepository,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
     private readonly logger: AppLogger,
@@ -237,7 +241,6 @@ export class TrainingPlanManagementService {
       userId: newFeedback.userId,
     });
   }
-
   async getFeedbacks(
     trainingPlanId: string,
     limit: number,
@@ -258,35 +261,32 @@ export class TrainingPlanManagementService {
       lastCursor,
     });
 
-    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
-    if (!trainingPlan) {
-      this.logger.warn('Attempted to fetch feedbacks for non-existing plan', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
+    const decodedCursor = lastCursor
+      ? JSON.parse(Buffer.from(lastCursor, 'base64').toString())
+      : undefined;
 
-    const { data: feedbacks, nextCursor } =
+    const { data: feedbacks, nextCursor: rawNextCursor } =
       await this.trainingPlanFeedbackRepository.findManyWithCursor(
-        { trainingPlanId: trainingPlan.id },
+        { trainingPlanId },
         limit,
-        lastCursor,
+        decodedCursor,
         'createdAt'
       );
 
     this.logger.log('Feedbacks fetched successfully', {
       trainingPlanId,
-      feedbackCount: feedbacks?.length ?? 0,
-      hasNextPage: !!nextCursor,
+      feedbackCount: feedbacks.length,
+      hasNextPage: !!rawNextCursor,
     });
 
+    const nextCursorString = rawNextCursor
+      ? Buffer.from(JSON.stringify(rawNextCursor)).toString('base64')
+      : null;
+
     return {
-      data:
-        feedbacks.map((f) => ({
-          ...f,
-        })) ?? [],
-      nextCursor,
-      hasNextPage: !!nextCursor,
+      data: feedbacks,
+      nextCursor: nextCursorString,
+      hasNextPage: !!nextCursorString,
     };
   }
 
@@ -479,5 +479,109 @@ export class TrainingPlanManagementService {
     }
 
     await this.trainingPlanRepository.save(clonedTrainingPlan);
+  }
+
+  async listComments(
+    trainingPlanId: string,
+    cursor?: string,
+    limit: number = 10
+  ): Promise<TrainingPlanComment[]> {
+    this.logger.log('Listing comments for training plan', { trainingPlanId });
+
+    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
+    if (!trainingPlan) {
+      this.logger.warn('Attempted to list comments for non-existing training plan', {
+        trainingPlanId,
+      });
+      throw new NotFoundException('training plan not found');
+    }
+
+    const decodedCursor: Cursor = cursor
+      ? JSON.parse(Buffer.from(cursor, 'base64').toString())
+      : undefined;
+
+    if (decodedCursor && decodedCursor.value) {
+      decodedCursor.value = new Date(decodedCursor.value);
+    }
+
+    const { data: comments } =
+      await this.trainingPlanCommentRepository.findManyWithCursor(
+        { trainingPlanId },
+        limit,
+        decodedCursor,
+        'createdAt'
+      );
+
+    this.logger.log('Comments listed successfully', {
+      trainingPlanId,
+      commentCount: comments.length,
+    });
+
+    return comments;
+  }
+
+  async addComment(
+    trainingPlanId: string,
+    userId: string,
+    message: string
+  ): Promise<void> {
+    this.logger.log('Adding comment to training plan', {
+      trainingPlanId,
+      userId,
+    });
+
+    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
+    if (!trainingPlan) {
+      this.logger.warn('Attempted to comment on non-existing training plan', {
+        trainingPlanId,
+      });
+      throw new NotFoundException('training plan not found');
+    }
+
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Attempted to comment by non-existing user', { userId });
+      throw new NotFoundException('user not found');
+    }
+
+    const comment = new TrainingPlanComment({
+      authorId: userId,
+      content: message,
+      trainingPlanId: trainingPlan.id,
+    });
+
+    await this.trainingPlanCommentRepository.save(comment);
+
+    this.logger.log('Comment added successfully', {
+      trainingPlanId,
+      userId,
+    });
+  }
+
+  async removeComment(commentId: string, userId: string): Promise<void> {
+    this.logger.log('Removing comment from training plan', {
+      commentId,
+      userId,
+    });
+
+    const comment = await this.trainingPlanCommentRepository.findOneById(commentId);
+    if (!comment) {
+      this.logger.warn('Attempted to remove non-existing comment', { commentId });
+      throw new NotFoundException('comment not found');
+    }
+
+    if (comment.authorId !== userId) {
+      this.logger.warn('User attempted to remove comment they do not own', {
+        commentId,
+        userId,
+      });
+      throw new BadRequestException('cannot remove comment of another user');
+    }
+
+    await this.trainingPlanCommentRepository.delete({ id: commentId });
+
+    this.logger.log('Comment removed successfully', {
+      commentId,
+      userId,
+    });
   }
 }

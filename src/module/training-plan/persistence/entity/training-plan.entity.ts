@@ -9,6 +9,7 @@ import { PlanParticipant } from './plan-participant.entity';
 import { PlanSubscription } from './plan-subscription.entity';
 import { TrainingPlanFeedback } from './training-plan-feedback.entity';
 import { TrainingPlanLike } from './training-plan-like.entity';
+import { TrainingPlanComment } from './training-plan-comment.entity';
 
 @Entity({ name: 'training_plans' })
 export class TrainingPlan extends DefaultEntity<TrainingPlan> {
@@ -94,4 +95,11 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   likes?: TrainingPlanLike[];
 
   likesCount: number;
+
+  @OneToMany(
+    () => TrainingPlanComment,
+    (comment) => comment.trainingPlan,
+    { cascade: true }
+  )
+  comments?: TrainingPlanComment[];
 }
