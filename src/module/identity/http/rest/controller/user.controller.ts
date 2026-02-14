@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
@@ -34,6 +35,7 @@ import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guar
 import { Public } from '../../../../shared/module/auth/guard/jwt-auth.guard';
 
 @ApiTags('Users')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('identity/user')
 export class UserController {
