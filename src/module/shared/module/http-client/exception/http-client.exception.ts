@@ -6,8 +6,11 @@ export class HttpClientInternalException extends Error {
 }
 
 export class HttpClientException extends Error {
-  constructor(message: string) {
+  public cause: unknown;
+
+  constructor(message: string, cause?: unknown) {
     super(message);
     this.name = this.constructor.name;
+    this.cause = cause;
   }
 }

@@ -45,12 +45,14 @@ export const factory = (): Config => {
     },
     trainingPlanApi: {
       url: process.env.TRAINING_PLAN_API,
+      serviceToken: process.env.TRAINING_PLAN_API_SERVICE_TOKEN,
     },
     billingApi: {
       url: process.env.BILLING_API_URL,
     },
     identityApi: {
       url: process.env.IDENTITY_API,
+      serviceToken: process.env.IDENTITY_API_SERVICE_TOKEN,
     },
   });
 

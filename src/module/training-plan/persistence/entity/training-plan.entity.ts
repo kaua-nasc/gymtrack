@@ -53,6 +53,8 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
+  likedByCurrentUser?: boolean;
+
   @OneToMany(
     () => PlanSubscription,
     (subscription) => subscription.trainingPlan,

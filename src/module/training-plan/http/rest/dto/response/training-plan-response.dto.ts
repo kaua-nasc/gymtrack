@@ -91,4 +91,10 @@ export class TrainingPlanResponseDto {
     type: [TrainingPlanLikeResponseDto],
   })
   likes?: TrainingPlanLikeResponseDto[] | undefined | null;
+
+  @ApiProperty({
+    description: 'Indica se o plano de treino é curtido pelo usuário atual',
+    example: true,
+  })
+  likedByCurrentUser?: boolean;
 }
