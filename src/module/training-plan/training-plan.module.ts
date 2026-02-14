@@ -16,6 +16,8 @@ import { ExerciseController } from './http/rest/controller/exercise.controller';
 import { ExerciseManagementService } from './core/service/exercise-management.service';
 import { StorageModule } from '../shared/module/storage/storage.module';
 import { AuthModule } from '../shared/module/auth/auth.module';
+import { ExerciseLogController } from './http/rest/controller/exercise-log.controller';
+import { ExerciseLogService } from './core/service/exercise-log.service';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { AuthModule } from '../shared/module/auth/auth.module';
     DayManagementService,
     ExerciseManagementService,
     TrainingPlanPublicApiProvider,
+    ExerciseLogService,
     {
       provide: IdentityUserExistsApi,
       useExisting: IdentityHttpClient,
@@ -42,6 +45,7 @@ import { AuthModule } from '../shared/module/auth/auth.module';
     PlanSubscriptionController,
     DayController,
     ExerciseController,
+    ExerciseLogController,
   ],
   exports: [TrainingPlanPublicApiProvider],
 })

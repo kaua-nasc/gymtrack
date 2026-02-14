@@ -11,6 +11,7 @@ import { TrainingPlanCommentRepository } from './repository/training-plan-commen
 import { TrainingPlanFeedbackRepository } from './repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from './repository/training-plan-like.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
+import { ExerciseLogRepository } from './repository/exercise-log.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -36,6 +37,7 @@ export class TrainingPlanPersistenceModule {
         TrainingPlanFeedbackRepository,
         TrainingPlanLikeRepository,
         TrainingPlanCommentRepository,
+        ExerciseLogRepository,
       ],
       exports: [
         PlanSubscriptionRepository,
@@ -46,6 +48,7 @@ export class TrainingPlanPersistenceModule {
         ExerciseRepository,
         TrainingPlanLikeRepository,
         TrainingPlanCommentRepository,
+        ExerciseLogRepository,
       ],
     };
   }
