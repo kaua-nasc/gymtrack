@@ -3,7 +3,9 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Scope,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { Cursor } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
@@ -22,7 +24,7 @@ import { TrainingPlanFeedbackRepository } from '../../persistence/repository/tra
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class TrainingPlanManagementService {
   constructor(
     private readonly trainingPlanRepository: TrainingPlanRepository,
@@ -32,7 +34,8 @@ export class TrainingPlanManagementService {
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
     private readonly logger: AppLogger,
-    private readonly storageService: AzureStorageService
+    private readonly storageService: AzureStorageService,
+    @Inject(REQUEST) private readonly request: { user: { id: string } }
   ) {}
 
   async traningPlanExists(trainingPlanId: string) {
@@ -84,7 +87,7 @@ export class TrainingPlanManagementService {
     this.logger.log('Training plan deleted successfully', { trainingPlanId: id });
   }
 
-  async get(id: string, userId: string | null = null) {
+  async get(id: string) {
     this.logger.log('Fetching training plan details', { trainingPlanId: id });
     const trainingPlan = await this.trainingPlanRepository.find({
       where: { id },
@@ -108,7 +111,7 @@ export class TrainingPlanManagementService {
     ]);
 
     trainingPlan.likesCount = likesCount;
-
+    const userId = this.request.user.id;
     if (userId && likesCount > 0) {
       const user = await this.trainingPlanLikeRepository.find({
         where: {
@@ -134,8 +137,9 @@ export class TrainingPlanManagementService {
     return exists;
   }
 
-  async list(userId: string | null = null) {
-    this.logger.log('Listing all training plans');
+  async list() {
+    const userId = this.request.user.id;
+    this.logger.log('Listing all training plans', { userId });
 
     let plans = await this.trainingPlanRepository.findMany({
       relations: {
@@ -202,13 +206,13 @@ export class TrainingPlanManagementService {
 
   async giveFeedback(newFeedback: {
     trainingPlanId: string;
-    userId: string;
     rating: number;
     message: string | null;
   }) {
+    const userId = this.request.user.id;
     this.logger.log('Giving feedback to training plan', {
       trainingPlanId: newFeedback.trainingPlanId,
-      userId: newFeedback.userId,
+      userId,
       rating: newFeedback.rating,
     });
 
@@ -223,23 +227,23 @@ export class TrainingPlanManagementService {
       throw new NotFoundException('training plan not found');
     }
 
-    if (trainingPlan?.authorId === newFeedback.userId) {
+    if (trainingPlan?.authorId === userId) {
       this.logger.warn('Training plan author attempted to give feedback to own plan', {
         trainingPlanId: newFeedback.trainingPlanId,
-        userId: newFeedback.userId,
+        userId,
       });
       throw new BadRequestException(
         'training plan author cannot give feedback to your training plan'
       );
     }
 
-    if (!(await this.identityUserServiceClient.userExists(newFeedback.userId))) {
-      this.logger.warn('Feedback failed: user not found', { userId: newFeedback.userId });
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      this.logger.warn('Feedback failed: user not found', { userId });
       throw new NotFoundException('user not found');
     }
 
     const feedback = new TrainingPlanFeedback({
-      userId: newFeedback.userId,
+      userId,
       trainingPlanId: newFeedback.trainingPlanId,
       rating: newFeedback.rating,
       message: newFeedback.message,
@@ -248,7 +252,7 @@ export class TrainingPlanManagementService {
     await this.trainingPlanFeedbackRepository.save(feedback);
     this.logger.log('Feedback saved successfully', {
       trainingPlanId: newFeedback.trainingPlanId,
-      userId: newFeedback.userId,
+      userId,
     });
   }
   async getFeedbacks(
@@ -330,7 +334,8 @@ export class TrainingPlanManagementService {
     );
   }
 
-  async like(trainingPlanId: string, userId: string) {
+  async like(trainingPlanId: string) {
+    const userId = this.request.user.id;
     this.logger.log(
       `Starting like operation. trainingPlanId=${trainingPlanId}, userId=${userId}`
     );
@@ -400,7 +405,8 @@ export class TrainingPlanManagementService {
     this.logger.log(`Like operation completed successfully.`);
   }
 
-  async removeLike(trainingPlanId: string, userId: string) {
+  async removeLike(trainingPlanId: string) {
+    const userId = this.request.user.id;
     this.logger.log(
       `Starting removeLike operation. trainingPlanId=${trainingPlanId}, userId=${userId}`
     );
@@ -426,7 +432,9 @@ export class TrainingPlanManagementService {
     this.logger.log(`Remove like operation completed successfully.`);
   }
 
-  async clone(userId: string, trainingPlanId: string) {
+  async clone(trainingPlanId: string) {
+    const userId = this.request.user.id;
+    this.logger.log('Cloning training plan', { userId, trainingPlanId });
     if (!(await this.identityUserServiceClient.userExists(userId))) {
       throw new NotFoundException('user not found');
     }
@@ -530,11 +538,8 @@ export class TrainingPlanManagementService {
     return comments;
   }
 
-  async addComment(
-    trainingPlanId: string,
-    userId: string,
-    message: string
-  ): Promise<void> {
+  async addComment(trainingPlanId: string, message: string): Promise<void> {
+    const userId = this.request.user.id;
     this.logger.log('Adding comment to training plan', {
       trainingPlanId,
       userId,
@@ -567,7 +572,8 @@ export class TrainingPlanManagementService {
     });
   }
 
-  async removeComment(commentId: string, userId: string): Promise<void> {
+  async removeComment(commentId: string): Promise<void> {
+    const userId = this.request.user.id;
     this.logger.log('Removing comment from training plan', {
       commentId,
       userId,

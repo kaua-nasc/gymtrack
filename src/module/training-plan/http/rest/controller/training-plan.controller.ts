@@ -43,20 +43,13 @@ export class TrainingPlanController {
 
   @Get()
   @ApiOperation({ summary: 'Lista todos os planos de treino' })
-  @ApiQuery({
-    name: 'userId',
-    required: false,
-    description: 'ID do usuário (opcional, usado para verificar se curtiu)',
-  })
   @ApiResponse({
     status: 200,
     description: 'Lista de planos de treino',
     type: [TrainingPlanResponseDto],
   })
-  async list(
-    @Query('userId') userId: string | null = null
-  ): Promise<TrainingPlanResponseDto[]> {
-    const plans = await this.trainingPlanManagementService.list(userId);
+  async list(): Promise<TrainingPlanResponseDto[]> {
+    const plans = await this.trainingPlanManagementService.list();
     return plans.map((p) => ({ ...p }));
   }
 
@@ -216,16 +209,8 @@ export class TrainingPlanController {
     required: true,
     description: 'ID of the training plan',
   })
-  @ApiParam({
-    name: 'userId',
-    required: true,
-    description: 'ID of the user liking the training plan',
-  })
-  async like(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
-  ) {
-    await this.trainingPlanManagementService.like(trainingPlanId, userId);
+  async like(@Param('trainingPlanId') trainingPlanId: string) {
+    await this.trainingPlanManagementService.like(trainingPlanId);
   }
 
   @Delete('like/:trainingPlanId/:userId')
@@ -237,16 +222,8 @@ export class TrainingPlanController {
     required: true,
     description: 'ID of the training plan',
   })
-  @ApiParam({
-    name: 'userId',
-    required: true,
-    description: 'ID of the user removing the like',
-  })
-  async removeLike(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
-  ) {
-    await this.trainingPlanManagementService.removeLike(trainingPlanId, userId);
+  async removeLike(@Param('trainingPlanId') trainingPlanId: string) {
+    await this.trainingPlanManagementService.removeLike(trainingPlanId);
   }
 
   @Post('clone/:userId/:trainingPlanId')
@@ -254,20 +231,14 @@ export class TrainingPlanController {
   @ApiOperation({ summary: 'Clona um plano de treino existente' })
   @ApiResponse({ status: 201, description: 'Plano de treino clonado com sucesso' })
   async cloneTrainingPlan(
-    @Param('userId') userId: string,
     @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
-    return await this.trainingPlanManagementService.clone(userId, trainingPlanId);
+    return await this.trainingPlanManagementService.clone(trainingPlanId);
   }
 
   @Get(':trainingPlanId')
   @ApiOperation({ summary: 'Busca um plano de treino pelo ID' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiQuery({
-    name: 'userId',
-    required: false,
-    description: 'ID do usuário (opcional, usado para verificar se curtiu)',
-  })
   @ApiResponse({
     status: 200,
     description: 'Plano de treino encontrado',
@@ -275,10 +246,9 @@ export class TrainingPlanController {
   })
   @ApiResponse({ status: 404, description: 'Plano de treino não encontrado' })
   async findOneTrainingPlanById(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Query('userId') userId: string | null = null
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<TrainingPlanResponseDto> {
-    const plan = await this.trainingPlanManagementService.get(trainingPlanId, userId);
+    const plan = await this.trainingPlanManagementService.get(trainingPlanId);
 
     return {
       ...plan,
@@ -352,10 +322,6 @@ export class TrainingPlanController {
     name: 'trainingPlanId',
     description: 'ID do plano de treino',
   })
-  @ApiParam({
-    name: 'userId',
-    description: 'ID do usuário que está comentando',
-  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -370,10 +336,9 @@ export class TrainingPlanController {
   @ApiResponse({ status: 201, description: 'Comentário adicionado com sucesso' })
   async addComment(
     @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string,
     @Body('message') message: string
   ) {
-    await this.trainingPlanManagementService.addComment(trainingPlanId, userId, message);
+    await this.trainingPlanManagementService.addComment(trainingPlanId, message);
   }
 
   @Delete('comments/:commentId/:userId')
@@ -382,15 +347,8 @@ export class TrainingPlanController {
     name: 'commentId',
     description: 'ID do comentário a ser removido',
   })
-  @ApiParam({
-    name: 'userId',
-    description: 'ID do usuário que está removendo o comentário',
-  })
   @ApiResponse({ status: 200, description: 'Comentário removido com sucesso' })
-  async removeComment(
-    @Param('commentId') commentId: string,
-    @Param('userId') userId: string
-  ) {
-    await this.trainingPlanManagementService.removeComment(commentId, userId);
+  async removeComment(@Param('commentId') commentId: string) {
+    await this.trainingPlanManagementService.removeComment(commentId);
   }
 }
