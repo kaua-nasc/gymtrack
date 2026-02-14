@@ -1,11 +1,19 @@
 import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { ExerciseManagementService } from '@src/module/training-plan/core/service/exercise-management.service';
 import { CreateExerciseRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-exercise-request.dto';
 import { ExerciseResponseDto } from '../dto/response/exercise-response.dto';
 
 @ApiTags('Exercises')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('exercise')
 export class ExerciseController {

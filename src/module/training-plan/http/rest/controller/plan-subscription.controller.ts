@@ -8,7 +8,13 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { PlanSubscriptionManagementService } from '@src/module/training-plan/core/service/plan-subscription-management.service';
 import { CreatePlanSubscriptionRequestDto } from '../dto/request/create-plan-subscription-request.dto';
@@ -17,6 +23,7 @@ import { PlanSubscriptionExistsResponseDto } from '../dto/response/plan-subscrip
 import { PlanSubscriptionResponseDto } from '../dto/response/plan-subscription-response.dto';
 
 @ApiTags('Plan Subscriptions')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('training-plan/subscription')
 export class PlanSubscriptionController {

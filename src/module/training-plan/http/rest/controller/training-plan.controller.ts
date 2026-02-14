@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
@@ -32,6 +33,7 @@ import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-f
 import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 
 @ApiTags('Training Plans')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('training-plan')
 export class TrainingPlanController {
