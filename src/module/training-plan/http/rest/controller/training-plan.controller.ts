@@ -200,7 +200,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.addImage(trainingPlanId, file.buffer);
   }
 
-  @Post('like/:trainingPlanId/:userId')
+  @Post('like/:trainingPlanId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Like a training plan' })
   @ApiResponse({ status: 200, description: 'Training plan liked successfully' })
@@ -213,7 +213,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.like(trainingPlanId);
   }
 
-  @Delete('like/:trainingPlanId/:userId')
+  @Delete('like/:trainingPlanId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove like from a training plan' })
   @ApiResponse({ status: 200, description: 'Like removed successfully' })
@@ -226,7 +226,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.removeLike(trainingPlanId);
   }
 
-  @Post('clone/:userId/:trainingPlanId')
+  @Post('clone/:trainingPlanId')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Clona um plano de treino existente' })
   @ApiResponse({ status: 201, description: 'Plano de treino clonado com sucesso' })
@@ -316,7 +316,7 @@ export class TrainingPlanController {
     return comments.map((c) => ({ ...c }));
   }
 
-  @Post('comments/:trainingPlanId/:userId')
+  @Post('comments/:trainingPlanId')
   @ApiOperation({ summary: 'Adiciona um comentário a um plano de treino' })
   @ApiParam({
     name: 'trainingPlanId',
@@ -341,7 +341,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.addComment(trainingPlanId, message);
   }
 
-  @Delete('comments/:commentId/:userId')
+  @Delete('comments/:commentId')
   @ApiOperation({ summary: 'Remove um comentário de um plano de treino' })
   @ApiParam({
     name: 'commentId',
