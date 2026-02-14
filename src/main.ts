@@ -28,6 +28,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, documentFactory);
 
   app.useLogger(app.get(AppLogger));
-  await app.listen(8080);
+  await app.listen(Number(process.env.PORT));
 }
 bootstrap();
