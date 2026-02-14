@@ -11,11 +11,13 @@ export class TrainingPlanHttpClient {
   ) {}
 
   async traningPlanExists(trainingPlanId: string): Promise<boolean> {
+    const serviceToken = this.configService.get('trainingPlanApi.serviceToken');
+
     const options = {
       method: 'GET',
       headers: {
         accept: 'application/json',
-        //Authorization: `Bearer PUT SOMETHING`,
+        Authorization: `Bearer ${serviceToken}`,
       },
     };
     const url = `${this.configService.get('trainingPlanApi.url')}/training-plan/exists/${trainingPlanId}`;

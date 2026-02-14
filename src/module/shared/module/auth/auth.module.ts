@@ -16,10 +16,6 @@ import { JwtAuthGuard } from './guard/jwt-auth.guard';
       inject: [ConfigService],
       global: true,
       useFactory: async (configService: ConfigService) => {
-        console.log(
-          'Registering JwtModule with secret:',
-          configService.get('auth.jwtSecret')
-        );
         return {
           secret: configService.get('auth.jwtSecret'),
           verifyOptions: { algorithms: ['HS256'] },

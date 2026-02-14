@@ -52,6 +52,7 @@ export const storageSchema = z.object({
 
 export const trainingPlanApiSchema = z.object({
   url: z.string(),
+  serviceToken: z.string().nonempty(),
 });
 
 const billingApiSchema = z.object({
@@ -60,6 +61,7 @@ const billingApiSchema = z.object({
 
 const identityApiSchema = z.object({
   url: z.string(),
+  serviceToken: z.string().nonempty(),
 });
 
 export const configSchema = z.object({

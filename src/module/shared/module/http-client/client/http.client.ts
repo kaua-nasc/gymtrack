@@ -15,7 +15,11 @@ export class HttpClient {
       const data = await response.json();
       return data as T;
     } catch (error) {
-      throw new HttpClientException(`Error fetching data from ${url}: ${error}`);
+      console.error('Underlying HTTP Client Error:', error);
+      throw new HttpClientException(
+        `Error fetching data from ${url}: ${error.message}`,
+        error
+      );
     }
   }
 }

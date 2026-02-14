@@ -116,7 +116,7 @@ export class TrainingPlanManagementService {
           likedBy: userId,
         },
       });
-      trainingPlan.likes = user ? [user] : [];
+      trainingPlan.likedByCurrentUser = user ? true : false;
     }
 
     this.logger.log('Training plan fetched successfully', { trainingPlanId: id });
@@ -134,7 +134,7 @@ export class TrainingPlanManagementService {
     return exists;
   }
 
-  async list() {
+  async list(userId: string | null = null) {
     this.logger.log('Listing all training plans');
 
     let plans = await this.trainingPlanRepository.findMany({
@@ -155,6 +155,16 @@ export class TrainingPlanManagementService {
       plan.likesCount = await this.trainingPlanLikeRepository.count({
         trainingPlanId: plan.id,
       });
+
+      if (userId && plan.likesCount > 0) {
+        const like = await this.trainingPlanLikeRepository.find({
+          where: {
+            trainingPlanId: plan.id,
+            likedBy: userId,
+          },
+        });
+        plan.likedByCurrentUser = like ? true : false;
+      }
 
       aux.push(plan);
     }

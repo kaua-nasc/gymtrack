@@ -41,15 +41,22 @@ export class TrainingPlanController {
     private readonly trainingPlanManagementService: TrainingPlanManagementService
   ) {}
 
-  @Get('list')
+  @Get()
   @ApiOperation({ summary: 'Lista todos os planos de treino' })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description: 'ID do usuário (opcional, usado para verificar se curtiu)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de planos de treino',
     type: [TrainingPlanResponseDto],
   })
-  async list(): Promise<TrainingPlanResponseDto[]> {
-    const plans = await this.trainingPlanManagementService.list();
+  async list(
+    @Query('userId') userId: string | null = null
+  ): Promise<TrainingPlanResponseDto[]> {
+    const plans = await this.trainingPlanManagementService.list(userId);
     return plans.map((p) => ({ ...p }));
   }
 
