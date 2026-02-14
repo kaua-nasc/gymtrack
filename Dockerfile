@@ -21,7 +21,7 @@ ENV NODE_ENV=production
 # Define a variável para o tsconfig-paths encontrar o arquivo
 ENV TS_NODE_PROJECT=tsconfig.json
 
-EXPOSE 3000
+EXPOSE 8080
 
 # Executa usando o registro do tsconfig-paths
 CMD ["node", "-r", "tsconfig-paths/register", "dist/main.js"]
