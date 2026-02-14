@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { ClsModule } from 'nestjs-cls';
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/service/config.service';
@@ -31,7 +31,7 @@ import { JwtAuthGuard } from './guard/jwt-auth.guard';
       },
     }),
   ],
-  providers: [JwtAuthGuard, JwtService],
-  exports: [JwtAuthGuard, JwtService],
+  providers: [JwtAuthGuard],
+  exports: [JwtAuthGuard],
 })
 export class AuthModule {}
