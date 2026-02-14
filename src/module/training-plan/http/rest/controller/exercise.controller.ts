@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { ExerciseManagementService } from '@src/module/training-plan/core/service/exercise-management.service';
 import { CreateExerciseRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-exercise-request.dto';
 import { ExerciseResponseDto } from '../dto/response/exercise-response.dto';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Exercises')
+@UseGuards(JwtAuthGuard)
 @Controller('exercise')
 export class ExerciseController {
   constructor(private readonly exerciseManagementService: ExerciseManagementService) {}

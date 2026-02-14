@@ -9,6 +9,9 @@ export const factory = (): Config => {
     database: {
       url: process.env.DATABASE_URL,
     },
+    auth: {
+      jwtSecret: process.env.AUTH_JWT_SECRET,
+    },
     cache: {
       host: process.env.CACHE_HOST,
       port: Number(process.env.CACHE_PORT),

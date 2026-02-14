@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { DayManagementService } from '@src/module/training-plan/core/service/day-management.service';
 import { CreateDayRequestDto } from '../dto/request/create-day-request.dto';
 import { CreateManyDayRequestDto } from '../dto/request/create-many-day-request.dto';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Days')
+@UseGuards(JwtAuthGuard)
 @Controller('day')
 export class DayController {
   constructor(private readonly dayManagementService: DayManagementService) {}

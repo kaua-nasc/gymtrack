@@ -6,6 +6,10 @@ export const databaseSchema = z.object({
   url: z.string().startsWith('postgresql://'),
 });
 
+export const authSchema = z.object({
+  jwtSecret: z.string().min(32),
+});
+
 export const cacheSchema = z.object({
   host: z.string(),
   port: z.number().positive().int(),
@@ -62,6 +66,7 @@ export const configSchema = z.object({
   env: environmentSchema,
   port: z.coerce.number().positive().int(),
   database: databaseSchema,
+  auth: authSchema,
   email: emailSchema,
   cache: cacheSchema,
   storage: storageSchema,

@@ -9,8 +9,10 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
@@ -20,16 +22,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
 import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
-import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
-import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-training-plan-feedback-request.dto';
-import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { TrainingPlanCommentResponseDto } from '../dto/response/training-plan-comment-response.dto';
+import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
+import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
+import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 
 @ApiTags('Training Plans')
+@UseGuards(JwtAuthGuard)
 @Controller('training-plan')
 export class TrainingPlanController {
   constructor(
