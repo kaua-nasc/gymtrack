@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@src/*": ["dist/*"],
+      "@database/*": ["dist/database/*"],
+      "@billingModule/*": ["dist/module/billing/*"],
+      "@identity/*": ["dist/module/identity/*"],
+      "@trainingPlan/*": ["dist/module/training-plan/*"],
+      "@shared/*": ["dist/module/shared/*"],
+      "@resource/*": ["dist/resource/*"],
+      "@contentModule/*": ["dist/module/content/*"],
+      "@identityModule/*": ["dist/module/identity/*"],
+      "@sharedModules/*": ["dist/module/shared/module/*"],
+      "@sharedLibs/*": ["dist/module/shared/*"]
+    }
+  }
+}
