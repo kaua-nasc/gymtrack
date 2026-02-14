@@ -1,12 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
-import { PlanSubscriptionManagementService } from '@src/module/training-plan/core/service/plan-subscription-management.service';
-import { PlanSubscriptionResponseDto } from '../dto/response/plan-subscription-response.dto';
-import { PlanSubscriptionExistsResponseDto } from '../dto/response/plan-subscription-exists-response.dto';
-import { DayProgressResponseDto } from '../dto/response/day-progress-response.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
+import { PlanSubscriptionManagementService } from '@src/module/training-plan/core/service/plan-subscription-management.service';
 import { CreatePlanSubscriptionRequestDto } from '../dto/request/create-plan-subscription-request.dto';
+import { DayProgressResponseDto } from '../dto/response/day-progress-response.dto';
+import { PlanSubscriptionExistsResponseDto } from '../dto/response/plan-subscription-exists-response.dto';
+import { PlanSubscriptionResponseDto } from '../dto/response/plan-subscription-response.dto';
 
 @ApiTags('Plan Subscriptions')
+@UseGuards(JwtAuthGuard)
 @Controller('training-plan/subscription')
 export class PlanSubscriptionController {
   constructor(

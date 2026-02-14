@@ -8,7 +8,11 @@ async function bootstrap() {
   initializeTransactionalContext();
   const app = await NestFactory.create(AppModule);
 
-  const config = new DocumentBuilder().setTitle('GymTrack API').setVersion('1.0').build();
+  const config = new DocumentBuilder()
+    .addBearerAuth()
+    .setTitle('GymTrack API')
+    .setVersion('1.0')
+    .build();
   app.enableCors();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

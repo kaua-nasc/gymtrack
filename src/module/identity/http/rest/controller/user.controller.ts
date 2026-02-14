@@ -9,10 +9,10 @@ import {
   Post,
   Put,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { UserManagementService } from '../../../core/service/user-management.service';
-import { UserCreateRequestDto } from '../dto/request/user-create-request.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
@@ -22,15 +22,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from '@src/module/identity/persistence/entity/user.entity';
-import { UserResponseDto } from '../dto/response/user-response.dto';
+import { UserManagementService } from '../../../core/service/user-management.service';
+import { UserCreateRequestDto } from '../dto/request/user-create-request.dto';
+import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
 import { UserExistsResponseDto } from '../dto/response/user-exists-response.dto';
 import { UserFollowCountResponseDto } from '../dto/response/user-follow-count-response.dto';
-import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
 import { UserPrivacySettingsResponseDto } from '../dto/response/user-privacy-settings-response.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { UserResponseDto } from '../dto/response/user-response.dto';
 import 'multer';
+import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
+import { Public } from '../../../../shared/module/auth/guard/jwt-auth.guard';
 
 @ApiTags('Users')
+@UseGuards(JwtAuthGuard)
 @Controller('identity/user')
 export class UserController {
   constructor(private readonly userManagementService: UserManagementService) {}
@@ -58,6 +62,7 @@ export class UserController {
 
     return { ...user };
   }
+  @Public()
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

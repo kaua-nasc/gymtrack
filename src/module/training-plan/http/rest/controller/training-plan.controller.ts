@@ -9,8 +9,10 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
@@ -20,15 +22,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
 import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
-import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
-import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-training-plan-feedback-request.dto';
+import { TrainingPlanCommentResponseDto } from '../dto/response/training-plan-comment-response.dto';
+import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
 import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
 
 @ApiTags('Training Plans')
+@UseGuards(JwtAuthGuard)
 @Controller('training-plan')
 export class TrainingPlanController {
   constructor(
@@ -133,46 +137,40 @@ export class TrainingPlanController {
   @ApiOperation({
     summary: 'Lista feedbacks de um plano de treino',
     description:
-      'Retorna uma lista paginada de feedbacks associados a um plano de treino, com suporte a cursor e limite.',
+      'Retorna uma lista paginada de feedbacks. Utilize o campo nextCursor da resposta para buscar os próximos registros.',
   })
   @ApiParam({
     name: 'trainingPlanId',
     description: 'ID do plano de treino',
-    example: 'c4b65c51-89a3-4f32-93e2-8a9f78b26c71',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
-    description: 'Número máximo de feedbacks a retornar (padrão: 10)',
-    example: 10,
+    type: Number,
+    description: 'Número máximo de feedbacks (padrão: 10)',
   })
   @ApiQuery({
     name: 'cursor',
     required: false,
-    description:
-      'Cursor de paginação — use o valor retornado na resposta anterior para buscar a próxima página.',
-    example: '2025-11-08T12:45:00.000Z',
+    type: String,
+    description: 'String Base64 retornada em nextCursor na requisição anterior',
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de feedbacks retornada com sucesso.',
     type: TrainingPlanFeedbackResponseDto,
   })
   async getFeedbacks(
     @Param('trainingPlanId') trainingPlanId: string,
-    @Query('limit') limit = 10,
+    @Query('limit') limit: number = 10,
     @Query('cursor') cursor?: string
   ): Promise<TrainingPlanFeedbackResponseDto> {
-    const feedbacks = await this.trainingPlanManagementService.getFeedbacks(
+    const parsedLimit = Number(limit);
+
+    return this.trainingPlanManagementService.getFeedbacks(
       trainingPlanId,
-      limit,
+      parsedLimit,
       cursor
     );
-
-    return {
-      ...feedbacks,
-      data: feedbacks.data.map((f) => ({ ...f })),
-    };
   }
 
   @Post('image/:trainingPlanId')
@@ -272,9 +270,10 @@ export class TrainingPlanController {
     @Query('userId') userId: string | null = null
   ): Promise<TrainingPlanResponseDto> {
     const plan = await this.trainingPlanManagementService.get(trainingPlanId, userId);
+
     return {
       ...plan,
-      likes: plan.likes.map((like) => ({ ...like })),
+      likes: plan.likes?.map((like) => ({ ...like })),
       likesCount: plan.likesCount ?? null,
     };
   }
@@ -290,5 +289,99 @@ export class TrainingPlanController {
   @ApiResponse({ status: 404, description: 'Plano não encontrado.' })
   async deleteTrainingPlanById(@Param('trainingPlanId') id: string): Promise<void> {
     await this.trainingPlanManagementService.delete(id);
+  }
+
+  @Get('comments/:trainingPlanId')
+  @ApiOperation({
+    summary: 'Lista os comentários de um plano de treino',
+    description:
+      'Retorna uma lista paginada. O cursor é um token Base64 que contém o estado da paginação.',
+  })
+  @ApiParam({
+    name: 'trainingPlanId',
+    description: 'ID do plano de treino',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: `Token Base64 para paginação. 
+    Estrutura do objeto original (antes de codificar):
+    {
+      "value": "2026-02-01T17:30:52.930Z", // Data (ISOString) ou valor do campo de ordenação
+      "id": "uuid-do-ultimo-item"           // ID para desempate
+    }
+    Exemplo: eyidIjoiODExMiIsImZpZWxkIjoiMjAyNi0wMi0wMSJ9`,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Número máximo de registros (padrão: 10). Máximo permitido: 50.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Comentários listados com sucesso',
+    type: [TrainingPlanCommentResponseDto],
+  })
+  async listComments(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number
+  ) {
+    const comments = await this.trainingPlanManagementService.listComments(
+      trainingPlanId,
+      cursor,
+      limit ?? 10
+    );
+    return comments.map((c) => ({ ...c }));
+  }
+
+  @Post('comments/:trainingPlanId/:userId')
+  @ApiOperation({ summary: 'Adiciona um comentário a um plano de treino' })
+  @ApiParam({
+    name: 'trainingPlanId',
+    description: 'ID do plano de treino',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID do usuário que está comentando',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          description: 'Conteúdo do comentário',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Comentário adicionado com sucesso' })
+  async addComment(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Param('userId') userId: string,
+    @Body('message') message: string
+  ) {
+    await this.trainingPlanManagementService.addComment(trainingPlanId, userId, message);
+  }
+
+  @Delete('comments/:commentId/:userId')
+  @ApiOperation({ summary: 'Remove um comentário de um plano de treino' })
+  @ApiParam({
+    name: 'commentId',
+    description: 'ID do comentário a ser removido',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID do usuário que está removendo o comentário',
+  })
+  @ApiResponse({ status: 200, description: 'Comentário removido com sucesso' })
+  async removeComment(
+    @Param('commentId') commentId: string,
+    @Param('userId') userId: string
+  ) {
+    await this.trainingPlanManagementService.removeComment(commentId, userId);
   }
 }

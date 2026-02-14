@@ -15,6 +15,7 @@ import { DayController } from './http/rest/controller/day.controller';
 import { ExerciseController } from './http/rest/controller/exercise.controller';
 import { ExerciseManagementService } from './core/service/exercise-management.service';
 import { StorageModule } from '../shared/module/storage/storage.module';
+import { AuthModule } from '../shared/module/auth/auth.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { StorageModule } from '../shared/module/storage/storage.module';
     DomainModuleIntegrationModule,
     HttpClientModule,
     StorageModule,
+    AuthModule,
   ],
   providers: [
     TrainingPlanManagementService,

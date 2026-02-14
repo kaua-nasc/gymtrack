@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ClsModule } from 'nestjs-cls';
-
-export const jwtConstants = {
-  secret:
-    'DO NOT USE THIS VALUE. INSTEAD, CREATE A COMPLEX SECRET AND KEEP IT SAFE OUTSIDE OF THE SOURCE CODE.',
-};
+import { ConfigModule } from '../config/config.module';
+import { ConfigService } from '../config/service/config.service';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -13,13 +11,27 @@ export const jwtConstants = {
       global: true,
       middleware: { mount: true },
     }),
-    JwtModule.register({
-      secret: jwtConstants.secret,
+    JwtModule.registerAsync({
+      imports: [ConfigModule.forRoot()],
+      inject: [ConfigService],
       global: true,
-      signOptions: {
-        expiresIn: '60m',
+      useFactory: async (configService: ConfigService) => {
+        console.log(
+          'Registering JwtModule with secret:',
+          configService.get('auth.jwtSecret')
+        );
+        return {
+          secret: configService.get('auth.jwtSecret'),
+          verifyOptions: { algorithms: ['HS256'] },
+          global: true,
+          signOptions: {
+            expiresIn: '60m',
+          },
+        };
       },
     }),
   ],
+  providers: [JwtAuthGuard, JwtService],
+  exports: [JwtAuthGuard, JwtService],
 })
 export class AuthModule {}
