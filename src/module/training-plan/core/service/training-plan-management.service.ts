@@ -142,6 +142,15 @@ export class TrainingPlanManagementService {
     this.logger.log('Listing all training plans', { userId });
 
     let plans = await this.trainingPlanRepository.findMany({
+      where: [
+        {
+          visibility: TrainingPlanVisibility.public,
+        },
+        {
+          visibility: TrainingPlanVisibility.protected,
+          privateParticipants: { userId },
+        },
+      ],
       relations: {
         privateParticipants: true,
         feedbacks: true,

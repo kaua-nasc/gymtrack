@@ -1,21 +1,23 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UserRepository } from '../../persistence/repository/user.repository';
-import { User } from '../../persistence/entity/user.entity';
-import { hash } from 'bcrypt';
-import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
-import { UserFollows } from '../../persistence/entity/user-follows.entity';
-import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
-import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
-import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
+import { REQUEST } from '@nestjs/core';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
+import { hash } from 'bcrypt';
+import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
+import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
+import { User } from '../../persistence/entity/user.entity';
+import { UserFollows } from '../../persistence/entity/user-follows.entity';
+import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
+import { UserRepository } from '../../persistence/repository/user.repository';
+import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
+import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 
 export interface CreateUserDto {
   email: string;
@@ -33,7 +35,8 @@ export class UserManagementService {
     private readonly userFollowsRepository: UserFollowsRepository,
     private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository,
     private readonly storageService: AzureStorageService,
-    private readonly logger: AppLogger
+    private readonly logger: AppLogger,
+    @Inject(REQUEST) private readonly request: { user: { id: string } }
   ) {}
 
   async create(user: CreateUserDto): Promise<User> {
@@ -102,7 +105,9 @@ export class UserManagementService {
     }));
   }
 
-  async exists(userId: string): Promise<boolean> {
+  async exists(): Promise<boolean> {
+    const userId = this.request.user.id;
+
     this.logger.log(`Checking existence of user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     const exists = user ? true : false;
@@ -110,7 +115,9 @@ export class UserManagementService {
     return exists;
   }
 
-  async followUser(userId: string, followedId: string): Promise<void> {
+  async followUser(followedId: string): Promise<void> {
+    const userId = this.request.user.id;
+
     this.logger.log(`User ${userId} attempting to follow user ${followedId}`);
     const user = await this.userRepository.findOneById(userId);
     const followedUser = await this.userRepository.findOneById(followedId);
@@ -137,7 +144,9 @@ export class UserManagementService {
     this.logger.log(`User ${userId} successfully followed ${followedId}`);
   }
 
-  async unfollowUser(userId: string, followedId: string): Promise<void> {
+  async unfollowUser(followedId: string): Promise<void> {
+    const userId = this.request.user.id;
+
     this.logger.log(`User ${userId} attempting to unfollow user ${followedId}`);
     if (userId === followedId) {
       this.logger.warn(`Unfollow attempt failed: User ${userId} tried to unfollow self.`);
@@ -236,7 +245,9 @@ export class UserManagementService {
     return users ?? [];
   }
 
-  async getPrivacyConfiguration(userId: string): Promise<UserPrivacySettings> {
+  async getPrivacyConfiguration(): Promise<UserPrivacySettings> {
+    const userId = this.request.user.id;
+
     this.logger.log(`Getting privacy configuration for user: ${userId}`);
     const privacyConfiguration = await this.userPrivacySettingsRepository.find({
       where: { user: { id: userId } },
@@ -251,10 +262,9 @@ export class UserManagementService {
     return privacyConfiguration;
   }
 
-  async alterPrivacySettings(
-    userId: string,
-    data: UserPrivacySettingsRequestDto
-  ): Promise<void> {
+  async alterPrivacySettings(data: UserPrivacySettingsRequestDto): Promise<void> {
+    const userId = this.request.user.id;
+
     this.logger.log(`Altering privacy settings for user: ${userId}`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
@@ -302,7 +312,9 @@ export class UserManagementService {
     this.logger.log(`Successfully altered user information for user: ${userId}`);
   }
 
-  async changeProfile(userId: string, file: Buffer): Promise<void> {
+  async changeProfile(file: Buffer): Promise<void> {
+    const userId = this.request.user.id;
+
     this.logger.log(`User ${userId} attempting to change profile picture.`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
@@ -335,7 +347,9 @@ export class UserManagementService {
     );
   }
 
-  async removeProfile(userId: string): Promise<void> {
+  async removeProfile(): Promise<void> {
+    const userId = this.request.user.id;
+
     this.logger.log(`User ${userId} attempting to remove profile picture.`);
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {

@@ -5,16 +5,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
-import { PlanSubscriptionStatus } from '../enum/plan-subscription-status.enum';
+import { REQUEST } from '@nestjs/core';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
-import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
-import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
-import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
-import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
-import { DayRepository } from '../../persistence/repository/day.repository';
-import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
+import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
+import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
+import { DayRepository } from '../../persistence/repository/day.repository';
+import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
+import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
+import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
+import { PlanSubscriptionStatus } from '../enum/plan-subscription-status.enum';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -25,10 +26,13 @@ export class PlanSubscriptionManagementService {
     private readonly dayRepository: DayRepository,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
-    private readonly logger: AppLogger
+    private readonly logger: AppLogger,
+    @Inject(REQUEST) private readonly request: { user: { id: string } }
   ) {}
 
-  async getInProgressSubscription(userId: string): Promise<PlanSubscription> {
+  async getInProgressSubscription(): Promise<PlanSubscription> {
+    const userId = this.request.user.id;
+
     this.logger.log('Fetching in-progress subscription for user', { userId });
     const subscription = await this.planSubscriptionRepository.find({
       where: { userId, status: PlanSubscriptionStatus.inProgress },
@@ -51,7 +55,8 @@ export class PlanSubscriptionManagementService {
     return subscription;
   }
 
-  async getSubscriptions(userId: string): Promise<PlanSubscription[]> {
+  async getSubscriptions(): Promise<PlanSubscription[]> {
+    const userId = this.request.user.id;
     this.logger.log('Fetching all subscriptions for user', { userId });
     const subscriptions = await this.planSubscriptionRepository.findMany({
       where: { userId },
@@ -95,7 +100,9 @@ export class PlanSubscriptionManagementService {
     );
   }
 
-  async exists(trainingPlanId: string, userId: string) {
+  async exists(trainingPlanId: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Checking if subscription exists', { userId, trainingPlanId });
     const subscription = await this.planSubscriptionRepository.find({
       where: {
@@ -113,7 +120,8 @@ export class PlanSubscriptionManagementService {
     return { exists };
   }
 
-  async existsInProgress(trainingPlanId: string, userId: string) {
+  async existsInProgress(trainingPlanId: string) {
+    const userId = this.request.user.id;
     this.logger.log('Checking if in-progress subscription exists', {
       userId,
       trainingPlanId,
@@ -137,9 +145,10 @@ export class PlanSubscriptionManagementService {
 
   async createSubscription(
     trainingPlanId: string,
-    userId: string,
     planSubscription: CreatePlanSubscriptionRequestDto
   ) {
+    const userId = this.request.user.id;
+
     this.logger.log('Attempting to create subscription', { userId, trainingPlanId });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
       this.logger.warn('Create subscription failed: Training plan not found', {
@@ -180,7 +189,9 @@ export class PlanSubscriptionManagementService {
     });
   }
 
-  async removeSubscription(trainingPlanId: string, userId: string) {
+  async removeSubscription(trainingPlanId: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Attempting to remove subscription', { userId, trainingPlanId });
     if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
       this.logger.warn('Remove subscription failed: Training plan not found', {
@@ -229,7 +240,9 @@ export class PlanSubscriptionManagementService {
     });
   }
 
-  async updateStatusToInProgress(trainingPlanId: string, userId: string) {
+  async updateStatusToInProgress(trainingPlanId: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Updating subscription status to IN_PROGRESS', {
       userId,
       trainingPlanId,
@@ -277,7 +290,9 @@ export class PlanSubscriptionManagementService {
     });
   }
 
-  async updateStatusToFinished(trainingPlanId: string, userId: string) {
+  async updateStatusToFinished(trainingPlanId: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Updating subscription status to FINISHED', {
       userId,
       trainingPlanId,
@@ -325,7 +340,9 @@ export class PlanSubscriptionManagementService {
     });
   }
 
-  async updateStatusToCanceled(trainingPlanId: string, userId: string) {
+  async updateStatusToCanceled(trainingPlanId: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Updating subscription status to CANCELED', {
       userId,
       trainingPlanId,
@@ -373,7 +390,9 @@ export class PlanSubscriptionManagementService {
     });
   }
 
-  async updateStatusToNotStarted(trainingPlanId: string, userId: string) {
+  async updateStatusToNotStarted(trainingPlanId: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Updating subscription status to NOT_STARTED', {
       userId,
       trainingPlanId,
@@ -456,7 +475,9 @@ export class PlanSubscriptionManagementService {
     return newDayProgress;
   }
 
-  async getDaysProgress(userId: string): Promise<PlanDayProgress[]> {
+  async getDaysProgress(): Promise<PlanDayProgress[]> {
+    const userId = this.request.user.id;
+
     this.logger.log('Fetching days progress for user', { userId });
     const subscription = await this.planSubscriptionRepository.find({
       where: { userId, status: PlanSubscriptionStatus.inProgress },

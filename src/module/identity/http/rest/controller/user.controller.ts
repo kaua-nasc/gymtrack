@@ -111,45 +111,36 @@ export class UserController {
     await this.userManagementService.create({ ...user });
   }
 
-  @Get('exists/:userId')
+  @Get('exists')
   @ApiOperation({ summary: 'Verifica se o usuário existe' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Retorna se o usuário existe',
     schema: { example: { exists: true } },
   })
-  async exists(@Param('userId') userId: string): Promise<UserExistsResponseDto> {
-    const exists = await this.userManagementService.exists(userId);
+  async exists(): Promise<UserExistsResponseDto> {
+    const exists = await this.userManagementService.exists();
 
     return { exists: exists };
   }
 
-  @Post('follow/:userId/:followedId')
+  @Post('follow/:followedId')
   @ApiOperation({ summary: 'Seguir outro usuário' })
-  @ApiParam({ name: 'userId', description: 'Id do usuário' })
   @ApiParam({ name: 'followedId', description: 'Id do usuário a ser seguido' })
-  async followUser(
-    @Param('userId') userId: string,
-    @Param('followedId') followedId: string
-  ) {
-    await this.userManagementService.followUser(userId, followedId);
+  async followUser(@Param('followedId') followedId: string) {
+    await this.userManagementService.followUser(followedId);
   }
 
-  @Post('unfollow/:userId/:followedId')
+  @Post('unfollow/:followedId')
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ status: 200 })
   @ApiOperation({ summary: 'Deixar de seguir outro usuário' })
-  @ApiParam({ name: 'userId', description: 'Id do usuário' })
   @ApiParam({ name: 'followedId', description: 'Id do usuário sendo deixado de seguir' })
-  async unfollowUser(
-    @Param('userId') userId: string,
-    @Param('followedId') followedId: string
-  ) {
-    await this.userManagementService.unfollowUser(userId, followedId);
+  async unfollowUser(@Param('followedId') followedId: string) {
+    await this.userManagementService.unfollowUser(followedId);
   }
 
-  @Get('following/:userId/count')
+  @Get('/:userId/following/count')
   @ApiOperation({ summary: 'Contar quantidade de pessoas seguindo' })
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
@@ -164,7 +155,7 @@ export class UserController {
     return { count };
   }
 
-  @Get('followers/:userId/count')
+  @Get('/:userId/followers/count')
   @ApiOperation({ summary: 'Contar quantidade de pessoas que seguem o usuario' })
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
@@ -179,7 +170,7 @@ export class UserController {
     return { count };
   }
 
-  @Get('following/:userId')
+  @Get('/:userId/following')
   @ApiOperation({ summary: 'Retornar usuarios que o usuario segue' })
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
@@ -192,7 +183,7 @@ export class UserController {
     return users.map((u) => ({ ...u }));
   }
 
-  @Get('followers/:userId')
+  @Get('/:userId/followers')
   @ApiOperation({ summary: 'Retornar usuarios que seguem o usuario' })
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
@@ -205,34 +196,26 @@ export class UserController {
     return users.map((u) => ({ ...u }));
   }
 
-  @Get('privacy/settings/:userId')
+  @Get('privacy/settings')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Obtém as configurações de privacidade de um usuário' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Configurações retornadas com sucesso',
     type: UserPrivacySettingsResponseDto,
   })
-  async getPrivacyConfiguration(
-    @Param('userId') userId: string
-  ): Promise<UserPrivacySettingsResponseDto> {
+  async getPrivacyConfiguration(): Promise<UserPrivacySettingsResponseDto> {
     const privacyConfiguration =
-      await this.userManagementService.getPrivacyConfiguration(userId);
+      await this.userManagementService.getPrivacyConfiguration();
     return { ...privacyConfiguration };
   }
 
-  @Put('privacy/settings/:userId')
+  @Put('privacy/settings')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Altera as configurações de privacidade de um usuário',
     description:
       'Permite atualizar as preferências de privacidade, como exibir nome, e-mail e progresso de treino.',
-  })
-  @ApiParam({
-    name: 'userId',
-    description: 'ID do usuário cujas configurações serão alteradas',
-    example: 'b8a35db4-61e7-4c13-9f8d-3dfefc26b25f',
   })
   @ApiResponse({
     status: 200,
@@ -242,14 +225,11 @@ export class UserController {
     status: 404,
     description: 'Usuário não encontrado.',
   })
-  async alterPrivacySettings(
-    @Param('userId') userId: string,
-    @Body() createDto: UserPrivacySettingsRequestDto
-  ) {
-    await this.userManagementService.alterPrivacySettings(userId, { ...createDto });
+  async alterPrivacySettings(@Body() createDto: UserPrivacySettingsRequestDto) {
+    await this.userManagementService.alterPrivacySettings({ ...createDto });
   }
 
-  @Post('profile/:userId')
+  @Post('profile')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Upload user profile picture' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
@@ -267,19 +247,16 @@ export class UserController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  async changeProfile(
-    @Param('userId') userId: string,
-    @UploadedFile() file: Express.Multer.File
-  ) {
-    await this.userManagementService.changeProfile(userId, file.buffer);
+  async changeProfile(@UploadedFile() file: Express.Multer.File) {
+    await this.userManagementService.changeProfile(file.buffer);
   }
 
-  @Delete('profile/:userId')
+  @Delete('profile')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove user profile picture' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   @UseInterceptors(FileInterceptor('file'))
-  async removeProfile(@Param('userId') userId: string) {
-    await this.userManagementService.removeProfile(userId);
+  async removeProfile() {
+    await this.userManagementService.removeProfile();
   }
 }

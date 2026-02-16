@@ -25,188 +25,136 @@ import { PlanSubscriptionResponseDto } from '../dto/response/plan-subscription-r
 @ApiTags('Plan Subscriptions')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
-@Controller('training-plan/subscription')
+@Controller('training-plan')
 export class PlanSubscriptionController {
   constructor(
     private readonly planSubscriptionManagementService: PlanSubscriptionManagementService
   ) {}
 
-  @Get('/:userId')
+  @Get('/subscriptions/in-progress')
   @ApiOperation({ summary: 'Retorna a assinatura em andamento de um usuário' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Assinatura em andamento',
     type: PlanSubscriptionResponseDto,
   })
-  async getInProgressSubscription(
-    @Param('userId') userId: string
-  ): Promise<PlanSubscriptionResponseDto> {
+  async getInProgressSubscription(): Promise<PlanSubscriptionResponseDto> {
     const subscription =
-      await this.planSubscriptionManagementService.getInProgressSubscription(userId);
+      await this.planSubscriptionManagementService.getInProgressSubscription();
     return {
       ...subscription,
     };
   }
 
-  @Get('/list/:userId')
+  @Get('/subscriptions')
   @ApiOperation({ summary: 'Lista todas as assinaturas de um usuário' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Lista de assinaturas',
     type: [PlanSubscriptionResponseDto],
   })
-  async getSubscriptions(
-    @Param('userId') userId: string
-  ): Promise<PlanSubscriptionResponseDto[]> {
-    const subscriptions =
-      await this.planSubscriptionManagementService.getSubscriptions(userId);
-    return subscriptions.map((s) => ({
-      id: s.id,
-      trainingPlanId: s.trainingPlanId,
-      status: s.status,
-      type: s.type,
-    }));
+  async getSubscriptions(): Promise<PlanSubscriptionResponseDto[]> {
+    const subscriptions = await this.planSubscriptionManagementService.getSubscriptions();
+    return subscriptions.map((s) => ({ ...s }));
   }
 
-  @Get('/exists/:trainingPlanId/:userId')
+  @Get(':trainingPlanId/subscriptions/exists')
   @ApiOperation({
     summary: 'Verifica se o usuário possui assinatura de um plano específico',
   })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Retorna se a assinatura existe',
     type: PlanSubscriptionExistsResponseDto,
   })
   async exists(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<PlanSubscriptionExistsResponseDto> {
-    const exists = await this.planSubscriptionManagementService.exists(
-      trainingPlanId,
-      userId
-    );
+    const exists = await this.planSubscriptionManagementService.exists(trainingPlanId);
     return { ...exists };
   }
 
-  @Get('/exists/in-progress/:trainingPlanId/:userId')
+  @Get('/:trainingPlanId/subscriptions/exists/in-progress')
   @ApiOperation({
     summary: 'Verifica se o usuário possui assinatura em andamento de um plano',
   })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Retorna se a assinatura em andamento existe',
     type: PlanSubscriptionExistsResponseDto,
   })
   async existsInProgress(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<PlanSubscriptionExistsResponseDto> {
-    const exists = await this.planSubscriptionManagementService.existsInProgress(
-      trainingPlanId,
-      userId
-    );
+    const exists =
+      await this.planSubscriptionManagementService.existsInProgress(trainingPlanId);
     return { ...exists };
   }
 
-  @Post('/:trainingPlanId/:userId')
+  @Post('/:trainingPlanId/subscriptions')
   @ApiOperation({ summary: 'Cria uma nova assinatura para o usuário' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 201, description: 'Assinatura criada com sucesso' })
   async createSubscription(
     @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string,
     @Body() data: CreatePlanSubscriptionRequestDto
   ): Promise<void> {
-    await this.planSubscriptionManagementService.createSubscription(
-      trainingPlanId,
-      userId,
-      data
-    );
+    await this.planSubscriptionManagementService.createSubscription(trainingPlanId, data);
   }
 
-  @Delete('/:trainingPlanId/:userId')
+  @Delete('/:trainingPlanId/subscriptions')
   @ApiOperation({ summary: 'Remove uma assinatura existente' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Assinatura removida com sucesso' })
   async removeSubscription(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
-    await this.planSubscriptionManagementService.removeSubscription(
-      trainingPlanId,
-      userId
-    );
+    await this.planSubscriptionManagementService.removeSubscription(trainingPlanId);
   }
 
-  @Put('/send/in-progress/:trainingPlanId/:userId')
+  @Put('/:trainingPlanId/subscriptions/send/in-progress')
   @ApiOperation({ summary: 'Atualiza status da assinatura para em andamento' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado para em andamento' })
   async updateStatusToInProgress(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
-    await this.planSubscriptionManagementService.updateStatusToInProgress(
-      trainingPlanId,
-      userId
-    );
+    await this.planSubscriptionManagementService.updateStatusToInProgress(trainingPlanId);
   }
 
-  @Put('/send/finished/:trainingPlanId/:userId')
+  @Put('/:trainingPlanId/subscriptions/send/finished')
   @ApiOperation({ summary: 'Atualiza status da assinatura para finalizado' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado para finalizado' })
   async updateStatusToFinished(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
-    await this.planSubscriptionManagementService.updateStatusToFinished(
-      trainingPlanId,
-      userId
-    );
+    await this.planSubscriptionManagementService.updateStatusToFinished(trainingPlanId);
   }
 
-  @Put('/send/canceled/:trainingPlanId/:userId')
+  @Put('/:trainingPlanId/subscriptions/send/canceled')
   @ApiOperation({ summary: 'Atualiza status da assinatura para cancelado' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado para cancelado' })
   async updateStatusToCanceled(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
-    await this.planSubscriptionManagementService.updateStatusToCanceled(
-      trainingPlanId,
-      userId
-    );
+    await this.planSubscriptionManagementService.updateStatusToCanceled(trainingPlanId);
   }
 
-  @Put('/send/not-started/:trainingPlanId/:userId')
+  @Put('/:trainingPlanId/subscriptions/send/not-started')
   @ApiOperation({ summary: 'Atualiza status da assinatura para não iniciada' })
   @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado para não iniciada' })
   async updateStatusToNotStarted(
-    @Param('trainingPlanId') trainingPlanId: string,
-    @Param('userId') userId: string
+    @Param('trainingPlanId') trainingPlanId: string
   ): Promise<void> {
-    await this.planSubscriptionManagementService.updateStatusToNotStarted(
-      trainingPlanId,
-      userId
-    );
+    await this.planSubscriptionManagementService.updateStatusToNotStarted(trainingPlanId);
   }
 
-  @Post('/day/progress/:planSubscriptionId/:dayId')
+  @Post('subscriptions/:planSubscriptionId/day/:dayId/progress')
   @ApiOperation({ summary: 'Cria progresso de um dia em uma assinatura' })
   @ApiParam({ name: 'planSubscriptionId', description: 'ID da assinatura' })
   @ApiParam({ name: 'dayId', description: 'ID do dia' })
@@ -221,18 +169,15 @@ export class PlanSubscriptionController {
     );
   }
 
-  @Get('/day/progress/:userId')
+  @Get('/subscriptions/day/progress')
   @ApiOperation({ summary: 'Retorna progresso de todos os dias de um usuário' })
-  @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({
     status: 200,
     description: 'Lista de progresso dos dias',
     type: [DayProgressResponseDto],
   })
-  async getDaysProgress(
-    @Param('userId') userId: string
-  ): Promise<DayProgressResponseDto[]> {
-    const progress = await this.planSubscriptionManagementService.getDaysProgress(userId);
+  async getDaysProgress(): Promise<DayProgressResponseDto[]> {
+    const progress = await this.planSubscriptionManagementService.getDaysProgress();
     return progress.map((p) => ({ ...p }));
   }
 }

@@ -38,8 +38,8 @@ import { AuthModule } from '../shared/module/auth/auth.module';
     },
   ],
   controllers: [
-    TrainingPlanController,
     PlanSubscriptionController,
+    TrainingPlanController,
     DayController,
     ExerciseController,
   ],
