@@ -115,6 +115,14 @@ export class UserManagementService {
     return exists;
   }
 
+  async existsById(userId: string): Promise<boolean> {
+    this.logger.log(`Checking existence of user: ${userId}`);
+    const user = await this.userRepository.findOneById(userId);
+    const exists = user ? true : false;
+    this.logger.log(`User ${userId} existence check result: ${exists}`);
+    return exists;
+  }
+
   async followUser(followedId: string): Promise<void> {
     const userId = this.request.user.id;
 

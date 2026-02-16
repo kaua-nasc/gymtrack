@@ -6,6 +6,6 @@ import { UserManagementService } from '../../core/service/user-management.servic
 export class IdentityApiProvider implements IdentityUserExistsApi {
   constructor(private readonly userManagementService: UserManagementService) {}
   userExists(userId: string): Promise<boolean> {
-    return this.userManagementService.exists(userId);
+    return this.userManagementService.existsById(userId);
   }
 }
