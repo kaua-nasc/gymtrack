@@ -10,6 +10,7 @@ import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.s
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { hash } from 'bcrypt';
+import { In } from 'typeorm';
 import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
 import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
 import { User } from '../../persistence/entity/user.entity';
@@ -81,6 +82,21 @@ export class UserManagementService {
 
     this.logger.log(`Successfully fetched user: ${id}`);
     return user;
+  }
+
+  async getUsersByIds(userIds: string[]): Promise<User[]> {
+    console.log(`Fetching users by IDs: ${userIds}`);
+    this.logger.log(`Fetching users by IDs: ${userIds}`);
+    const users = await this.userRepository.findMany({
+      where: { id: In([...new Set(userIds)]) },
+    });
+
+    if (!users || users.length === 0) {
+      this.logger.warn(`Failed to fetch users: No users found with IDs: ${userIds}`);
+      throw new NotFoundException('users not found');
+    }
+
+    return users;
   }
 
   async getUsers() {

@@ -4,14 +4,37 @@ import { HttpClientException } from '@src/module/shared/module/http-client/excep
 @Injectable()
 export class HttpClient {
   async get<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, options);
+    try {
+      const response = await fetch(url, options);
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`[${response.status}] ${response.statusText} - ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`[${response.status}] ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      throw new HttpClientException(`Error fetching data from ${url}: ${error}`);
     }
+  }
 
-    const data = await response.json();
-    return data as T;
+  async post<T>(url: string, body: unknown, options: RequestInit = {}): Promise<T> {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`[${response.status}] ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      throw new HttpClientException(`Error fetching data from ${url}: ${error}`);
+    }
   }
 }

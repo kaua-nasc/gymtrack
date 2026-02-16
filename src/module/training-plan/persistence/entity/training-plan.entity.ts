@@ -104,4 +104,6 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
     { cascade: true }
   )
   comments?: TrainingPlanComment[];
+
+  author?: object;
 }

@@ -183,7 +183,14 @@ export class TrainingPlanManagementService {
     }
 
     plans = aux;
+
+    const authorIds = [...new Set(plans.map((p) => p.authorId))];
+    const authors = await this.identityUserServiceClient.getUsers(authorIds);
+    const authorsMap = new Map(authors.map((a) => [a['id'], a]));
+
     return plans?.map((p) => {
+      p.author = authorsMap.get(p.authorId);
+
       if (p.imageUrl) {
         return { ...p, imageUrl: this.storageService.generateSasUrl(p.imageUrl) };
       }

@@ -97,4 +97,9 @@ export class TrainingPlanResponseDto {
     example: true,
   })
   likedByCurrentUser?: boolean;
+
+  @ApiProperty({
+    description: 'Informações do autor do plano de treino',
+  })
+  author?: object;
 }

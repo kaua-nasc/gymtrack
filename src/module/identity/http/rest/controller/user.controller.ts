@@ -33,6 +33,7 @@ import { UserResponseDto } from '../dto/response/user-response.dto';
 import 'multer';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { Public } from '../../../../shared/module/auth/guard/jwt-auth.guard';
+import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -64,6 +65,27 @@ export class UserController {
 
     return { ...user };
   }
+
+  @Post('by-ids')
+  @ApiOperation({ summary: 'Busca múltiplos usuários por IDs' })
+  @ApiBody({
+    description: 'Lista de IDs dos usuários',
+    type: UserGetByIdsRequestDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuários encontrados',
+    type: [UserResponseDto],
+  })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async getUserByIds(
+    @Body() data: UserGetByIdsRequestDto,
+  ): Promise<UserResponseDto[]> {
+    const users = await this.userManagementService.getUsersByIds(data.userIds);
+
+    return users.map((user) => ({ ...user }));
+  }
+
   @Public()
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -148,7 +170,7 @@ export class UserController {
     schema: { example: { count: 3 } },
   })
   async countFollowing(
-    @Param('userId') userId: string
+    @Param('userId') userId: string,
   ): Promise<UserFollowCountResponseDto> {
     const count = await this.userManagementService.countFollowing(userId);
 
@@ -163,7 +185,7 @@ export class UserController {
     schema: { example: { count: 0 } },
   })
   async countFollowers(
-    @Param('userId') userId: string
+    @Param('userId') userId: string,
   ): Promise<UserFollowCountResponseDto> {
     const count = await this.userManagementService.countFollowers(userId);
 
