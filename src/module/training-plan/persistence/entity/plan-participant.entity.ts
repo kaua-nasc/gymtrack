@@ -10,10 +10,14 @@ export class PlanParticipant extends DefaultEntity<PlanParticipant> {
   @Column({ type: 'uuid', nullable: false })
   trainingPlanId: string;
 
-  @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.privateParticipants, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => TrainingPlan,
+    (trainingPlan) => trainingPlan.privateParticipants,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    }
+  )
   @JoinColumn({ name: 'trainingPlanId' })
   trainingPlan: Relation<TrainingPlan>;
 

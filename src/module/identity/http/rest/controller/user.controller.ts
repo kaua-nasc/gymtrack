@@ -78,9 +78,7 @@ export class UserController {
     type: [UserResponseDto],
   })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  async getUserByIds(
-    @Body() data: UserGetByIdsRequestDto,
-  ): Promise<UserResponseDto[]> {
+  async getUserByIds(@Body() data: UserGetByIdsRequestDto): Promise<UserResponseDto[]> {
     const users = await this.userManagementService.getUsersByIds(data.userIds);
 
     return users.map((user) => ({ ...user }));
@@ -170,7 +168,7 @@ export class UserController {
     schema: { example: { count: 3 } },
   })
   async countFollowing(
-    @Param('userId') userId: string,
+    @Param('userId') userId: string
   ): Promise<UserFollowCountResponseDto> {
     const count = await this.userManagementService.countFollowing(userId);
 
@@ -185,7 +183,7 @@ export class UserController {
     schema: { example: { count: 0 } },
   })
   async countFollowers(
-    @Param('userId') userId: string,
+    @Param('userId') userId: string
   ): Promise<UserFollowCountResponseDto> {
     const count = await this.userManagementService.countFollowers(userId);
 

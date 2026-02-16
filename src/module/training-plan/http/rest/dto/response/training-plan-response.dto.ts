@@ -103,3 +103,24 @@ export class TrainingPlanResponseDto {
   })
   author?: object;
 }
+
+export class TrainingPlanListResponseDto {
+  @ApiProperty({
+    description: 'Lista de planos de treino',
+    type: [TrainingPlanResponseDto],
+  })
+  data: TrainingPlanResponseDto[];
+
+  @ApiProperty({
+    description: 'Cursor para a próxima página de resultados',
+    example: 'eyJpZCI6IjEyMyIsInR5cGUiOiJ0cmFpbmluZy1wbGFuIn0=',
+    required: false,
+  })
+  nextCursor: string | null;
+
+  @ApiProperty({
+    description: 'Indica se há mais páginas de resultados disponíveis',
+    example: true,
+  })
+  hasNextPage: boolean;
+}

@@ -1,6 +1,9 @@
 import { mock } from 'bun:test';
 import { Module } from '@nestjs/common';
-import { AzureStorageService, StorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
+import {
+  AzureStorageService,
+  StorageService,
+} from '@src/module/shared/module/storage/service/azure-storage.service';
 
 export class MockAzureStorageService implements StorageService {
   upload = mock<StorageService['upload']>().mockResolvedValue(undefined);

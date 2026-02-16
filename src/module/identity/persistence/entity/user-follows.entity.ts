@@ -10,13 +10,21 @@ export class UserFollows extends DefaultEntity<UserFollows> {
   @Column({ type: 'uuid' })
   followingId: string;
 
-  @ManyToOne(() => User, (user) => user.following, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => User,
+    (user) => user.following,
+    {
+      onDelete: 'CASCADE',
+    }
+  )
   follower: Relation<User>;
 
-  @ManyToOne(() => User, (user) => user.followers, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => User,
+    (user) => user.followers,
+    {
+      onDelete: 'CASCADE',
+    }
+  )
   following: Relation<User>;
 }

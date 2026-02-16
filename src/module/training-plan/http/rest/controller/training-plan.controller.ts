@@ -30,7 +30,10 @@ import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-trai
 import { TrainingPlanCommentResponseDto } from '../dto/response/training-plan-comment-response.dto';
 import { TrainingPlanExistsResponseDto } from '../dto/response/training-plan-exists-response.dto';
 import { TrainingPlanFeedbackResponseDto } from '../dto/response/training-plan-feedback-response.dto';
-import { TrainingPlanResponseDto } from '../dto/response/training-plan-response.dto';
+import {
+  TrainingPlanListResponseDto,
+  TrainingPlanResponseDto,
+} from '../dto/response/training-plan-response.dto';
 
 @ApiTags('Training Plans')
 @ApiBearerAuth('JWT-auth')
@@ -46,11 +49,26 @@ export class TrainingPlanController {
   @ApiResponse({
     status: 200,
     description: 'Lista de planos de treino',
-    type: [TrainingPlanResponseDto],
+    type: TrainingPlanListResponseDto,
   })
-  async list(): Promise<TrainingPlanResponseDto[]> {
-    const plans = await this.trainingPlanManagementService.list();
-    return plans.map((p) => ({ ...p }));
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Número máximo de planos (padrão: 10)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'String Base64 retornada em nextCursor na requisição anterior',
+  })
+  async list(
+    @Query('limit') limit: number = 10,
+    @Query('cursor') cursor?: string
+  ): Promise<TrainingPlanListResponseDto> {
+    const paginatedPlans = await this.trainingPlanManagementService.list(limit, cursor);
+    return paginatedPlans;
   }
 
   @Post()

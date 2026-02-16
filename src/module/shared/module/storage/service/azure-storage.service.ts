@@ -18,7 +18,6 @@ export interface StorageService {
   generateSasUrl(blobName: string, expiryMinutes?: number): string;
 }
 
-
 @Injectable()
 export class AzureStorageService implements StorageService, OnModuleInit {
   constructor(private readonly configService: ConfigService) {}

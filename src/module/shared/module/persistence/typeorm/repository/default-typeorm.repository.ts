@@ -5,6 +5,8 @@ import {
   EntityTarget,
   FindManyOptions,
   FindOneOptions,
+  FindOptionsOrder,
+  FindOptionsRelations,
   FindOptionsWhere,
   Repository,
 } from 'typeorm';
@@ -76,23 +78,29 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   }
 
   async findManyWithCursor(
-    options: FindOptionsWhere<T> = {},
+    options: FindOptionsWhere<T> | FindOptionsWhere<T>[] = {},
     limit: number = 10,
     cursor?: Cursor,
-    orderBy: keyof T = 'createdAt' as keyof T
+    orderBy: keyof T = 'createdAt' as keyof T,
+    relations?: FindOptionsRelations<T>
   ): Promise<{ data: T[]; nextCursor: Cursor | null }> {
-    const qb = this.repository
-      .createQueryBuilder('entity')
-      .where(options)
-      .orderBy(`entity.${orderBy.toString()}`, 'DESC')
-      .addOrderBy('entity.id', 'DESC')
-      .take(limit);
+    const qb = this.repository.createQueryBuilder('entity');
+
+    qb.setFindOptions({
+      where: options,
+      relations: relations,
+      order: {
+        [orderBy]: 'DESC',
+        id: 'DESC',
+      } as unknown as FindOptionsOrder<T>,
+      take: limit,
+    });
 
     if (cursor) {
       qb.andWhere(
         new Brackets((or) => {
-          or.where(`entity.${orderBy.toString()} < :val`, { val: cursor.value }).orWhere(
-            `entity.${orderBy.toString()} = :val AND entity.id < :id`,
+          or.where(`entity.${String(orderBy)} < :val`, { val: cursor.value }).orWhere(
+            `entity.${String(orderBy)} = :val AND entity.id < :id`,
             { val: cursor.value, id: cursor.id }
           );
         })

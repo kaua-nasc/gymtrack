@@ -26,9 +26,13 @@ export class Exercise extends DefaultEntity<Exercise> {
   @Column({ type: 'text', nullable: true })
   observation: string;
 
-  @ManyToOne(() => Day, (day) => day.id, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => Day,
+    (day) => day.id,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    }
+  )
   day: Relation<Day>;
 }

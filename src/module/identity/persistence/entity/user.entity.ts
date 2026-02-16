@@ -23,12 +23,22 @@ export class User extends DefaultEntity<User> {
   @Column()
   password: string;
 
-  @OneToMany(() => UserFollows, (follow) => follow.following)
+  @OneToMany(
+    () => UserFollows,
+    (follow) => follow.following
+  )
   followers: UserFollows[];
 
-  @OneToMany(() => UserFollows, (follow) => follow.follower)
+  @OneToMany(
+    () => UserFollows,
+    (follow) => follow.follower
+  )
   following: UserFollows[];
 
-  @OneToOne(() => UserPrivacySettings, (settings) => settings.user, { cascade: true })
+  @OneToOne(
+    () => UserPrivacySettings,
+    (settings) => settings.user,
+    { cascade: true }
+  )
   privacySettings: UserPrivacySettings;
 }

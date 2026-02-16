@@ -13,6 +13,7 @@ import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum'
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { CreateTrainingPlanRequestDto } from '../../http/rest/dto/request/create-training-plan-request.dto';
+import { TrainingPlanListResponseDto } from '../../http/rest/dto/response/training-plan-response.dto';
 import { Day } from '../../persistence/entity/day.entity';
 import { Exercise } from '../../persistence/entity/exercise.entity';
 import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
@@ -137,30 +138,42 @@ export class TrainingPlanManagementService {
     return exists;
   }
 
-  async list() {
+  async list(
+    limit: number = 10,
+    lastCursor?: string
+  ): Promise<TrainingPlanListResponseDto> {
     const userId = this.request.user.id;
-    this.logger.log('Listing all training plans', { userId });
+    this.logger.log('Listing all training plans', { userId, limit, lastCursor });
 
-    let plans = await this.trainingPlanRepository.findMany({
-      where: [
+    const decodedCursor = lastCursor
+      ? JSON.parse(Buffer.from(lastCursor, 'base64').toString())
+      : undefined;
+
+    const { data: plans, nextCursor: rawNextCursor } =
+      await this.trainingPlanRepository.findManyWithCursor(
+        [
+          {
+            visibility: TrainingPlanVisibility.public,
+          },
+          {
+            visibility: TrainingPlanVisibility.protected,
+            privateParticipants: { userId },
+          },
+        ],
+        limit,
+        decodedCursor,
+        'createdAt',
         {
-          visibility: TrainingPlanVisibility.public,
-        },
-        {
-          visibility: TrainingPlanVisibility.protected,
-          privateParticipants: { userId },
-        },
-      ],
-      relations: {
-        privateParticipants: true,
-        feedbacks: true,
-        planSubscriptions: { planDayProgress: true, privacySettings: true },
-        days: { exercises: true },
-      },
-    });
+          privateParticipants: true,
+          feedbacks: true,
+          planSubscriptions: { planDayProgress: true, privacySettings: true },
+          days: { exercises: true },
+        }
+      );
+
     this.logger.log('Training plans listed', { count: plans?.length ?? 0 });
 
-    if (!plans) return [];
+    if (!plans) return { data: [], nextCursor: null, hasNextPage: false };
 
     const aux: TrainingPlan[] = [];
     for (let i = 0; i < plans.length; i++) {
@@ -176,27 +189,35 @@ export class TrainingPlanManagementService {
             likedBy: userId,
           },
         });
-        plan.likedByCurrentUser = like ? true : false;
+        plan.likedByCurrentUser = !!like;
       }
 
       aux.push(plan);
     }
 
-    plans = aux;
-
     const authorIds = [...new Set(plans.map((p) => p.authorId))];
     const authors = await this.identityUserServiceClient.getUsers(authorIds);
     const authorsMap = new Map(authors.map((a) => [a['id'], a]));
 
-    return plans?.map((p) => {
+    const data = plans.map((p) => {
       p.author = authorsMap.get(p.authorId);
 
       if (p.imageUrl) {
-        return { ...p, imageUrl: this.storageService.generateSasUrl(p.imageUrl) };
+        p.imageUrl = this.storageService.generateSasUrl(p.imageUrl);
       }
 
-      return { ...p };
+      return p;
     });
+
+    const nextCursorString = rawNextCursor
+      ? Buffer.from(JSON.stringify(rawNextCursor)).toString('base64')
+      : null;
+
+    return {
+      data,
+      nextCursor: nextCursorString,
+      hasNextPage: !!nextCursorString,
+    };
   }
 
   async listByUserId(userId: string): Promise<TrainingPlan[]> {

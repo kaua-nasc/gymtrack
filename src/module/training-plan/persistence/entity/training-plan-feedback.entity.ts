@@ -16,10 +16,14 @@ export class TrainingPlanFeedback extends DefaultEntity<TrainingPlanFeedback> {
   @Column({ type: 'text', nullable: true })
   message: string | null;
 
-  @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.feedbacks, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => TrainingPlan,
+    (trainingPlan) => trainingPlan.feedbacks,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    }
+  )
   @JoinColumn({ name: 'trainingPlanId' })
   trainingPlan: Relation<TrainingPlan>;
 }

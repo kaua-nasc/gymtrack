@@ -11,10 +11,14 @@ export class PlanAccessRequest extends DefaultEntity<PlanAccessRequest> {
   @Column({ type: 'uuid', nullable: false })
   trainingPlanId: string;
 
-  @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.accessRequests, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => TrainingPlan,
+    (trainingPlan) => trainingPlan.accessRequests,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    }
+  )
   @JoinColumn({ name: 'trainingPlanId' })
   trainingPlan: Relation<TrainingPlan>;
 

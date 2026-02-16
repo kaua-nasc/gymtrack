@@ -11,10 +11,14 @@ export class TrainingPlanLike extends DefaultEntity<TrainingPlanLike> {
   @Column({ type: 'uuid', nullable: false })
   trainingPlanId: string;
 
-  @ManyToOne(() => TrainingPlan, (trainingPlan) => trainingPlan.likes, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => TrainingPlan,
+    (trainingPlan) => trainingPlan.likes,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    }
+  )
   @JoinColumn({ name: 'trainingPlanId' })
   trainingPlan: Relation<TrainingPlan>;
 }
