@@ -1,5 +1,5 @@
 # --- Stage 1: Build ---
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -18,7 +18,7 @@ RUN npm run build
 RUN npm prune --production
 
 # --- Stage 2: Production ---
-FROM node:20-slim AS production
+FROM node:25-slim AS production
 
 WORKDIR /usr/src/app
 

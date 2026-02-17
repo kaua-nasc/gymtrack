@@ -369,4 +369,23 @@ export class TrainingPlanController {
   async removeComment(@Param('commentId') commentId: string) {
     await this.trainingPlanManagementService.removeComment(commentId);
   }
+
+  @Get('/subscriptions/in-progress')
+  @ApiOperation({
+    summary: 'Obtém o plano de treino em andamento do usuário',
+    description:
+      'Retorna o plano de treino que o usuário tem atualmente em andamento, se houver.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Plano de treino em andamento encontrado',
+    type: TrainingPlanResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Nenhum plano de treino em andamento encontrado',
+  })
+  async getTrainingPlanInProgress(): Promise<TrainingPlanResponseDto | null> {
+    return await this.trainingPlanManagementService.getTrainingPlanInProgress();
+  }
 }

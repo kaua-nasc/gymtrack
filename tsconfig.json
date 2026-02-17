@@ -31,7 +31,7 @@
       "@contentModule/*": ["./src/module/content/*"],
       "@identityModule/*": ["./src/module/identity/*"],
       "@sharedModules/*": ["./src/module/shared/module/*"],
-      "@sharedLibs/*": ["./src/module/shared/*"],
+      "@sharedLibs/*": ["./src/module/shared/*"]
     },
     "removeComments": true,
     "resolveJsonModule": true,
@@ -45,12 +45,6 @@
     "types": ["bun"],
     "moduleResolution": "node"
   },
-"include": [
-    "src/**/*",
-    "test/**/*.spec.ts",
-    "test/**/*.test.ts"
-  ],
-  "exclude": [
-    "**/*.e2e.ts"
-  ]
+  "include": ["src/**/*", "test/**/*.spec.ts", "test/**/*.test.ts"],
+  "exclude": ["**/*.e2e.ts"]
 }

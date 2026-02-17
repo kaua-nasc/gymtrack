@@ -64,7 +64,8 @@
     "typeorm-extension": "^3.7.4",
     "typeorm-transactional": "^0.5.0",
     "winston": "^3.19.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.13",
