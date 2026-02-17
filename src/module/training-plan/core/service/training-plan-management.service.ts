@@ -142,7 +142,7 @@ export class TrainingPlanManagementService {
     limit: number = 10,
     lastCursor?: string
   ): Promise<TrainingPlanListResponseDto> {
-    const userId = this.request.user.id;
+    const userId = this.request.user?.id;
     this.logger.log('Listing all training plans', { userId, limit, lastCursor });
 
     const decodedCursor = lastCursor
@@ -155,10 +155,14 @@ export class TrainingPlanManagementService {
           {
             visibility: TrainingPlanVisibility.public,
           },
-          {
-            visibility: TrainingPlanVisibility.protected,
-            privateParticipants: { userId },
-          },
+          ...(userId
+            ? [
+                {
+                  visibility: TrainingPlanVisibility.protected,
+                  privateParticipants: { userId },
+                },
+              ]
+            : []),
         ],
         limit,
         decodedCursor,
@@ -173,34 +177,29 @@ export class TrainingPlanManagementService {
 
     this.logger.log('Training plans listed', { count: plans?.length ?? 0 });
 
-    if (!plans) return { data: [], nextCursor: null, hasNextPage: false };
+    if (!plans || plans.length === 0) return { data: [], nextCursor: null, hasNextPage: false };
 
-    const aux: TrainingPlan[] = [];
-    for (let i = 0; i < plans.length; i++) {
-      const plan = plans[i];
-      plan.likesCount = await this.trainingPlanLikeRepository.count({
-        trainingPlanId: plan.id,
-      });
-
-      if (userId && plan.likesCount > 0) {
-        const like = await this.trainingPlanLikeRepository.find({
-          where: {
-            trainingPlanId: plan.id,
-            likedBy: userId,
-          },
-        });
-        plan.likedByCurrentUser = !!like;
-      }
-
-      aux.push(plan);
-    }
-
+    const planIds = plans.map((p) => p.id);
     const authorIds = [...new Set(plans.map((p) => p.authorId))];
-    const authors = await this.identityUserServiceClient.getUsers(authorIds);
+
+    const [likesCounts, userLikes, authors] = await Promise.all([
+      this.trainingPlanLikeRepository.countByTrainingPlanIds(planIds),
+      userId
+        ? this.trainingPlanLikeRepository.findLikesByPlanIdsAndUserId(planIds, userId)
+        : Promise.resolve([]),
+      this.identityUserServiceClient.getUsers(authorIds),
+    ]);
+
+    const likesCountMap = new Map<string, number>(
+      likesCounts.map((lc) => [lc.trainingPlanId, lc.count])
+    );
+    const userLikesSet = new Set(userLikes.map((ul) => ul.trainingPlanId));
     const authorsMap = new Map(authors.map((a) => [a['id'], a]));
 
     const data = plans.map((p) => {
       p.author = authorsMap.get(p.authorId);
+      p.likesCount = likesCountMap.get(p.id) || 0;
+      p.likedByCurrentUser = userLikesSet.has(p.id);
 
       if (p.imageUrl) {
         p.imageUrl = this.storageService.generateSasUrl(p.imageUrl);

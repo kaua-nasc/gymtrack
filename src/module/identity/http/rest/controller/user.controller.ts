@@ -131,15 +131,16 @@ export class UserController {
     await this.userManagementService.create({ ...user });
   }
 
-  @Get('exists')
+  @Get('exists/:userId')
   @ApiOperation({ summary: 'Verifica se o usuário existe' })
+  @ApiParam({ name: 'userId', description: 'ID do usuário a ser verificado' })
   @ApiResponse({
     status: 200,
     description: 'Retorna se o usuário existe',
     schema: { example: { exists: true } },
   })
-  async exists(): Promise<UserExistsResponseDto> {
-    const exists = await this.userManagementService.exists();
+  async exists(@Param('userId') userId: string): Promise<UserExistsResponseDto> {
+    const exists = await this.userManagementService.existsById(userId);
 
     return { exists: exists };
   }
