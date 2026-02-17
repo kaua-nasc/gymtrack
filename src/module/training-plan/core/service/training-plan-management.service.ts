@@ -24,6 +24,8 @@ import { TrainingPlanCommentRepository } from '../../persistence/repository/trai
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
+import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
+import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TrainingPlanManagementService {
@@ -32,6 +34,7 @@ export class TrainingPlanManagementService {
     private readonly trainingPlanFeedbackRepository: TrainingPlanFeedbackRepository,
     private readonly trainingPlanLikeRepository: TrainingPlanLikeRepository,
     private readonly trainingPlanCommentRepository: TrainingPlanCommentRepository,
+    private readonly planSubscriptionRepository: PlanSubscriptionRepository,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
     private readonly logger: AppLogger,
@@ -177,17 +180,19 @@ export class TrainingPlanManagementService {
 
     this.logger.log('Training plans listed', { count: plans?.length ?? 0 });
 
-    if (!plans || plans.length === 0) return { data: [], nextCursor: null, hasNextPage: false };
+    if (!plans || plans.length === 0)
+      return { data: [], nextCursor: null, hasNextPage: false };
 
     const planIds = plans.map((p) => p.id);
     const authorIds = [...new Set(plans.map((p) => p.authorId))];
 
-    const [likesCounts, userLikes, authors] = await Promise.all([
+    const [likesCounts, userLikes, authors, subscriptions] = await Promise.all([
       this.trainingPlanLikeRepository.countByTrainingPlanIds(planIds),
       userId
         ? this.trainingPlanLikeRepository.findLikesByPlanIdsAndUserId(planIds, userId)
         : Promise.resolve([]),
       this.identityUserServiceClient.getUsers(authorIds),
+      this.planSubscriptionRepository.getUserSubscriptionForPlan(userId, planIds),
     ]);
 
     const likesCountMap = new Map<string, number>(
@@ -195,11 +200,20 @@ export class TrainingPlanManagementService {
     );
     const userLikesSet = new Set(userLikes.map((ul) => ul.trainingPlanId));
     const authorsMap = new Map(authors.map((a) => [a['id'], a]));
+    const subscriptionsMap = new Map<string, PlanSubscription[]>();
+    subscriptions.forEach((subscription) => {
+      const planId = subscription.trainingPlanId;
+      if (!subscriptionsMap.has(planId)) {
+        subscriptionsMap.set(planId, []);
+      }
+      subscriptionsMap.get(planId)!.push(subscription);
+    });
 
     const data = plans.map((p) => {
       p.author = authorsMap.get(p.authorId);
       p.likesCount = likesCountMap.get(p.id) || 0;
       p.likedByCurrentUser = userLikesSet.has(p.id);
+      p.planSubscriptions = subscriptionsMap.get(p.id) ?? [];
 
       if (p.imageUrl) {
         p.imageUrl = this.storageService.generateSasUrl(p.imageUrl);
