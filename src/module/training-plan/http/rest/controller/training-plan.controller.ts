@@ -153,7 +153,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.giveFeedback({ ...feedback });
   }
 
-  @Get('feedbacks/:trainingPlanId')
+  @Get(':trainingPlanId/feedbacks')
   @ApiOperation({
     summary: 'Lista feedbacks de um plano de treino',
     description:
@@ -193,7 +193,7 @@ export class TrainingPlanController {
     );
   }
 
-  @Post('image/:trainingPlanId')
+  @Post('/:trainingPlanId/image')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Upload training plan image' })
   @ApiResponse({ status: 200, description: 'Image updated successfully' })
@@ -218,7 +218,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.addImage(trainingPlanId, file.buffer);
   }
 
-  @Post('like/:trainingPlanId')
+  @Post('/:trainingPlanId/like')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Like a training plan' })
   @ApiResponse({ status: 200, description: 'Training plan liked successfully' })
@@ -231,7 +231,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.like(trainingPlanId);
   }
 
-  @Delete('like/:trainingPlanId')
+  @Delete('/:trainingPlanId/like')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove like from a training plan' })
   @ApiResponse({ status: 200, description: 'Like removed successfully' })
@@ -244,7 +244,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.removeLike(trainingPlanId);
   }
 
-  @Post('clone/:trainingPlanId')
+  @Post('/:trainingPlanId/clone')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Clona um plano de treino existente' })
   @ApiResponse({ status: 201, description: 'Plano de treino clonado com sucesso' })

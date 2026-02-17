@@ -430,11 +430,9 @@ export class TrainingPlanManagementService {
     }
 
     this.logger.log(`Checking if like already exists`);
-    const alreadyLiked = await this.trainingPlanLikeRepository.find({
-      where: {
-        trainingPlanId,
-        likedBy: userId,
-      },
+    const alreadyLiked = await this.trainingPlanLikeRepository.existsBy({
+      trainingPlanId,
+      likedBy: userId,
     });
 
     if (alreadyLiked) {
