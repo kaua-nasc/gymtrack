@@ -26,6 +26,8 @@ import { TrainingPlanLikeRepository } from '../../persistence/repository/trainin
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
+import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
+import { TrainingPlanResponseDto } from '../../http/rest/dto/response/training-plan-response.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TrainingPlanManagementService {
@@ -269,7 +271,6 @@ export class TrainingPlanManagementService {
     const trainingPlan = await this.trainingPlanRepository.findOneById(
       newFeedback.trainingPlanId
     );
-
     if (!trainingPlan) {
       this.logger.warn('Feedback failed: training plan not found', {
         trainingPlanId: newFeedback.trainingPlanId,
@@ -647,5 +648,66 @@ export class TrainingPlanManagementService {
       commentId,
       userId,
     });
+  }
+
+  async getTrainingPlanInProgress(): Promise<TrainingPlanResponseDto | null> {
+    const userId = this.request.user.id;
+    this.logger.log('Fetching training plan in progress for user', { userId });
+
+    const subscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        status: PlanSubscriptionStatus.inProgress,
+      },
+      relations: {
+        trainingPlan: {
+          days: true,
+        },
+        planDayProgress: true,
+      },
+    });
+
+    if (!subscription) {
+      this.logger.log('No training plan in progress found for user', { userId });
+      return null;
+    }
+
+    const trainingPlan = subscription.trainingPlan;
+    const weekStatus: Record<string, boolean> = {
+      monday: false,
+      tuesday: false,
+      wednesday: false,
+      thursday: false,
+      friday: false,
+      saturday: false,
+      sunday: false,
+    };
+
+    const days = trainingPlan.days;
+    const progress = subscription.planDayProgress;
+
+    for (const day of days) {
+      const dayName = day.name.toLowerCase();
+      if (Object.hasOwn(weekStatus, dayName)) {
+        const isTrained = progress.some((p) => p.dayId === day.id);
+        weekStatus[dayName] = isTrained;
+      }
+    }
+
+    if (trainingPlan.imageUrl) {
+      trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
+    }
+
+    return {
+      ...trainingPlan,
+      weekStatus,
+      likesCount: await this.trainingPlanLikeRepository.count({
+        trainingPlanId: trainingPlan.id,
+      }),
+      likedByCurrentUser: await this.trainingPlanLikeRepository.existsBy({
+        trainingPlanId: trainingPlan.id,
+        likedBy: userId,
+      }),
+    };
   }
 }

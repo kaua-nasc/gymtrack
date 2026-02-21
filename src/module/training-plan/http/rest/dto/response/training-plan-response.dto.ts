@@ -102,6 +102,21 @@ export class TrainingPlanResponseDto {
     description: 'Informações do autor do plano de treino',
   })
   author?: object;
+
+  @ApiProperty({
+    description: 'Status do treino para cada dia da semana',
+    example: {
+      monday: true,
+      tuesday: false,
+      wednesday: false,
+      thursday: true,
+      friday: false,
+      saturday: false,
+      sunday: false,
+    },
+    required: false,
+  })
+  weekStatus?: Record<string, boolean>;
 }
 
 export class TrainingPlanListResponseDto {
