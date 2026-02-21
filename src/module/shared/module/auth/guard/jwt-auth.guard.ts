@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { ClsService } from 'nestjs-cls';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -16,7 +17,8 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
-    private reflector: Reflector
+    private reflector: Reflector,
+    private clsService: ClsService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -39,6 +41,7 @@ export class JwtAuthGuard implements CanActivate {
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
       request['user'] = { id: payload.sub };
+      this.clsService.set('userId', payload.sub);
     } catch {
       throw new UnauthorizedException();
     }
