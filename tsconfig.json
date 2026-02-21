@@ -12,8 +12,8 @@
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "lib": ["ES2020"],
-    "module": "CommonJS",
+    "lib": ["ESNext"],
+    "module": "esnext",
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -41,9 +41,9 @@
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
-    "target": "ES2021",
+    "target": "esnext",
     "types": ["bun"],
-    "moduleResolution": "node"
+    "moduleResolution": "bundler"
   },
   "include": ["src/**/*", "test/**/*.spec.ts", "test/**/*.test.ts"],
   "exclude": ["**/*.e2e.ts"]
