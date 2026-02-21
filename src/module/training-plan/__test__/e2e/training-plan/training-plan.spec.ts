@@ -15,6 +15,7 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
+import { sign } from 'jsonwebtoken';
 import { HttpResponse, http } from 'msw';
 import { SetupServerApi } from 'msw/node';
 import {
@@ -63,6 +64,17 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
     }
   });
 
+  const getAuthorizationHeader = (userId: string) => {
+    return {
+      Authorization: `Bearer ${sign(
+        {
+          sub: userId,
+        },
+        configuration['auth.jwtSecret'] as string
+      )}`,
+    };
+  };
+
   describe('Create Training Plan', () => {
     it('should create an training plan when has valid data and user exists', async () => {
       const user = userFactory.build();
@@ -78,7 +90,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
         body: JSON.stringify(trainingPlan),
       });
 
@@ -99,7 +114,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainingPlan.authorId!),
+        },
         body: JSON.stringify(trainingPlan),
       });
 
@@ -121,7 +139,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainingPlan.authorId!),
+        },
         body: JSON.stringify(trainingPlan),
       });
 
@@ -145,7 +166,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainingPlan.authorId!),
+        },
         body: JSON.stringify(trainingPlan),
       });
 
@@ -163,7 +187,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       await testDbClient(Tables.TrainingPlan).insert(firstTrainingPlan);
 
       const response = await fetch(
-        `${url}/training-plan/list/${firstTrainingPlan.authorId}`
+        `${url}/training-plan/list/${firstTrainingPlan.authorId}`,
+        {
+          headers: {
+            ...getAuthorizationHeader(firstTrainingPlan.authorId!),
+          },
+        }
       );
 
       const body = await response.json();
@@ -180,7 +209,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
       const firstTrainingPlan = trainingPlanFactory.build();
 
       const response = await fetch(
-        `${url}/training-plan/list/${firstTrainingPlan.authorId}`
+        `${url}/training-plan/list/${firstTrainingPlan.authorId}`,
+        {
+          headers: {
+            ...getAuthorizationHeader(firstTrainingPlan.authorId!),
+          },
+        }
       );
 
       const body = await response.json();
@@ -197,16 +231,22 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan/${firstTrainingPlan.id}`, {
         method: 'DELETE',
+        headers: {
+          ...getAuthorizationHeader(firstTrainingPlan.authorId!),
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
     });
 
-    it('should delete an training plan when has a training plan', async () => {
+    it('should delete an training plan when has a training plan 2', async () => {
       const firstTrainingPlan = trainingPlanFactory.build();
 
       const response = await fetch(`${url}/training-plan/${firstTrainingPlan.id}`, {
         method: 'DELETE',
+        headers: {
+          ...getAuthorizationHeader(firstTrainingPlan.authorId!),
+        },
       });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
@@ -237,7 +277,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(userId),
+        },
         body: JSON.stringify(feedback),
       });
 
@@ -258,7 +301,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainingPlan.authorId!),
+        },
         body: JSON.stringify(feedback),
       });
 
@@ -280,7 +326,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainingPlan.authorId!),
+        },
         body: JSON.stringify(feedback),
       });
 
@@ -310,7 +359,10 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       const response = await fetch(`${url}/training-plan/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(userId),
+        },
         body: JSON.stringify(feedback),
       });
 
@@ -337,12 +389,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -363,12 +415,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -387,12 +439,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -413,12 +465,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -447,12 +499,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -482,12 +534,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -521,12 +573,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -536,15 +588,15 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
     it('should remove like successfully when send valid data', async () => {
       const trainingPlan = trainingPlanFactory.build();
-      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const user = userFactory.build();
       const planParticipant = planParticipantFactory
         .extend({
-          userId,
+          userId: user.id,
           trainingPlanId: trainingPlan.id,
         })
         .build();
       const like = trainingPlanLikeFactory
-        .extend({ likedBy: userId, trainingPlanId: trainingPlan.id })
+        .extend({ likedBy: user.id, trainingPlanId: trainingPlan.id })
         .build();
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
@@ -553,19 +605,21 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
       server.use(
         http.get(
-          `${configuration['identityApi.url']}/identity/user/exists/${userId}`,
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
           () => HttpResponse.json({ exists: true })
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'DELETE',
+        headers: {
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
-      const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
+      const likes = await testDbClient(Tables.TrainingPlanLikes)
+        .select('*')
+        .where('deletedAt', '<>', null);
 
       expect(likes).toHaveLength(0);
       expect(response.status).toBe(HttpStatus.OK);
@@ -584,12 +638,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/like/${trainingPlan.id}/${userId}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/like`, {
+        method: 'DELETE',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const likes = await testDbClient(Tables.TrainingPlanLikes).select('*');
 
@@ -614,12 +668,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -640,12 +694,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
       expect(plans).toHaveLength(1);
@@ -663,12 +717,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          ...getAuthorizationHeader(userId),
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -692,12 +746,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${configuration['trainingPlanApi.serviceToken']}`,
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -721,12 +775,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${configuration['trainingPlanApi.serviceToken']}`,
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -750,12 +804,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${configuration['trainingPlanApi.serviceToken']}`,
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -787,12 +841,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${configuration['trainingPlanApi.serviceToken']}`,
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -816,12 +870,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${configuration['trainingPlanApi.serviceToken']}`,
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 
@@ -851,12 +905,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
         )
       );
 
-      const response = await fetch(
-        `${url}/training-plan/clone/${userId}/${trainingPlan.id}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/clone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${configuration['trainingPlanApi.serviceToken']}`,
+        },
+      });
 
       const plans = await testDbClient(Tables.TrainingPlan).select('*');
 

@@ -13,6 +13,7 @@ import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
+import { sign } from 'jsonwebtoken';
 import { SetupServerApi } from 'msw/node';
 import { createUserFactory, userFactory } from '../../factory/user.factory';
 import { userFollowsFactory } from '../../factory/user-follows.factory';
@@ -23,11 +24,13 @@ describe('Identity - User Management Controller - (e2e)', () => {
   let module: TestingModule;
   let url: string;
   let server: SetupServerApi;
+  let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
     const setup = await createNestApp([IdentityModule]);
     app = setup.app;
     module = setup.module;
+    configuration = setup.configuration;
     server = setup.server;
     await app.listen(0);
 
@@ -38,7 +41,8 @@ describe('Identity - User Management Controller - (e2e)', () => {
     await testDbClient(Tables.User).del();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await testDbClient(Tables.User).del();
     server.resetHandlers();
   });
 
@@ -52,13 +56,27 @@ describe('Identity - User Management Controller - (e2e)', () => {
     }
   });
 
+  const getAuthorizationHeader = (userId: string) => {
+    return {
+      Authorization: `Bearer ${sign(
+        {
+          sub: userId,
+        },
+        configuration['auth.jwtSecret'] as string
+      )}`,
+    };
+  };
+
   describe('Create User', () => {
     it('should creates a new user', async () => {
       const user = createUserFactory.build();
 
       const response = await fetch(`${url}/identity/user`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
         body: JSON.stringify(user),
       });
 
@@ -74,7 +92,10 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       const res = await fetch(`${url}/identity/user`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
         body: JSON.stringify(user),
       });
 
@@ -94,7 +115,10 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       const res = await fetch(`${url}/identity/user/${user.id}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
       });
 
       const body = (await res.json()) as { id: string; email: string };
@@ -109,7 +133,10 @@ describe('Identity - User Management Controller - (e2e)', () => {
         `${url}/identity/user/5e2a62de-6ead-4678-a12f-8c17e91513a3`,
         {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader('5e2a62de-6ead-4678-a12f-8c17e91513a3'),
+          },
         }
       );
 
@@ -128,26 +155,28 @@ describe('Identity - User Management Controller - (e2e)', () => {
       await testDbClient(Tables.User).insert(user);
       await testDbClient(Tables.User).insert(anotherUser);
 
-      const res = await fetch(
-        `${url}/identity/user/follow/${user.id}/${anotherUser.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/identity/user/follow/${anotherUser.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.CREATED);
     });
 
     it('should return not found when user not exists', async () => {
-      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
       const anotherUser = userFactory.build({ email: 'another@example.com' });
 
       await testDbClient(Tables.User).insert(anotherUser);
 
-      const res = await fetch(`${url}/identity/user/follow/${userId}/${anotherUser.id}`, {
+      const res = await fetch(`${url}/identity/user/follow/${anotherUser.id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader('5e2a62de-6ead-4678-a12f-8c17e91513a3'),
+        },
       });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -159,9 +188,12 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       await testDbClient(Tables.User).insert(user);
 
-      const res = await fetch(`${url}/identity/user/follow/${user.id}/${userId}`, {
+      const res = await fetch(`${url}/identity/user/follow/${userId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
       });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -183,13 +215,13 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       await testDbClient(Tables.UserFollows).insert(userFollows);
 
-      const res = await fetch(
-        `${url}/identity/user/follow/${user.id}/${anotherUser.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/identity/user/follow/${anotherUser.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -211,13 +243,13 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       await testDbClient(Tables.UserFollows).insert(userFollows);
 
-      const res = await fetch(
-        `${url}/identity/user/unfollow/${user.id}/${anotherUser.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/identity/user/unfollow/${anotherUser.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.OK);
     });
@@ -225,9 +257,12 @@ describe('Identity - User Management Controller - (e2e)', () => {
     it('should return bad request when paramether ids are equals', async () => {
       const user = userFactory.build();
 
-      const res = await fetch(`${url}/identity/user/unfollow/${user.id}/${user.id}`, {
+      const res = await fetch(`${url}/identity/user/unfollow/${user.id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
       });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -242,13 +277,13 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       await testDbClient(Tables.User).insert(user);
 
-      const res = await fetch(
-        `${url}/identity/user/unfollow/${user.id}/${anotherUser.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/identity/user/unfollow/${anotherUser.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -262,13 +297,13 @@ describe('Identity - User Management Controller - (e2e)', () => {
       await testDbClient(Tables.User).insert(user);
       await testDbClient(Tables.User).insert(anotherUser);
 
-      const res = await fetch(
-        `${url}/identity/user/unfollow/${user.id}/${anotherUser.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/identity/user/unfollow/${anotherUser.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -291,9 +326,12 @@ describe('Identity - User Management Controller - (e2e)', () => {
         userId: user.id,
       });
 
-      const res = await fetch(`${url}/identity/user/privacy/settings/${user.id}`, {
+      const res = await fetch(`${url}/identity/user/privacy/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
         body: JSON.stringify({
           shareName: true,
           shareEmail: true,
@@ -319,9 +357,12 @@ describe('Identity - User Management Controller - (e2e)', () => {
         userId: user.id,
       });
 
-      const res = await fetch(`${url}/identity/user/privacy/settings/${user.id}`, {
+      const res = await fetch(`${url}/identity/user/privacy/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
         body: JSON.stringify({
           shareEmail: true,
           shareTrainingProgress: true,
@@ -346,9 +387,12 @@ describe('Identity - User Management Controller - (e2e)', () => {
         userId: user.id,
       });
 
-      const res = await fetch(`${url}/identity/user/privacy/settings/${user.id}`, {
+      const res = await fetch(`${url}/identity/user/privacy/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
         body: JSON.stringify({}),
       });
 

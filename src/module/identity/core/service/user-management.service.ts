@@ -85,7 +85,6 @@ export class UserManagementService {
   }
 
   async getUsersByIds(userIds: string[]): Promise<User[]> {
-    console.log(`Fetching users by IDs: ${userIds}`);
     this.logger.log(`Fetching users by IDs: ${userIds}`);
     const users = await this.userRepository.findMany({
       where: { id: In([...new Set(userIds)]) },

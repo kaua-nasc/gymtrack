@@ -15,6 +15,7 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
+import { sign } from 'jsonwebtoken';
 import { HttpResponse, http } from 'msw';
 import { SetupServerApi } from 'msw/node';
 import { planSubscriptionFactory } from '../../factory/plan-subscription.factory';
@@ -59,6 +60,17 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
     }
   });
 
+  const getAuthorizationHeader = (userId: string) => {
+    return {
+      Authorization: `Bearer ${sign(
+        {
+          sub: userId,
+        },
+        configuration['auth.jwtSecret'] as string
+      )}`,
+    };
+  };
+
   describe('Create Subscription', () => {
     it('should create a plan subscription successfully', async () => {
       const user = userFactory.build();
@@ -73,14 +85,14 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+      });
 
       expect(res.status).toBe(HttpStatus.CREATED);
     });
@@ -99,14 +111,14 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainingPlan.authorId!),
+        },
+        body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+      });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -121,14 +133,14 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${trainingPlan.authorId}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+      });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -152,14 +164,14 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: 'TOTAL_ACCESS' }),
+      });
 
       expect(res.status).toBe(HttpStatus.CONFLICT);
     });
@@ -185,13 +197,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.OK);
     });
@@ -214,13 +226,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.OK);
     });
@@ -243,13 +255,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       expect(res.status).toBe(HttpStatus.OK);
     });
@@ -272,13 +284,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       const body = (await res.json()) as { message: string };
 
@@ -298,13 +310,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
       const body = (await res.json()) as { message: string };
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
@@ -329,13 +341,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       const body = (await res.json()) as { message: string };
 
@@ -363,13 +375,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
 
-      const res = await fetch(
-        `${url}/training-plan/subscription/${trainingPlan.id}/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
 
       const body = (await res.json()) as { message: string };
 
@@ -401,10 +413,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/in-progress`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -433,10 +448,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/in-progress`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -457,10 +475,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/in-progress`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -487,10 +508,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/in-progress`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -517,10 +541,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/in-progress`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -547,10 +574,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/in-progress/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/in-progress`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -579,10 +609,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/finished`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -609,10 +642,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/finished`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -633,23 +669,26 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/finished`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
 
-    it('should return a bad request when plan subscription status is not started', async () => {
+    it('should return a bad request when plan subscription status is finished', async () => {
       const user = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
         userId: user.id,
         trainingPlanId: trainingPlan.id,
-        status: PlanSubscriptionStatus.notStarted,
+        status: PlanSubscriptionStatus.completed,
       });
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
@@ -663,10 +702,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/finished`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -693,10 +735,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/finished`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -723,10 +768,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/finished/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/canceled`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -754,10 +802,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         )
       );
       const res = await fetch(
-        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/canceled`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -784,10 +835,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/canceled`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -808,17 +862,20 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/canceled`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
 
-    it('should return a bad request when plan subscription status is not started', async () => {
+    it('should return a bad request when plan subscription status is canceled', async () => {
       const user = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
@@ -838,10 +895,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -868,10 +928,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/canceled`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -898,10 +961,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/canceled/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/canceled`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -930,10 +996,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -960,10 +1029,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -984,10 +1056,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -1014,10 +1089,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -1044,10 +1122,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 
@@ -1074,10 +1155,13 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       );
 
       const res = await fetch(
-        `${url}/training-plan/subscription/send/not-started/${trainingPlan.id}/${user.id}`,
+        `${url}/training-plan/${trainingPlan.id}/subscriptions/send/not-started`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
         }
       );
 

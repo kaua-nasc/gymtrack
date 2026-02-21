@@ -49,4 +49,7 @@ export const getTestConfig = (): { [key: string]: string | number | undefined } 
   'billingApi.url': process.env.BILLING_API_URL,
   'identityApi.url': 'http://localhost:9876',
   'trainingPlanApi.url': 'http://aguardando-inicializacao',
+  'trainingPlanApi.serviceToken': process.env.TRAINING_PLAN_API_SERVICE_TOKEN,
+  'identityApi.serviceToken': process.env.IDENTITY_API_SERVICE_TOKEN,
+  'auth.jwtSecret': process.env.AUTH_JWT_SECRET,
 });
