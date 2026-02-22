@@ -1,33 +1,30 @@
 # --- Stage 1: Build ---
-FROM oven/bun:1-alpine AS builder
-
+FROM node:22-alpine AS builder
 WORKDIR /usr/src/app
 
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
-RUN bun run build
-
-# Remove dependências de desenvolvimento para economizar centenas de MBs
-RUN rm -rf node_modules && bun install --production --frozen-lockfile
+RUN npm run build
 
 # --- Stage 2: Production ---
-FROM oven/bun:1-distroless AS production
-
+FROM node:22-slim AS production
 WORKDIR /usr/src/app
 
-# Copiamos apenas o necessário. 
-# O Bun Distroless não tem shell nem gerenciadores de pacotes, apenas o runtime do Bun.
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Copia arquivos de definição
+COPY package.json package-lock.json tsconfig.json ./
+
+# Instala apenas o necessário para rodar (omitindo dev)
+# Adicionamos o tsconfig-paths explicitamente caso ele não esteja no dependencies
+RUN npm ci --omit=dev && npm install tsconfig-paths --omit=dev
+
+# Copia o código compilado do Stage 1
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/package.json ./
 
 ENV NODE_ENV=production
 ENV PORT=8080
-
 EXPOSE 8080
 
-# No distroless, chamamos o binário do bun diretamente
-# Em vez de "bun run start:prod", chamamos o comando que o script executaria
-CMD ["./node_modules/.bin/bun", "dist/src/main.js"]
+# CAMINHO CORRIGIDO: dist/src/main.js
+CMD ["node", "-r", "tsconfig-paths/register", "dist/src/main.js"]
