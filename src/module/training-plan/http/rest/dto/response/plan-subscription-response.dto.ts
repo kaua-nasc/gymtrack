@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TrainingPlan } from '@src/module/training-plan/persistence/entity/training-plan.entity';
 import { TrainingPlanResponseDto } from './training-plan-response.dto';
 
 export class PlanSubscriptionResponseDto {
@@ -19,6 +18,7 @@ export class PlanSubscriptionResponseDto {
 
   @ApiProperty({
     description: 'Informações do plano de treinamento associado à assinatura',
+    type: () => TrainingPlanResponseDto,
   })
   trainingPlan?: TrainingPlanResponseDto;
 }

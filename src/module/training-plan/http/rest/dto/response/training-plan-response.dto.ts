@@ -117,6 +117,12 @@ export class TrainingPlanResponseDto {
     required: false,
   })
   weekStatus?: Record<string, boolean>;
+
+  @ApiProperty({
+    description:
+      'Status do plano de treino, caso o usuario tenha uma inscricao nesse plano',
+  })
+  planSubscriptionStatus?: string;
 }
 
 export class TrainingPlanListResponseDto {

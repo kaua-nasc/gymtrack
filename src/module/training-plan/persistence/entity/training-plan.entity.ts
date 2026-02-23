@@ -55,6 +55,8 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
 
   likedByCurrentUser?: boolean;
 
+  planSubscriptionStatus?: string;
+
   @OneToMany(
     () => PlanSubscription,
     (subscription) => subscription.trainingPlan,

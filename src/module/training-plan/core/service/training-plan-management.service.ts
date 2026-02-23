@@ -12,22 +12,24 @@ import { Cursor } from '@src/module/shared/module/persistence/typeorm/repository
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
+import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
 import { CreateTrainingPlanRequestDto } from '../../http/rest/dto/request/create-training-plan-request.dto';
-import { TrainingPlanListResponseDto } from '../../http/rest/dto/response/training-plan-response.dto';
+import {
+  TrainingPlanListResponseDto,
+  TrainingPlanResponseDto,
+} from '../../http/rest/dto/response/training-plan-response.dto';
 import { Day } from '../../persistence/entity/day.entity';
 import { Exercise } from '../../persistence/entity/exercise.entity';
+import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
 import { TrainingPlanComment } from '../../persistence/entity/training-plan-comment.entity';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
+import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { TrainingPlanCommentRepository } from '../../persistence/repository/training-plan-comment.repository';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
-import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
-import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
-import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
-import { TrainingPlanResponseDto } from '../../http/rest/dto/response/training-plan-response.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TrainingPlanManagementService {
@@ -94,10 +96,16 @@ export class TrainingPlanManagementService {
   }
 
   async get(id: string) {
+    const userId = this.request.user.id;
+
     this.logger.log('Fetching training plan details', { trainingPlanId: id });
     const trainingPlan = await this.trainingPlanRepository.find({
       where: { id },
-      relations: { days: { exercises: true } },
+      relations: {
+        days: { exercises: true },
+        privateParticipants: true,
+        planSubscriptions: { planDayProgress: true, privacySettings: true },
+      },
     });
 
     if (!trainingPlan) {
@@ -117,7 +125,6 @@ export class TrainingPlanManagementService {
     ]);
 
     trainingPlan.likesCount = likesCount;
-    const userId = this.request.user.id;
     if (userId && likesCount > 0) {
       const user = await this.trainingPlanLikeRepository.find({
         where: {
@@ -174,9 +181,7 @@ export class TrainingPlanManagementService {
         'createdAt',
         {
           privateParticipants: true,
-          feedbacks: true,
           planSubscriptions: { planDayProgress: true, privacySettings: true },
-          days: { exercises: true },
         }
       );
 
@@ -215,7 +220,12 @@ export class TrainingPlanManagementService {
       p.author = authorsMap.get(p.authorId);
       p.likesCount = likesCountMap.get(p.id) || 0;
       p.likedByCurrentUser = userLikesSet.has(p.id);
-      p.planSubscriptions = subscriptionsMap.get(p.id) ?? [];
+
+      const userPlanSub = (subscriptionsMap.get(p.id) ?? []).find(
+        (sub) => sub.userId === userId
+      );
+
+      p.planSubscriptionStatus = userPlanSub ? userPlanSub.status.toString() : undefined;
 
       if (p.imageUrl) {
         p.imageUrl = this.storageService.generateSasUrl(p.imageUrl);
@@ -579,6 +589,15 @@ export class TrainingPlanManagementService {
         'createdAt'
       );
 
+    const users = await this.identityUserServiceClient.getUsers(
+      comments.map((c) => c.authorId)
+    );
+
+    const usersMap = new Map(users.map((u) => [u['id'], u]));
+    comments.forEach((comment) => {
+      comment.author = usersMap.get(comment.authorId);
+    });
+
     this.logger.log('Comments listed successfully', {
       trainingPlanId,
       commentCount: comments.length,
@@ -685,12 +704,13 @@ export class TrainingPlanManagementService {
 
     const days = trainingPlan.days;
     const progress = subscription.planDayProgress;
+    const trainedDayIds = new Set(progress.map((p) => p.dayId));
 
     for (const day of days) {
       const dayName = day.name.toLowerCase();
-      if (Object.hasOwn(weekStatus, dayName)) {
-        const isTrained = progress.some((p) => p.dayId === day.id);
-        weekStatus[dayName] = isTrained;
+
+      if (dayName in weekStatus) {
+        weekStatus[dayName] = trainedDayIds.has(day.id);
       }
     }
 

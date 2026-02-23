@@ -1,3 +1,4 @@
+import { IdentityUser } from '@src/module/shared/module/integration/interface/identity-user-integration.interface';
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
@@ -19,4 +20,6 @@ export class TrainingPlanComment extends DefaultEntity<TrainingPlanComment> {
 
   @Column({ type: 'uuid', nullable: false })
   trainingPlanId: string;
+
+  author?: IdentityUser;
 }
