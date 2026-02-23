@@ -82,7 +82,8 @@ export class PinoLogger implements PinoMethods {
 
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
-        outOfContext = pino(...pinoHttp);
+        // biome-ignore lint/suspicious/noExplicitAny: pino types compatibility
+        outOfContext = pino(...(pinoHttp as [any, any])) as unknown as pino.Logger;
       } else if (isPassedLogger(pinoHttp)) {
         // biome-ignore lint/suspicious/noExplicitAny: pino types compatibility
         outOfContext = pinoHttp.logger as any;
@@ -94,9 +95,11 @@ export class PinoLogger implements PinoMethods {
         outOfContext = pino(
           pinoHttp as pino.LoggerOptions,
           pinoHttp.stream as DestinationStream
-        );
+        ) as unknown as pino.Logger;
       } else {
-        outOfContext = pino(pinoHttp as pino.LoggerOptions | DestinationStream);
+        outOfContext = pino(
+          pinoHttp as pino.LoggerOptions | DestinationStream
+        ) as unknown as pino.Logger;
       }
     }
   }
