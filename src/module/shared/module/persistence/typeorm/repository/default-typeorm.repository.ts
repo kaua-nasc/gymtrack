@@ -11,6 +11,7 @@ import {
   Repository,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity.js';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 export interface Cursor {
   value: string | number | Date;
@@ -21,7 +22,8 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   protected repository: Repository<T>;
   constructor(
     readonly entity: EntityTarget<T>,
-    readonly manager: EntityManager
+    readonly manager: EntityManager,
+    protected readonly logger: AppLogger
   ) {
     this.repository = manager.getRepository(entity);
   }
@@ -29,52 +31,138 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
   async save(entity: T): Promise<T> {
     try {
       return await this.repository.save(entity);
-    } catch {
-      return await this.repository.save(entity);
+    } catch (error) {
+      this.logger.error(
+        `Error saving entity ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
     }
   }
 
   async findOneById(id: string, relations?: string[]): Promise<T | null> {
-    return this.repository.findOne({
-      where: { id } as unknown as FindOptionsWhere<T>,
-      relations,
-    });
+    try {
+      return await this.repository.findOne({
+        where: { id } as unknown as FindOptionsWhere<T>,
+        relations,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error finding entity ${this.repository.metadata.name} by id ${id}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async find(options: FindOneOptions<T>): Promise<T | null> {
-    return this.repository.findOne(options);
+    try {
+      return await this.repository.findOne(options);
+    } catch (error) {
+      this.logger.error(
+        `Error finding entity ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async findMany(options: FindManyOptions<T>): Promise<T[] | null> {
-    return this.repository.find(options);
+    try {
+      return await this.repository.find(options);
+    } catch (error) {
+      this.logger.error(
+        `Error finding many entities ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async exists(id: string): Promise<boolean> {
-    return this.repository.exists({
-      where: { id } as unknown as FindOptionsWhere<T>,
-    });
+    try {
+      return await this.repository.exists({
+        where: { id } as unknown as FindOptionsWhere<T>,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error checking existence of entity ${this.repository.metadata.name} by id ${id}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async existsBy(properties: FindOptionsWhere<T>): Promise<boolean> {
-    return this.repository.exists({
-      where: properties,
-    });
+    try {
+      return await this.repository.exists({
+        where: properties,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error checking existence of entity ${this.repository.metadata.name} by properties`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async delete(options: FindOptionsWhere<T>): Promise<void> {
-    await this.repository.softDelete(options);
+    try {
+      await this.repository.softDelete(options);
+    } catch (error) {
+      this.logger.error(
+        `Error deleting entity ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async update(criteria: FindOptionsWhere<T>, partialEntity: QueryDeepPartialEntity<T>) {
-    await this.repository.update(criteria, partialEntity);
+    try {
+      await this.repository.update(criteria, partialEntity);
+    } catch (error) {
+      this.logger.error(
+        `Error updating entity ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async deleteAll() {
-    await this.repository.delete({});
+    try {
+      await this.repository.delete({});
+    } catch (error) {
+      this.logger.error(
+        `Error deleting all entities ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async count(criteria: FindOptionsWhere<T>): Promise<number> {
-    return await this.repository.countBy(criteria);
+    try {
+      return await this.repository.countBy(criteria);
+    } catch (error) {
+      this.logger.error(
+        `Error counting entities ${this.repository.metadata.name}`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
+      );
+      throw error;
+    }
   }
 
   async findManyWithCursor(
@@ -84,39 +172,48 @@ export abstract class DefaultTypeOrmRepository<T extends DefaultEntity<T>> {
     orderBy: keyof T = 'createdAt' as keyof T,
     relations?: FindOptionsRelations<T>
   ): Promise<{ data: T[]; nextCursor: Cursor | null }> {
-    const qb = this.repository.createQueryBuilder('entity');
+    try {
+      const qb = this.repository.createQueryBuilder('entity');
 
-    qb.setFindOptions({
-      where: options,
-      relations: relations,
-      order: {
-        [orderBy]: 'DESC',
-        id: 'DESC',
-      } as unknown as FindOptionsOrder<T>,
-      take: limit,
-    });
+      qb.setFindOptions({
+        where: options,
+        relations: relations,
+        order: {
+          [orderBy]: 'DESC',
+          id: 'DESC',
+        } as unknown as FindOptionsOrder<T>,
+        take: limit,
+      });
 
-    if (cursor) {
-      qb.andWhere(
-        new Brackets((or) => {
-          or.where(`entity.${String(orderBy)} < :val`, { val: cursor.value }).orWhere(
-            `entity.${String(orderBy)} = :val AND entity.id < :id`,
-            { val: cursor.value, id: cursor.id }
-          );
-        })
+      if (cursor) {
+        qb.andWhere(
+          new Brackets((or) => {
+            or.where(`entity.${String(orderBy)} < :val`, { val: cursor.value }).orWhere(
+              `entity.${String(orderBy)} = :val AND entity.id < :id`,
+              { val: cursor.value, id: cursor.id }
+            );
+          })
+        );
+      }
+
+      const data = await qb.getMany();
+
+      const nextCursor =
+        data.length === limit
+          ? {
+              value: data[data.length - 1][orderBy] as unknown as string | number | Date,
+              id: (data[data.length - 1] as unknown as DefaultEntity<T>).id,
+            }
+          : null;
+
+      return { data, nextCursor };
+    } catch (error) {
+      this.logger.error(
+        `Error finding many entities ${this.repository.metadata.name} with cursor`,
+        error instanceof Error ? error.stack : undefined,
+        this.repository.metadata.name
       );
+      throw error;
     }
-
-    const data = await qb.getMany();
-
-    const nextCursor =
-      data.length === limit
-        ? {
-            value: data[data.length - 1][orderBy] as unknown as string | number | Date,
-            id: (data[data.length - 1] as unknown as DefaultEntity<T>).id,
-          }
-        : null;
-
-    return { data, nextCursor };
   }
 }

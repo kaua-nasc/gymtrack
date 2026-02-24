@@ -3,13 +3,15 @@ import { PlanDayProgress } from '../entity/plan-day-progress.entity';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Between, DataSource } from 'typeorm';
 import dayjs from 'dayjs';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 export class PlanDayProgressRepository extends DefaultTypeOrmRepository<PlanDayProgress> {
   constructor(
     @InjectDataSource('training-plan')
-    dataSource: DataSource
+    dataSource: DataSource,
+    logger: AppLogger
   ) {
-    super(PlanDayProgress, dataSource.manager);
+    super(PlanDayProgress, dataSource.manager, logger);
   }
 
   async create(planDayProgress: PlanDayProgress) {

@@ -27,42 +27,41 @@ export class DayManagementService {
 
   async createMany(days: CreateManyDayRequestDto[]) {
     this.logger.log(`Attempting to create ${days.length} days and their exercises.`);
-    for (const key in days) {
-      if (Object.prototype.hasOwnProperty.call(days, key)) {
-        const day = days[key];
 
-        this.logger.log('Creating day...', {
+    for (const day of days) {
+      this.logger.log('Creating day...', {
+        name: day.name,
+        trainingPlanId: day.trainingPlanId,
+      });
+
+      const savedDay = await this.dayRepository.save(
+        new Day({
           name: day.name,
           trainingPlanId: day.trainingPlanId,
-        });
-        const savedDay = await this.dayRepository.save(
-          new Day({
-            name: day.name,
-            trainingPlanId: day.trainingPlanId,
+        })
+      );
+
+      this.logger.log(`Successfully saved day: ${savedDay.id}. Now adding exercises.`);
+
+      for (const exercise of day.exercises) {
+        this.logger.log(`Adding exercise: ${exercise.name} to day: ${savedDay.id}`);
+
+        await this.exerciseRepository.save(
+          new Exercise({
+            dayId: savedDay.id,
+            name: exercise.name,
+            description: exercise.description,
+            observation: exercise.observation,
+            repsNumber: exercise.repsNumber,
+            setsNumber: exercise.setsNumber,
+            type: exercise.type,
           })
         );
-        this.logger.log(`Successfully saved day: ${savedDay.id}. Now adding exercises.`);
-
-        for (const key in day.exercises) {
-          if (Object.prototype.hasOwnProperty.call(day.exercises, key)) {
-            const exercise = day.exercises[key];
-            this.logger.log(`Adding exercise: ${exercise.name} to day: ${savedDay.id}`);
-            await this.exerciseRepository.save(
-              new Exercise({
-                dayId: savedDay.id,
-                name: exercise.name,
-                description: exercise.description,
-                observation: exercise.observation,
-                repsNumber: exercise.repsNumber,
-                setsNumber: exercise.setsNumber,
-                type: exercise.type,
-              })
-            );
-          }
-        }
-        this.logger.log(`Finished adding exercises for day: ${savedDay.id}`);
       }
+
+      this.logger.log(`Finished adding exercises for day: ${savedDay.id}`);
     }
+
     this.logger.log('Finished createMany operation for all days.');
   }
 

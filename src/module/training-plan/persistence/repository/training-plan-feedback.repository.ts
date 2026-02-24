@@ -3,13 +3,15 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { TrainingPlanFeedback } from '../entity/training-plan-feedback.entity';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class TrainingPlanFeedbackRepository extends DefaultTypeOrmRepository<TrainingPlanFeedback> {
   constructor(
     @InjectDataSource('training-plan')
-    dataSource: DataSource
+    dataSource: DataSource,
+    logger: AppLogger
   ) {
-    super(TrainingPlanFeedback, dataSource.manager);
+    super(TrainingPlanFeedback, dataSource.manager, logger);
   }
 }

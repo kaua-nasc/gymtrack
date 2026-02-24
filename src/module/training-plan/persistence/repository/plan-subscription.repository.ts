@@ -2,13 +2,15 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { DataSource, In } from 'typeorm';
 import { PlanSubscription } from '../entity/plan-subscription.entity';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 export class PlanSubscriptionRepository extends DefaultTypeOrmRepository<PlanSubscription> {
   constructor(
     @InjectDataSource('training-plan')
-    dataSource: DataSource
+    dataSource: DataSource,
+    logger: AppLogger
   ) {
-    super(PlanSubscription, dataSource.manager);
+    super(PlanSubscription, dataSource.manager, logger);
   }
 
   async remove(entity: PlanSubscription): Promise<void> {

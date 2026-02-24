@@ -2,13 +2,15 @@ import { Day } from '@src/module/training-plan/persistence/entity/day.entity';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 export class DayRepository extends DefaultTypeOrmRepository<Day> {
   constructor(
     @InjectDataSource('training-plan')
-    dataSource: DataSource
+    dataSource: DataSource,
+    logger: AppLogger
   ) {
-    super(Day, dataSource.manager);
+    super(Day, dataSource.manager, logger);
   }
 
   async findDaysByTrainingPlanId(

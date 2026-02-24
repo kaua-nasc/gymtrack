@@ -2,14 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ExerciseRepository } from '@src/module/training-plan/persistence/repository/exercise.repository';
 import { CreateExerciseRequestDto } from '../../http/rest/dto/request/create-exercise-request.dto';
 import { Exercise } from '../../persistence/entity/exercise.entity';
-import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class ExerciseManagementService {
-  constructor(
-    private readonly exerciseRepository: ExerciseRepository,
-    private readonly logger: AppLogger
-  ) {}
+  constructor(private readonly exerciseRepository: ExerciseRepository) {}
   async create(execiseData: CreateExerciseRequestDto) {
     return await this.exerciseRepository.saveExercise(new Exercise({ ...execiseData }));
   }

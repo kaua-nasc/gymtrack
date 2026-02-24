@@ -3,14 +3,16 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, In } from 'typeorm';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { TrainingPlanLike } from '../entity/training-plan-like.entity';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class TrainingPlanLikeRepository extends DefaultTypeOrmRepository<TrainingPlanLike> {
   constructor(
     @InjectDataSource('training-plan')
-    dataSource: DataSource
+    dataSource: DataSource,
+    logger: AppLogger
   ) {
-    super(TrainingPlanLike, dataSource.manager);
+    super(TrainingPlanLike, dataSource.manager, logger);
   }
 
   async findLike(trainingPlanId: string, likedBy: string): Promise<TrainingPlanLike | null> {

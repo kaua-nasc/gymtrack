@@ -51,6 +51,28 @@ export class AppLogger implements LoggerService {
     };
   }
 
+  private parseMessage(message: unknown, fields: Record<string, unknown>) {
+    let msg = '';
+    const additionalFields = { ...fields };
+
+    if (message instanceof Error) {
+      msg = message.message;
+      additionalFields.err = message;
+      if (!additionalFields.stack) {
+        additionalFields.stack = message.stack;
+      }
+    } else if (typeof message === 'object' && message !== null) {
+      if ('message' in message && typeof message.message === 'string') {
+        msg = message.message;
+      }
+      Object.assign(additionalFields, message);
+    } else {
+      msg = String(message);
+    }
+
+    return { msg, fields: additionalFields };
+  }
+
   /**
    * NestJS Logger signature:
    * log(message: unknown, context?: string)
@@ -58,17 +80,14 @@ export class AppLogger implements LoggerService {
    */
   log(message: unknown, ...optionalParams: unknown[]) {
     const context = optionalParams[optionalParams.length - 1];
-    const fields = {
+    const baseFields = {
       ...this.getBaseFields(),
       ...this.getCallerContext(),
       context: typeof context === 'string' ? context : undefined,
     };
 
-    if (typeof message === 'object') {
-      this.logger.info({ ...fields, ...message });
-    } else if (typeof message === 'string') {
-      this.logger.info(fields, message);
-    }
+    const { msg, fields } = this.parseMessage(message, baseFields);
+    this.logger.info(fields, msg);
   }
 
   /**
@@ -77,73 +96,56 @@ export class AppLogger implements LoggerService {
    * error(message: unknown, ...optionalParams: unknown[])
    */
   error(message: unknown, ...optionalParams: unknown[]) {
-    let stack = optionalParams[0];
+    const stack = optionalParams[0];
     const context = optionalParams[1];
 
-    const err = message instanceof Error ? message : undefined;
-    if (err && !stack) {
-      stack = err.stack;
-    }
-
-    const fields: Record<string, unknown> = {
+    const baseFields: Record<string, unknown> = {
       ...this.getBaseFields(),
       ...this.getCallerContext(typeof stack === 'string' ? stack : undefined),
       context: typeof context === 'string' ? context : undefined,
     };
 
-    if (err) {
-      fields.err = err;
+    if (typeof stack === 'string') {
+      baseFields.stack = stack;
     }
 
-    if (typeof message === 'object' && !(message instanceof Error)) {
-      this.logger.error({ ...fields, ...message });
-    } else if (typeof message === 'string') {
-      this.logger.error(fields, err ? err.message : message);
-    }
+    const { msg, fields } = this.parseMessage(message, baseFields);
+    this.logger.error(fields, msg);
   }
 
   warn(message: unknown, ...optionalParams: unknown[]) {
     const context = optionalParams[optionalParams.length - 1];
-    const fields = {
+    const baseFields = {
       ...this.getBaseFields(),
       ...this.getCallerContext(),
       context: typeof context === 'string' ? context : undefined,
     };
 
-    if (typeof message === 'object') {
-      this.logger.warn({ ...fields, message });
-    } else if (typeof message === 'string') {
-      this.logger.warn(fields, message);
-    }
+    const { msg, fields } = this.parseMessage(message, baseFields);
+    this.logger.warn(fields, msg);
   }
 
   debug(message: unknown, ...optionalParams: unknown[]) {
     const context = optionalParams[optionalParams.length - 1];
-    const fields = {
+    const baseFields = {
       ...this.getBaseFields(),
       ...this.getCallerContext(),
       context: typeof context === 'string' ? context : undefined,
     };
 
-    if (typeof message === 'object') {
-      this.logger.debug({ ...fields, ...message });
-    } else if (typeof message === 'string') {
-      this.logger.debug(fields, message);
-    }
+    const { msg, fields } = this.parseMessage(message, baseFields);
+    this.logger.debug(fields, msg);
   }
 
   verbose(message: unknown, ...optionalParams: unknown[]) {
     const context = optionalParams[optionalParams.length - 1];
-    const fields = {
+    const baseFields = {
       ...this.getBaseFields(),
       ...this.getCallerContext(),
       context: typeof context === 'string' ? context : undefined,
     };
 
-    if (typeof message === 'object') {
-      this.logger.trace({ ...fields, ...message });
-    } else if (typeof message === 'string') {
-      this.logger.trace(fields, message);
-    }
+    const { msg, fields } = this.parseMessage(message, baseFields);
+    this.logger.trace(fields, msg);
   }
 }

@@ -4,15 +4,17 @@ import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/
 import { DataSource } from 'typeorm';
 import { User } from '../entity/user.entity';
 import { CacheService } from '@src/module/shared/module/cache/service/cache.service';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class UserRepository extends DefaultTypeOrmRepository<User> {
   constructor(
     @InjectDataSource('identity')
     dataSource: DataSource,
-    private readonly cacheService: CacheService
+    private readonly cacheService: CacheService,
+    logger: AppLogger
   ) {
-    super(User, dataSource.manager);
+    super(User, dataSource.manager, logger);
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
