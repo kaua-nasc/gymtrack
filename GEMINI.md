@@ -18,7 +18,7 @@ Contains the modular layered architecture (`Controller -> Service -> Repository 
 
 > **Open this when:** Creating new modules, defining entities, or establishing communication between `Identity` and `Training Plan`.
 
-@./documentation/rules/architecture-rules.md
+@./docs/rules/architecture-rules.md
 
 ## 🧪 Test Patterns and Best Practices
 
@@ -27,7 +27,7 @@ Defines the strategy for **Unit** (isolated/mocked), **Integration**, and **E2E*
 
 > **Open this when:** Writing `.spec.ts` files, creating data factories, or mocking external API calls with MSW.
 
-@./documentation/rules/test-patterns.md
+@./docs/rules/test-patterns.md
 
 
 ## 🧠 Global Rules & Policies
@@ -37,7 +37,7 @@ The single source of truth for **Global Error Handling**, **Transaction Manageme
 
 > **Open this when:** Handling failures, managing DB consistency, implementing logging, or designing API responses and DTOs.
 
-@./documentation/rules/general-rules.md
+@./docs/rules/general-rules.md
 
 
 ## ⚠️ Compliance Guardrail
