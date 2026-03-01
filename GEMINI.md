@@ -40,6 +40,14 @@ The single source of truth for **Global Error Handling**, **Transaction Manageme
 @./docs/rules/general-rules.md
 
 
+## 📐 Feature Designs
+
+Detailed specifications for newly implemented or planned features.
+
+- **User Metrics Tracking**: `docs/plans/2026-03-01-user-metrics-tracking-design.md`
+- **Advanced Body Measurements**: `docs/plans/2026-03-01-advanced-measurements-design.md`
+
+
 ## ⚠️ Compliance Guardrail
 
 All generated code must be validated against these rules. MCPs (Model Context Protocols) are supporting tools and **never** override the constraints defined in the files above.

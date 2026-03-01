@@ -30,6 +30,42 @@ export interface IUserPublicApi {
 }
 ```
 
+### Semantic Repository Pattern:
+Repositories must provide high-level, domain-specific methods. **Direct usage of TypeORM query builders or raw options in the service layer is strictly forbidden.**
+
+```typescript
+@Injectable()
+export class MyRepository extends DefaultTypeOrmRepository<MyEntity> {
+  constructor(
+    @InjectDataSource('{domain}') dataSource: DataSource,
+    logger: AppLogger
+  ) {
+    super(MyEntity, dataSource.createEntityManager(), logger);
+  }
+
+  // GOOD: Semantic method
+  async findActiveByUserId(userId: string): Promise<MyEntity[]> {
+    return this.repository.find({ where: { userId, isActive: true } });
+  }
+}
+```
+
+### Strict Decimal Typing (Numeric Transformer):
+When using `decimal` or `numeric` columns in TypeORM, always use a `transformer` to ensure the value is handled as a `number` (not a `string`) in the application.
+
+```typescript
+@Column({
+  type: 'decimal',
+  precision: 6,
+  scale: 2,
+  transformer: {
+    to: (value: number) => value,
+    from: (value: string) => (value ? Number(value) : value),
+  },
+})
+value: number;
+```
+
 ## 🧪 3. E2E Testing Strategy
 
 Every new feature **MUST** have a corresponding E2E test in `__test__/e2e/`.

@@ -15,29 +15,43 @@ export class MyEntity extends DefaultEntity {
   @Column()
   name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Column({
+    type: 'decimal',
+    precision: 6,
+    scale: 2,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => (value ? Number(value) : value),
+    },
+  })
+  value: number;
 }
 ```
 
 ## 📦 2. Repository (`persistence/repository/`)
 
-Must extend `DefaultTypeOrmRepository`.
+Must extend `DefaultTypeOrmRepository`. Provide **semantic methods** to keep the service layer clean.
 
 ```typescript
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, FindOptionsWhere } from 'typeorm';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { MyEntity } from '../entity/my.entity';
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 @Injectable()
 export class MyRepository extends DefaultTypeOrmRepository<MyEntity> {
   constructor(
-    @InjectDataSource('{domain}') // e.g., 'identity' or 'training-plan'
-    private readonly dataSource: DataSource,
+    @InjectDataSource('{domain}') dataSource: DataSource,
+    logger: AppLogger
   ) {
-    super(MyEntity, dataSource.createEntityManager());
+    super(MyEntity, dataSource.createEntityManager(), logger);
+  }
+
+  async findByCustomCriteria(userId: string): Promise<MyEntity[]> {
+    const where: FindOptionsWhere<MyEntity> = { userId };
+    return this.repository.find({ where });
   }
 }
 ```
