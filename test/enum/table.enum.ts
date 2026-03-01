@@ -12,4 +12,5 @@ export enum Tables {
   TrainingPlanFeedback = 'training_plan_feedbacks',
   TrainingPlanParticipants = 'plan_participant',
   TrainingPlanLikes = 'training_plan_likes',
+  WeightLog = 'weight_logs',
 }

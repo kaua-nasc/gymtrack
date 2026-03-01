@@ -6,8 +6,10 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -34,6 +36,9 @@ import 'multer';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { Public } from '../../../../shared/module/auth/guard/jwt-auth.guard';
 import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.dto';
+import { UpdateUserMetricsRequestDto } from '../dto/request/update-user-metrics-request.dto';
+import { AddWeightLogRequestDto } from '../dto/request/add-weight-log-request.dto';
+import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -279,5 +284,44 @@ export class UserController {
   @UseInterceptors(FileInterceptor('file'))
   async removeProfile() {
     await this.userManagementService.removeProfile();
+  }
+
+  @Patch('profile/metrics')
+  @ApiOperation({ summary: 'Update user height, weight and unit preferences' })
+  @ApiBody({ type: UpdateUserMetricsRequestDto })
+  @ApiResponse({ status: 200, description: 'Metrics updated successfully' })
+  async updateMetrics(@Body() dto: UpdateUserMetricsRequestDto): Promise<void> {
+    await this.userManagementService.updateMetrics(dto);
+  }
+
+  @Post('profile/weight')
+  @ApiOperation({ summary: 'Add a new weight log entry' })
+  @ApiBody({ type: AddWeightLogRequestDto })
+  @ApiResponse({ status: 201, description: 'Weight log entry created successfully', type: WeightLogResponseDto })
+  async addWeightLog(@Body() dto: AddWeightLogRequestDto): Promise<WeightLogResponseDto> {
+    const log = await this.userManagementService.addWeightLog(dto);
+    return {
+      id: log.id,
+      weight: log.weight,
+      measuredAt: log.measuredAt,
+    };
+  }
+
+  @Get('profile/weight-history')
+  @ApiOperation({ summary: 'Get weight history' })
+  @ApiResponse({ status: 200, description: 'Weight history retrieved successfully' })
+  async getWeightHistory(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20
+  ): Promise<{ items: WeightLogResponseDto[], total: number }> {
+    const { items, total } = await this.userManagementService.getWeightHistory(Number(page), Number(limit));
+    return {
+      items: items.map(log => ({
+        id: log.id,
+        weight: log.weight,
+        measuredAt: log.measuredAt,
+      })),
+      total,
+    };
   }
 }

@@ -10,7 +10,7 @@ import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.s
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { hash } from 'bcrypt';
-import { In } from 'typeorm';
+import { In, DataSource } from 'typeorm';
 import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
 import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
 import { User } from '../../persistence/entity/user.entity';
@@ -19,6 +19,13 @@ import { UserPrivacySettings } from '../../persistence/entity/user-privacy-setti
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
+import { WeightUnit } from '../../core/enum/weight-unit.enum';
+import { HeightUnit } from '../../core/enum/height-unit.enum';
+import { UpdateUserMetricsRequestDto } from '../../http/rest/dto/request/update-user-metrics-request.dto';
+import { AddWeightLogRequestDto } from '../../http/rest/dto/request/add-weight-log-request.dto';
+import { WeightLog } from '../../persistence/entity/weight-log.entity';
+import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 export interface CreateUserDto {
   email: string;
@@ -35,6 +42,8 @@ export class UserManagementService {
     private readonly userRepository: UserRepository,
     private readonly userFollowsRepository: UserFollowsRepository,
     private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository,
+    private readonly weightLogRepository: WeightLogRepository,
+    @InjectDataSource('identity') private readonly dataSource: DataSource,
     private readonly storageService: AzureStorageService,
     private readonly logger: AppLogger,
     @Inject(REQUEST) private readonly request: { user: { id: string } }
@@ -386,5 +395,90 @@ export class UserManagementService {
       }
     );
     this.logger.log(`Successfully removed profile picture for user ${userId}.`);
+  }
+
+  async updateMetrics(dto: UpdateUserMetricsRequestDto): Promise<void> {
+    const userId = this.request.user.id;
+    this.logger.log(`Updating metrics for user: ${userId}`);
+
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+
+    if (dto.height !== undefined) {
+      user.height = this.convertToMetricHeight(dto.height, dto.heightUnit || user.heightUnit);
+    }
+
+    if (dto.currentWeight !== undefined) {
+      user.currentWeight = this.convertToMetricWeight(dto.currentWeight, dto.weightUnit || user.weightUnit);
+    }
+
+    if (dto.weightUnit) {
+      user.weightUnit = dto.weightUnit;
+    }
+
+    if (dto.heightUnit) {
+      user.heightUnit = dto.heightUnit;
+    }
+
+    await this.userRepository.save(user);
+    this.logger.log(`Successfully updated metrics for user: ${userId}`);
+  }
+
+  async addWeightLog(dto: AddWeightLogRequestDto): Promise<WeightLog> {
+    const userId = this.request.user.id;
+    this.logger.log(`Adding weight log for user: ${userId}`);
+
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+
+    const weightInMetric = this.convertToMetricWeight(dto.weight, user.weightUnit);
+
+    return await this.dataSource.transaction(async (manager) => {
+      const log = new WeightLog({
+        userId,
+        weight: weightInMetric,
+        measuredAt: dto.measuredAt ? new Date(dto.measuredAt) : new Date(),
+      });
+
+      const savedLog = await manager.save(WeightLog, log);
+
+      user.currentWeight = weightInMetric;
+      await manager.save(user);
+
+      return savedLog;
+    });
+  }
+
+  async getWeightHistory(page = 1, limit = 20): Promise<{ items: WeightLog[], total: number }> {
+    const userId = this.request.user.id;
+    this.logger.log(`Fetching weight history for user: ${userId}`);
+
+    const [items, total] = await this.weightLogRepository.repository.findAndCount({
+      where: { userId } as any,
+      order: { measuredAt: 'DESC' } as any,
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+
+    return { items, total };
+  }
+
+  private convertToMetricWeight(weight: number, unit: WeightUnit): number {
+    if (unit === WeightUnit.lb) {
+      return Number((weight * 0.453592).toFixed(2));
+    }
+    return Number(weight.toFixed(2));
+  }
+
+  private convertToMetricHeight(height: number, unit: HeightUnit): number {
+    if (unit === HeightUnit['ft-in']) {
+      // Assuming height is passed in total inches for ft-in unit preference
+      return Number((height * 2.54).toFixed(2));
+    }
+    return Number(height.toFixed(2));
   }
 }
