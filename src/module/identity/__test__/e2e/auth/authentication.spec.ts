@@ -15,7 +15,6 @@ import { testDbClient } from '@testInfra/knex.database';
 import { testCacheClient } from '@testInfra/test-cache.setup';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { SetupServerApi } from 'msw/node';
-import request from 'supertest';
 import { userFactory } from '../../factory/user.factory';
 
 describe('Auth Controller (e2e)', () => {
@@ -79,7 +78,11 @@ describe('Auth Controller (e2e)', () => {
     it('should throws an exception and return status code unauthorized', async () => {
       const user = userFactory.build();
 
-      await request(app.getHttpServer()).post('/identity/user').send(user);
+      await fetch(`${url}/identity/user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
 
       const res = await fetch(`${url}/identity/auth`, {
         method: 'POST',
@@ -95,7 +98,7 @@ describe('Auth Controller (e2e)', () => {
   });
 
   describe('Authentication - Request Reset Password', () => {
-    it.skip('should return ok when request an reset password with valid email', async () => {
+    it('should return ok when request an reset password with valid email', async () => {
       const user = userFactory.build();
       await testDbClient(Tables.User).insert(user);
 

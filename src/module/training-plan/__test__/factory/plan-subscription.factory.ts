@@ -7,12 +7,12 @@ import { PlanSubscriptionType } from '../../core/enum/plan-subscription-type.enu
 export const planSubscriptionFactory = Factory.Sync.makeFactory<
   Partial<PlanSubscription>
 >({
-  id: faker.string.uuid(),
-  status: faker.helpers.enumValue(PlanSubscriptionStatus),
-  type: faker.helpers.enumValue(PlanSubscriptionType),
-  userId: faker.string.uuid(),
-  trainingPlanId: faker.string.uuid(),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  id: Factory.each(() => faker.string.uuid()),
+  status: Factory.each(() => faker.helpers.enumValue(PlanSubscriptionStatus)),
+  type: Factory.each(() => faker.helpers.enumValue(PlanSubscriptionType)),
+  userId: Factory.each(() => faker.string.uuid()),
+  trainingPlanId: Factory.each(() => faker.string.uuid()),
+  createdAt: Factory.each(() => faker.date.recent()),
+  updatedAt: Factory.each(() => faker.date.recent()),
   deletedAt: null,
 });

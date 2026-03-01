@@ -32,7 +32,7 @@ export class DayController {
   @ApiBody({ type: [CreateManyDayRequestDto] })
   @ApiResponse({ status: 201, description: 'Dias criados com sucesso' })
   async createMany(@Body() user: CreateManyDayRequestDto[]): Promise<void> {
-    await this.dayManagementService.createMany({ ...user });
+    await this.dayManagementService.createMany(user);
   }
 
   @Delete(':dayId')

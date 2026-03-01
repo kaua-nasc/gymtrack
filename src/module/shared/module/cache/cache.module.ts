@@ -19,7 +19,7 @@ export interface CacheModuleAsyncOptions {
     | ForwardReference<unknown>
   )[];
   inject?: (InjectionToken | OptionalFactoryDependency)[];
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: This factory receives arguments from NestJS DI which can be of any type.
   useFactory: (...args: any[]) => RedisOptions | Promise<RedisOptions>;
 }
 

@@ -370,7 +370,7 @@ export class TrainingPlanController {
     await this.trainingPlanManagementService.removeComment(commentId);
   }
 
-  @Get('/subscriptions/in-progress')
+  @Get('/active-training-plan')
   @ApiOperation({
     summary: 'Obtém o plano de treino em andamento do usuário',
     description:

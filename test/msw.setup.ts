@@ -1,21 +1,26 @@
 import { setupServer } from 'msw/node';
 
+export const mswServer = setupServer();
+
+let isListening = false;
+
 export const configureMswServer = () => {
-  const server = setupServer();
+  if (!isListening) {
+    mswServer.listen({
+      onUnhandledRequest(req, print) {
+        const url = new URL(req.url);
+        if (
+          url.hostname.includes('localhost') ||
+          url.hostname.includes('127.0.0.1') ||
+          url.hostname.includes('[::1]')
+        ) {
+          return;
+        }
+        print.warning();
+      },
+    });
+    isListening = true;
+  }
 
-  server.listen({
-    onUnhandledRequest(req, print) {
-      const url = new URL(req.url);
-      if (
-        url.hostname.includes('localhost') ||
-        url.hostname.includes('127.0.0.1') ||
-        url.hostname.includes('[::1]')
-      ) {
-        return;
-      }
-      print.warning();
-    },
-  });
-
-  return server;
+  return mswServer;
 };

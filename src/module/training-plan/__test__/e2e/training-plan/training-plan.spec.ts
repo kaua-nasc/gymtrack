@@ -52,7 +52,6 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
   });
 
   afterAll(async () => {
-    server.close();
     if (module) {
       await testDbClient(Tables.User).del();
       await testDbClient(Tables.TrainingPlan).del();

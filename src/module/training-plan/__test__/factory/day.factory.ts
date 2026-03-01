@@ -3,10 +3,10 @@ import { Day } from '../../persistence/entity/day.entity';
 import { faker } from '@faker-js/faker/locale/pt_BR';
 
 export const dayFactory = Factory.Sync.makeFactory<Partial<Day>>({
-  id: faker.string.uuid(),
-  name: faker.string.alphanumeric(),
-  trainingPlanId: faker.string.uuid(),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  id: Factory.each(() => faker.string.uuid()),
+  name: Factory.each(() => faker.string.alphanumeric()),
+  trainingPlanId: Factory.each(() => faker.string.uuid()),
+  createdAt: Factory.each(() => faker.date.recent()),
+  updatedAt: Factory.each(() => faker.date.recent()),
   deletedAt: null,
 });

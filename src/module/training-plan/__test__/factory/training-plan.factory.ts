@@ -8,39 +8,39 @@ import { PlanParticipant } from '../../persistence/entity/plan-participant.entit
 import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
 
 export const trainingPlanFactory = Factory.Sync.makeFactory<Partial<TrainingPlan>>({
-  id: faker.string.uuid(),
-  authorId: faker.string.uuid(),
-  level: faker.helpers.enumValue(TrainingPlanLevel),
-  name: faker.string.alphanumeric(),
-  observation: faker.string.alphanumeric(),
-  pathology: faker.string.alphanumeric(),
-  timeInDays: faker.number.int({ max: 255 }),
-  type: faker.helpers.enumValue(TrainingPlanType),
-  visibility: faker.helpers.enumValue(TrainingPlanVisibility),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  id: Factory.each(() => faker.string.uuid()),
+  authorId: Factory.each(() => faker.string.uuid()),
+  level: Factory.each(() => faker.helpers.enumValue(TrainingPlanLevel)),
+  name: Factory.each(() => faker.string.alphanumeric()),
+  observation: Factory.each(() => faker.string.alphanumeric()),
+  pathology: Factory.each(() => faker.string.alphanumeric()),
+  timeInDays: Factory.each(() => faker.number.int({ max: 255 })),
+  type: Factory.each(() => faker.helpers.enumValue(TrainingPlanType)),
+  visibility: Factory.each(() => faker.helpers.enumValue(TrainingPlanVisibility)),
+  createdAt: Factory.each(() => faker.date.recent()),
+  updatedAt: Factory.each(() => faker.date.recent()),
   deletedAt: null,
-  maxSubscriptions: faker.number.int({ min: 1, max: 255 }),
+  maxSubscriptions: Factory.each(() => faker.number.int({ min: 1, max: 255 })),
 });
 
 export const planParticipantFactory = Factory.Sync.makeFactory<Partial<PlanParticipant>>({
-  id: faker.string.uuid(),
-  approved_at: faker.date.past({ years: 1 }),
-  trainingPlanId: faker.string.uuid(),
-  userId: faker.string.uuid(),
-  expiration_date: faker.date.future({ years: 1 }),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  id: Factory.each(() => faker.string.uuid()),
+  approved_at: Factory.each(() => faker.date.past({ years: 1 })),
+  trainingPlanId: Factory.each(() => faker.string.uuid()),
+  userId: Factory.each(() => faker.string.uuid()),
+  expiration_date: Factory.each(() => faker.date.future({ years: 1 })),
+  createdAt: Factory.each(() => faker.date.recent()),
+  updatedAt: Factory.each(() => faker.date.recent()),
   deletedAt: null,
 });
 
 export const trainingPlanLikeFactory = Factory.Sync.makeFactory<
   Partial<TrainingPlanLike>
 >({
-  id: faker.string.uuid(),
-  likedBy: faker.string.uuid(),
-  trainingPlanId: faker.string.uuid(),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  id: Factory.each(() => faker.string.uuid()),
+  likedBy: Factory.each(() => faker.string.uuid()),
+  trainingPlanId: Factory.each(() => faker.string.uuid()),
+  createdAt: Factory.each(() => faker.date.recent()),
+  updatedAt: Factory.each(() => faker.date.recent()),
   deletedAt: null,
 });

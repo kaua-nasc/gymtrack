@@ -18,10 +18,11 @@ import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
 import { SetupServerApi } from 'msw/node';
 import { dayFactory } from '../../factory/day.factory';
+import { planDayProgressFactory } from '../../factory/plan-day-progress.factory';
 import { planSubscriptionFactory } from '../../factory/plan-subscription.factory';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 
-describe.skip('Day Progress - Plan Subscription Controller - (e2e)', () => {
+describe('Day Progress - Plan Subscription Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
@@ -40,10 +41,11 @@ describe.skip('Day Progress - Plan Subscription Controller - (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await testDbClient(Tables.TrainingPlan).del();
+    await testDbClient(Tables.PlanDayProgress).del();
     await testDbClient(Tables.PlanSubscription).del();
     await testDbClient(Tables.Day).del();
-    await testDbClient(Tables.PlanDayProgress).del();
+    await testDbClient(Tables.TrainingPlan).del();
+    await testDbClient(Tables.User).del();
   });
 
   afterEach(() => {
@@ -52,10 +54,11 @@ describe.skip('Day Progress - Plan Subscription Controller - (e2e)', () => {
 
   afterAll(async () => {
     if (module) {
-      await testDbClient(Tables.TrainingPlan).del();
+      await testDbClient(Tables.PlanDayProgress).del();
       await testDbClient(Tables.PlanSubscription).del();
       await testDbClient(Tables.Day).del();
-      await testDbClient(Tables.PlanDayProgress).del();
+      await testDbClient(Tables.TrainingPlan).del();
+      await testDbClient(Tables.User).del();
       await module.close();
     }
 
@@ -75,71 +78,55 @@ describe.skip('Day Progress - Plan Subscription Controller - (e2e)', () => {
     };
   };
 
-  describe('Create Day Progress', () => {
-    it('should create a day progress', async () => {
-      const trainingPlan = trainingPlanFactory.build();
+  describe('POST /training-plan/subscriptions/:planSubscriptionId/day/:dayId/progress', () => {
+    it('should create a day progress successfully', async () => {
       const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
+      await testDbClient(Tables.Day).insert(day);
+
       const planSubscription = planSubscriptionFactory.build({
         userId: user.id,
         trainingPlanId: trainingPlan.id,
         status: PlanSubscriptionStatus.inProgress,
       });
-      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
-
-      await testDbClient(Tables.User).insert(user);
-      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
-      await testDbClient(Tables.Day).insert(day);
-
-      const res = await fetch(`${url}/training-plan/subscriptions/day/progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id!),
-        },
-      });
-
-      expect(res.status).toBe(HttpStatus.CREATED);
-    });
-    it('should return not found status when have not plan subscription with status in progress', async () => {
-      const trainingPlan = trainingPlanFactory.build();
-      const user = userFactory.build();
-      const planSubscription = planSubscriptionFactory.build({
-        userId: user.id,
-        trainingPlanId: trainingPlan.id,
-        status: PlanSubscriptionStatus.completed,
-      });
-      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
-
-      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
-      await testDbClient(Tables.PlanSubscription).insert(planSubscription);
-      await testDbClient(Tables.Day).insert(day);
-
-      const res = await fetch(`${url}/training-plan/subscriptions/day/progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id!),
-        },
-      });
-
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
-    });
-    it('should return not found status when plan subscription id is invalid', async () => {
-      const trainingPlan = trainingPlanFactory.build();
-      const user = userFactory.build();
-      const planSubscription = planSubscriptionFactory.build({
-        userId: user.id,
-        trainingPlanId: trainingPlan.id,
-        status: PlanSubscriptionStatus.inProgress,
-      });
-      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
-
-      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
-      await testDbClient(Tables.Day).insert(day);
 
       const res = await fetch(
-        `${url}/training-plan/subscriptions/day/progress/${planSubscription.id}/${day.id}`,
+        `${url}/training-plan/subscriptions/${planSubscription.id}/day/${day.id}/progress`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthorizationHeader(user.id!),
+          },
+        }
+      );
+
+      expect(res.status).toBe(HttpStatus.CREATED);
+      const progress = await testDbClient(Tables.PlanDayProgress).select('*');
+      expect(progress).toHaveLength(1);
+    });
+
+    it('should return not found when subscription is not in progress', async () => {
+      const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
+      await testDbClient(Tables.Day).insert(day);
+
+      const planSubscription = planSubscriptionFactory.build({
+        userId: user.id,
+        trainingPlanId: trainingPlan.id,
+        status: PlanSubscriptionStatus.notStarted,
+      });
+      await testDbClient(Tables.PlanSubscription).insert(planSubscription);
+
+      const res = await fetch(
+        `${url}/training-plan/subscriptions/${planSubscription.id}/day/${day.id}/progress`,
         {
           method: 'POST',
           headers: {
@@ -151,28 +138,40 @@ describe.skip('Day Progress - Plan Subscription Controller - (e2e)', () => {
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
+  });
 
-    it('should return not found status when day id is invalid', async () => {
-      const trainingPlan = trainingPlanFactory.build();
+  describe('GET /training-plan/subscriptions/day/progress', () => {
+    it('should return progress for the in-progress subscription', async () => {
       const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
+      await testDbClient(Tables.Day).insert(day);
+
       const planSubscription = planSubscriptionFactory.build({
         userId: user.id,
         trainingPlanId: trainingPlan.id,
         status: PlanSubscriptionStatus.inProgress,
       });
-
-      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
       await testDbClient(Tables.PlanSubscription).insert(planSubscription);
 
+      const planDayProgress = planDayProgressFactory.build({
+        planSubscriptionId: planSubscription.id,
+        dayId: day.id,
+      });
+
+      await testDbClient(Tables.PlanDayProgress).insert(planDayProgress);
+
       const res = await fetch(`${url}/training-plan/subscriptions/day/progress`, {
-        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           ...getAuthorizationHeader(user.id!),
         },
       });
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.OK);
+      const body = await res.json();
+      expect(body).toHaveLength(1);
     });
   });
 });

@@ -1,0 +1,149 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'bun:test';
+import { HttpStatus, INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
+import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
+import { Tables } from '@testInfra/enum/table.enum';
+import { testDbClient } from '@testInfra/knex.database';
+import { createNestApp } from '@testInfra/test-e2e.setup';
+import { sign } from 'jsonwebtoken';
+import { SetupServerApi } from 'msw/node';
+import { exerciseLogFactory } from '../../factory/exercise-log.factory';
+import { exerciseFactory } from '../../factory/exercise.factory';
+import { dayFactory } from '../../factory/day.factory';
+import { trainingPlanFactory } from '../../factory/training-plan.factory';
+
+describe('Exercise Log Controller - (e2e)', () => {
+  let app: INestApplication;
+  let module: TestingModule;
+  let url: string;
+  let server: SetupServerApi;
+  let configuration: { [key: string]: string | number | undefined };
+
+  beforeAll(async () => {
+    const setup = await createNestApp([TrainingPlanModule]);
+    app = setup.app;
+    module = setup.module;
+    configuration = setup.configuration;
+    server = setup.server;
+    await app.listen(0);
+
+    url = await app.getUrl();
+  });
+
+  beforeEach(async () => {
+    await testDbClient(Tables.ExerciseLog).del();
+    await testDbClient(Tables.Exercise).del();
+    await testDbClient(Tables.Day).del();
+    await testDbClient(Tables.TrainingPlan).del();
+    await testDbClient(Tables.User).del();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
+  });
+
+  afterAll(async () => {
+    if (module) {
+      await testDbClient(Tables.ExerciseLog).del();
+      await testDbClient(Tables.Exercise).del();
+      await testDbClient(Tables.Day).del();
+      await testDbClient(Tables.TrainingPlan).del();
+      await testDbClient(Tables.User).del();
+      await module.close();
+    }
+
+    if (app) {
+      await app.close();
+    }
+  });
+
+  const getAuthorizationHeader = (userId: string) => {
+    return {
+      Authorization: `Bearer ${sign(
+        {
+          sub: userId,
+        },
+        configuration['auth.jwtSecret'] as string
+      )}`,
+    };
+  };
+
+  describe('POST /exercise-log', () => {
+    it('should create an exercise log successfully', async () => {
+      const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
+      await testDbClient(Tables.Day).insert(day);
+      const exercise = exerciseFactory.build({ dayId: day.id });
+      await testDbClient(Tables.Exercise).insert(exercise);
+
+      const logRequest = {
+        userId: user.id,
+        exerciseId: exercise.id,
+        reps: [12, 10, 8],
+        weight: [60, 65, 70],
+        notes: 'Good progress',
+      };
+
+      const response = await fetch(`${url}/exercise-log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify(logRequest),
+      });
+
+      expect(response.status).toBe(HttpStatus.CREATED);
+      const logs = await testDbClient(Tables.ExerciseLog).select('*');
+      expect(logs).toHaveLength(1);
+    });
+  });
+
+  describe('GET /exercise-log/history/:userId/:exerciseId', () => {
+    it('should return exercise log history for a user', async () => {
+      const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      const day = dayFactory.build({ trainingPlanId: trainingPlan.id });
+      await testDbClient(Tables.Day).insert(day);
+      const exercise = exerciseFactory.build({ dayId: day.id });
+      await testDbClient(Tables.Exercise).insert(exercise);
+
+      const log = exerciseLogFactory.build({
+        userId: user.id,
+        exerciseId: exercise.id,
+        reps: [10, 10], // Knex might expect a string or it might handle array if using a specific plugin, but let's see.
+        weight: [50, 50],
+      });
+      
+      // Knex pg simple-array needs to be a string for insertion if not handled by an interceptor
+      await testDbClient(Tables.ExerciseLog).insert({
+        ...log,
+        reps: log.reps?.join(','),
+        weight: log.weight?.join(','),
+      });
+
+      const response = await fetch(`${url}/exercise-log/history/${user.id}/${exercise.id}`, {
+        headers: {
+          ...getAuthorizationHeader(user.id!),
+        },
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      const body = await response.json();
+      expect(body).toHaveLength(1);
+      expect(body[0].exerciseId).toBe(exercise.id);
+    });
+  });
+});
