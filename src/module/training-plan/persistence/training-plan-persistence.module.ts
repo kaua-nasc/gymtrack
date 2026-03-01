@@ -5,6 +5,7 @@ import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/
 import { DayRepository } from './repository/day.repository';
 import { ExerciseRepository } from './repository/exercise.repository';
 import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
+import { PlanInviteRepository } from './repository/plan-invite.repository';
 import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
 import { TrainingPlanRepository } from './repository/training-plan.repository';
 import { TrainingPlanCommentRepository } from './repository/training-plan-comment.repository';
@@ -36,6 +37,7 @@ export class TrainingPlanPersistenceModule {
         TrainingPlanFeedbackRepository,
         TrainingPlanLikeRepository,
         TrainingPlanCommentRepository,
+        PlanInviteRepository,
       ],
       exports: [
         PlanSubscriptionRepository,
@@ -46,6 +48,7 @@ export class TrainingPlanPersistenceModule {
         ExerciseRepository,
         TrainingPlanLikeRepository,
         TrainingPlanCommentRepository,
+        PlanInviteRepository,
       ],
     };
   }

@@ -1,5 +1,6 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
+import { UserType } from '../../core/enum/user-type.enum';
 import { UserFollows } from './user-follows.entity';
 import { UserPrivacySettings } from './user-privacy-settings.entity';
 
@@ -22,6 +23,9 @@ export class User extends DefaultEntity<User> {
 
   @Column()
   password: string;
+
+  @Column({ type: 'enum', enum: UserType, nullable: false, default: UserType.client })
+  type: UserType;
 
   @OneToMany(
     () => UserFollows,

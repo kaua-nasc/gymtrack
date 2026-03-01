@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "lint": "bunx --bun @biomejs/biome lint",
     "identity:db:generate": "bun ./node_modules/typeorm/cli.js migration:generate src/module/identity/persistence/migration/migration -d src/module/identity/persistence/typeorm-datasource.ts",
     "identity:db:migrate": "bun ./node_modules/typeorm/cli.js migration:run -d src/module/identity/persistence/typeorm-datasource.ts",
     "identity:db:drop": "bun ./node_modules/typeorm/cli.js schema:drop -d src/module/identity/persistence/typeorm-datasource.ts",
@@ -65,6 +66,7 @@
     "typeorm": "^0.3.28",
     "typeorm-extension": "^3.8.0",
     "typeorm-transactional": "^0.5.0",
+    "valibot": "^1.2.0",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
   },

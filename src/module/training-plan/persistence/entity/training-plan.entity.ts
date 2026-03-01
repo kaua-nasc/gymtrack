@@ -5,11 +5,12 @@ import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/trai
 import { Column, Entity, OneToMany } from 'typeorm';
 import { Day } from './day.entity';
 import { PlanAccessRequest } from './plan-access-request.entity';
+import { PlanInvite } from './plan-invite.entity';
 import { PlanParticipant } from './plan-participant.entity';
 import { PlanSubscription } from './plan-subscription.entity';
+import { TrainingPlanComment } from './training-plan-comment.entity';
 import { TrainingPlanFeedback } from './training-plan-feedback.entity';
 import { TrainingPlanLike } from './training-plan-like.entity';
-import { TrainingPlanComment } from './training-plan-comment.entity';
 
 @Entity({ name: 'training_plans' })
 export class TrainingPlan extends DefaultEntity<TrainingPlan> {
@@ -106,6 +107,13 @@ export class TrainingPlan extends DefaultEntity<TrainingPlan> {
     { cascade: true }
   )
   comments?: TrainingPlanComment[];
+
+  @OneToMany(
+    () => PlanInvite,
+    (invite) => invite.trainingPlan,
+    { cascade: true }
+  )
+  invites?: PlanInvite[];
 
   author?: object;
 }

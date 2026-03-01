@@ -16,6 +16,9 @@ import { ExerciseController } from './http/rest/controller/exercise.controller';
 import { ExerciseManagementService } from './core/service/exercise-management.service';
 import { StorageModule } from '../shared/module/storage/storage.module';
 import { AuthModule } from '../shared/module/auth/auth.module';
+import { EmailModule } from '../shared/module/email/email.module';
+import { PlanInviteManagementService } from './core/service/plan-invite-management.service';
+import { PlanInviteController } from './http/rest/controller/plan-invite.controller';
 
 @Module({
   imports: [
@@ -25,12 +28,14 @@ import { AuthModule } from '../shared/module/auth/auth.module';
     HttpClientModule,
     StorageModule,
     AuthModule,
+    EmailModule,
   ],
   providers: [
     TrainingPlanManagementService,
     PlanSubscriptionManagementService,
     DayManagementService,
     ExerciseManagementService,
+    PlanInviteManagementService,
     TrainingPlanPublicApiProvider,
     {
       provide: IdentityUserExistsApi,
@@ -42,6 +47,7 @@ import { AuthModule } from '../shared/module/auth/auth.module';
     TrainingPlanController,
     DayController,
     ExerciseController,
+    PlanInviteController,
   ],
   exports: [TrainingPlanPublicApiProvider],
 })
