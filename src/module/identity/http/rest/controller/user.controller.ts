@@ -39,6 +39,9 @@ import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.d
 import { UpdateUserMetricsRequestDto } from '../dto/request/update-user-metrics-request.dto';
 import { AddWeightLogRequestDto } from '../dto/request/add-weight-log-request.dto';
 import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
+import { AddBodyMeasurementsRequestDto } from '../dto/request/add-body-measurements-request.dto';
+import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-response.dto';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -323,5 +326,52 @@ export class UserController {
       })),
       total,
     };
+  }
+
+  @Post('profile/measurements')
+  @ApiOperation({ summary: 'Add body measurements (bulk)' })
+  @ApiBody({ type: AddBodyMeasurementsRequestDto })
+  @ApiResponse({ status: 201, description: 'Measurements added successfully', type: [BodyMeasurementResponseDto] })
+  async addBodyMeasurements(@Body() dto: AddBodyMeasurementsRequestDto): Promise<BodyMeasurementResponseDto[]> {
+    const measurements = await this.userManagementService.addBodyMeasurements(dto);
+    return measurements.map(m => ({
+      id: m.id,
+      type: m.type,
+      value: m.value,
+      measuredAt: m.measuredAt,
+    }));
+  }
+
+  @Get('profile/measurements')
+  @ApiOperation({ summary: 'Get body measurements history' })
+  @ApiResponse({ status: 200, description: 'History retrieved successfully' })
+  async getBodyMeasurementsHistory(
+    @Query('type') type?: MeasurementType,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20
+  ): Promise<{ items: BodyMeasurementResponseDto[], total: number }> {
+    const { items, total } = await this.userManagementService.getBodyMeasurementsHistory(type, Number(page), Number(limit));
+    return {
+      items: items.map(m => ({
+        id: m.id,
+        type: m.type,
+        value: m.value,
+        measuredAt: m.measuredAt,
+      })),
+      total,
+    };
+  }
+
+  @Get('profile/measurements/latest')
+  @ApiOperation({ summary: 'Get latest body measurements for all types' })
+  @ApiResponse({ status: 200, description: 'Latest measurements retrieved successfully', type: [BodyMeasurementResponseDto] })
+  async getLatestBodyMeasurements(): Promise<BodyMeasurementResponseDto[]> {
+    const measurements = await this.userManagementService.getLatestBodyMeasurements();
+    return measurements.map(m => ({
+      id: m.id,
+      type: m.type,
+      value: m.value,
+      measuredAt: m.measuredAt,
+    }));
   }
 }

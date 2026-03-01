@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { User } from '../entity/user.entity';
 import { CacheService } from '@src/module/shared/module/cache/service/cache.service';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity.js';
 
 @Injectable()
 export class UserRepository extends DefaultTypeOrmRepository<User> {
@@ -21,6 +22,24 @@ export class UserRepository extends DefaultTypeOrmRepository<User> {
     return this.find({
       where: { email },
     });
+  }
+
+  async findManyWithFollows(): Promise<User[]> {
+    return this.findMany({
+      relations: ['following', 'following.following', 'followers', 'followers.follower'],
+    }) ?? [];
+  }
+
+  async findFollowingByUserId(userId: string): Promise<User[]> {
+    return this.findMany({
+      where: { followers: { followerId: userId } },
+    }) ?? [];
+  }
+
+  async findFollowersByUserId(userId: string): Promise<User[]> {
+    return this.findMany({
+      where: { following: { followingId: userId } },
+    }) ?? [];
   }
 
   async findResetCode(email: string): Promise<string | null> {

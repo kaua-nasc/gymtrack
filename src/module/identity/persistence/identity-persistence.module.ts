@@ -8,6 +8,7 @@ import { CacheModule } from '@src/module/shared/module/cache/cache.module';
 import { UserFollowsRepository } from './repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from './repository/user-privacy-settings.repository';
 import { WeightLogRepository } from './repository/weight-log.repository';
+import { BodyMeasurementRepository } from './repository/body-measurement.repository';
 
 @Module({
   imports: [
@@ -35,12 +36,14 @@ import { WeightLogRepository } from './repository/weight-log.repository';
     UserFollowsRepository,
     UserPrivacySettingsRepository,
     WeightLogRepository,
+    BodyMeasurementRepository,
   ],
   exports: [
     UserRepository,
     UserFollowsRepository,
     UserPrivacySettingsRepository,
     WeightLogRepository,
+    BodyMeasurementRepository,
   ],
 })
 export class IdentityPersistenceModule {}

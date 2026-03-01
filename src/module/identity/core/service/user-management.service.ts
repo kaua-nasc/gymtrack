@@ -26,6 +26,10 @@ import { AddWeightLogRequestDto } from '../../http/rest/dto/request/add-weight-l
 import { WeightLog } from '../../persistence/entity/weight-log.entity';
 import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { BodyMeasurementRepository } from '../../persistence/repository/body-measurement.repository';
+import { BodyMeasurement } from '../../persistence/entity/body-measurement.entity';
+import { AddBodyMeasurementsRequestDto } from '../../http/rest/dto/request/add-body-measurements-request.dto';
+import { MeasurementType } from '../../core/enum/measurement-type.enum';
 
 export interface CreateUserDto {
   email: string;
@@ -43,6 +47,7 @@ export class UserManagementService {
     private readonly userFollowsRepository: UserFollowsRepository,
     private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository,
     private readonly weightLogRepository: WeightLogRepository,
+    private readonly bodyMeasurementRepository: BodyMeasurementRepository,
     @InjectDataSource('identity') private readonly dataSource: DataSource,
     private readonly storageService: AzureStorageService,
     private readonly logger: AppLogger,
@@ -109,9 +114,7 @@ export class UserManagementService {
 
   async getUsers() {
     this.logger.log('Fetching all users with relations...');
-    const users = await this.userRepository.findMany({
-      relations: ['following', 'following.following', 'followers', 'followers.follower'],
-    });
+    const users = await this.userRepository.findManyWithFollows();
 
     if (!users || users.length === 0) {
       this.logger.log('No users found. Returning empty array.');
@@ -131,8 +134,7 @@ export class UserManagementService {
 
   async existsById(userId: string): Promise<boolean> {
     this.logger.log(`Checking existence of user: ${userId}`);
-    const user = await this.userRepository.findOneById(userId);
-    const exists = user ? true : false;
+    const exists = await this.userRepository.exists(userId);
     this.logger.log(`User ${userId} existence check result: ${exists}`);
     return exists;
   }
@@ -150,9 +152,7 @@ export class UserManagementService {
       throw new NotFoundException('user(s) not exists');
     }
 
-    const userFollows = await this.userFollowsRepository.find({
-      where: { followerId: user.id, followingId: followedUser.id },
-    });
+    const userFollows = await this.userFollowsRepository.findOneByFollowerAndFollowing(user.id, followedUser.id);
 
     if (userFollows) {
       this.logger.warn(
@@ -183,9 +183,7 @@ export class UserManagementService {
       throw new NotFoundException('user(s) not exists');
     }
 
-    const userFollows = await this.userFollowsRepository.find({
-      where: { followerId: user.id },
-    });
+    const userFollows = await this.userFollowsRepository.findOneByFollowerAndFollowing(user.id, followedUser.id);
 
     if (!userFollows) {
       this.logger.warn(
@@ -194,10 +192,7 @@ export class UserManagementService {
       throw new BadRequestException('user not follow this user');
     }
 
-    await this.userFollowsRepository.delete({
-      followerId: user.id,
-      followingId: followedUser.id,
-    });
+    await this.userFollowsRepository.deleteFollow(user.id, followedUser.id);
     this.logger.log(`User ${userId} successfully unfollowed ${followedId}`);
   }
 
@@ -209,9 +204,7 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    const count = await this.userFollowsRepository.count({
-      followerId: user.id,
-    });
+    const count = await this.userFollowsRepository.countFollowing(user.id);
     this.logger.log(`User ${userId} is following ${count} users.`);
     return count;
   }
@@ -224,9 +217,7 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    const count = await this.userFollowsRepository.count({
-      followingId: user.id,
-    });
+    const count = await this.userFollowsRepository.countFollowers(user.id);
     this.logger.log(`User ${userId} has ${count} followers.`);
     return count;
   }
@@ -239,9 +230,7 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    const users = await this.userRepository.findMany({
-      where: { followers: { id: user.id } },
-    });
+    const users = await this.userRepository.findFollowingByUserId(user.id);
 
     this.logger.log(
       `Successfully fetched ${users?.length ?? 0} following for user: ${userId}`
@@ -257,9 +246,7 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    const users = await this.userRepository.findMany({
-      where: { following: { id: user.id } },
-    });
+    const users = await this.userRepository.findFollowersByUserId(user.id);
 
     this.logger.log(
       `Successfully fetched ${users?.length ?? 0} followers for user: ${userId}`
@@ -271,9 +258,7 @@ export class UserManagementService {
     const userId = this.request.user.id;
 
     this.logger.log(`Getting privacy configuration for user: ${userId}`);
-    const privacyConfiguration = await this.userPrivacySettingsRepository.find({
-      where: { user: { id: userId } },
-    });
+    const privacyConfiguration = await this.userPrivacySettingsRepository.findOneByUserId(userId);
 
     if (!privacyConfiguration) {
       this.logger.warn(`Get privacy configuration failed: Not found for user: ${userId}`);
@@ -294,9 +279,7 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    const privacySettings = await this.userPrivacySettingsRepository.find({
-      where: { user: { id: userId } },
-    });
+    const privacySettings = await this.userPrivacySettingsRepository.findOneByUserId(userId);
 
     if (!privacySettings) {
       this.logger.warn(
@@ -307,10 +290,7 @@ export class UserManagementService {
 
     const newPrivacySettings = new UserPrivacySettings({ ...privacySettings, ...data });
 
-    await this.userPrivacySettingsRepository.update(
-      { user: { id: userId } },
-      { ...newPrivacySettings }
-    );
+    await this.userPrivacySettingsRepository.updateByUserId(userId, { ...newPrivacySettings });
     this.logger.log(`Successfully altered privacy settings for user: ${userId}`);
   }
 
@@ -457,14 +437,84 @@ export class UserManagementService {
     const userId = this.request.user.id;
     this.logger.log(`Fetching weight history for user: ${userId}`);
 
-    const [items, total] = await this.weightLogRepository.repository.findAndCount({
-      where: { userId } as any,
-      order: { measuredAt: 'DESC' } as any,
-      take: limit,
-      skip: (page - 1) * limit,
-    });
+    const [items, total] = await this.weightLogRepository.findAndCountByUserId(userId, page, limit);
 
     return { items, total };
+  }
+
+  async addBodyMeasurements(dto: AddBodyMeasurementsRequestDto): Promise<BodyMeasurement[]> {
+    const userId = this.request.user.id;
+    this.logger.log(`Adding body measurements for user: ${userId}`);
+
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+
+    const measuredAt = dto.measuredAt ? new Date(dto.measuredAt) : new Date();
+
+    return await this.dataSource.transaction(async (manager) => {
+      const savedMeasurements: BodyMeasurement[] = [];
+
+      for (const entry of dto.measurements) {
+        const valueInMetric = this.convertToMetricValue(entry.type, entry.value, user);
+
+        const measurement = new BodyMeasurement({
+          userId,
+          type: entry.type,
+          value: valueInMetric,
+          measuredAt,
+        });
+
+        const saved = await manager.save(BodyMeasurement, measurement);
+        savedMeasurements.push(saved);
+      }
+
+      return savedMeasurements;
+    });
+  }
+
+  async getBodyMeasurementsHistory(
+    type?: MeasurementType,
+    page = 1,
+    limit = 20
+  ): Promise<{ items: BodyMeasurement[]; total: number }> {
+    const userId = this.request.user.id;
+    this.logger.log(`Fetching body measurements history for user: ${userId}`);
+
+    const [items, total] = await this.bodyMeasurementRepository.findAndCountByUserId(userId, type, page, limit);
+
+    return { items, total };
+  }
+
+  async getLatestBodyMeasurements(): Promise<BodyMeasurement[]> {
+    const userId = this.request.user.id;
+    this.logger.log(`Fetching latest body measurements for user: ${userId}`);
+
+    return await this.bodyMeasurementRepository.findLatestByUserId(userId);
+  }
+
+  private convertToMetricValue(type: MeasurementType, value: number, user: User): number {
+    const compositionMetrics = [
+      MeasurementType.BODY_FAT,
+      MeasurementType.WATER_PERCENTAGE,
+    ];
+
+    const massMetrics = [
+      MeasurementType.MUSCLE_MASS,
+      MeasurementType.BONE_MASS,
+    ];
+
+    if (compositionMetrics.includes(type)) {
+      return Number(value.toFixed(2)); // Percentages stay the same
+    }
+
+    if (massMetrics.includes(type)) {
+      return this.convertToMetricWeight(value, user.weightUnit);
+    }
+
+    // Default is length (circumferences and limbs)
+    return this.convertToMetricHeight(value, user.heightUnit);
   }
 
   private convertToMetricWeight(weight: number, unit: WeightUnit): number {

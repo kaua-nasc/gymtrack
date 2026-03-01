@@ -13,4 +13,22 @@ export class UserFollowsRepository extends DefaultTypeOrmRepository<UserFollows>
   ) {
     super(UserFollows, dataSource.manager, logger);
   }
+
+  async findOneByFollowerAndFollowing(followerId: string, followingId: string): Promise<UserFollows | null> {
+    return this.find({
+      where: { followerId, followingId },
+    });
+  }
+
+  async countFollowing(followerId: string): Promise<number> {
+    return this.count({ followerId });
+  }
+
+  async countFollowers(followingId: string): Promise<number> {
+    return this.count({ followingId });
+  }
+
+  async deleteFollow(followerId: string, followingId: string): Promise<void> {
+    await this.delete({ followerId, followingId });
+  }
 }

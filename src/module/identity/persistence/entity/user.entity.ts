@@ -29,10 +29,28 @@ export class User extends DefaultEntity<User> {
   @Column({ type: 'enum', enum: UserType, nullable: false, default: UserType.client })
   type: UserType;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => (value ? Number(value) : value),
+    },
+  })
   height?: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => (value ? Number(value) : value),
+    },
+  })
   currentWeight?: number;
 
   @Column({ type: 'enum', enum: WeightUnit, default: WeightUnit.kg })
