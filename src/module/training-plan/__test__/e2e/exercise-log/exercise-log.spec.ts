@@ -141,9 +141,9 @@ describe('Exercise Log Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = await response.json();
+      const body  = await response.json() as {exerciseId: string}[];
       expect(body).toHaveLength(1);
-      expect(body[0].exerciseId).toBe(exercise.id);
+      expect(body[0].exerciseId).toBe(exercise.id!);
     });
   });
 });

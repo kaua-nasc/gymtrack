@@ -7,7 +7,7 @@ export class BodyMeasurementResponseDto {
   @Expose()
   id: string;
 
-  @ApiProperty({ enum: MeasurementType })
+  @ApiProperty({ enum:  MeasurementType, enumName: 'MeasurementType' })
   @Expose()
   type: MeasurementType;
 

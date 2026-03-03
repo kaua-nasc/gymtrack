@@ -25,19 +25,19 @@ export class UserRepository extends DefaultTypeOrmRepository<User> {
   }
 
   async findManyWithFollows(): Promise<User[]> {
-    return this.findMany({
+    return await this.findMany({
       relations: ['following', 'following.following', 'followers', 'followers.follower'],
     }) ?? [];
   }
 
   async findFollowingByUserId(userId: string): Promise<User[]> {
-    return this.findMany({
+    return  await this.findMany({
       where: { followers: { followerId: userId } },
     }) ?? [];
   }
 
   async findFollowersByUserId(userId: string): Promise<User[]> {
-    return this.findMany({
+    return await this.findMany({
       where: { following: { followingId: userId } },
     }) ?? [];
   }

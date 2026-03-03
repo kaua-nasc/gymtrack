@@ -1,3 +1,4 @@
+import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import {
   Brackets,
@@ -11,7 +12,6 @@ import {
   Repository,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity.js';
-import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 
 export interface Cursor {
   value: string | number | Date;

@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
 import { User } from './user.entity';
 import { MeasurementType } from '../../core/enum/measurement-type.enum';
 
@@ -29,5 +29,5 @@ export class BodyMeasurement extends DefaultEntity<BodyMeasurement> {
     () => User,
     { onDelete: 'CASCADE' }
   )
-  user: User;
+  user: Relation<User>;
 }

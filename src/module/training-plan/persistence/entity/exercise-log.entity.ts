@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { Exercise } from './exercise.entity';
 
 @Entity({ name: 'exercise_logs' })
@@ -12,7 +12,7 @@ export class ExerciseLog extends DefaultEntity<ExerciseLog> {
 
   @ManyToOne(() => Exercise, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'exerciseId' })
-  exercise: Exercise;
+  exercise: Relation<Exercise>;
 
   @Column({ type: 'simple-array', nullable: false })
   reps: number[];

@@ -79,7 +79,7 @@ describe('Identity - Body Measurements Controller - (e2e)', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify({
           measurements: [
@@ -91,7 +91,7 @@ describe('Identity - Body Measurements Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      const data = await response.json();
+      const data = await response.json() as { type: MeasurementType, value: number }[];
       expect(data.length).toBe(2);
 
       const savedMeasurements = await testDbClient(Tables.BodyMeasurement).where({ userId: user.id });
@@ -107,7 +107,7 @@ describe('Identity - Body Measurements Controller - (e2e)', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify({
           measurements: [
@@ -138,15 +138,15 @@ describe('Identity - Body Measurements Controller - (e2e)', () => {
       ]);
 
       const response = await fetch(`${url}/identity/user/profile/measurements/latest`, {
-        headers: getAuthorizationHeader(user.id),
+        headers: getAuthorizationHeader(user.id!),
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const data = await response.json();
+      const data = await response.json() as { type: MeasurementType, value: number }[];
       expect(data.length).toBe(2);
       
       const waist = data.find((m: any) => m.type === MeasurementType.WAIST);
-      expect(Number(waist.value)).toBe(85);
+      expect(Number(waist?.value)).toBe(85);
     });
   });
 });

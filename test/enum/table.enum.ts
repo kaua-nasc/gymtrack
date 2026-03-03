@@ -14,4 +14,5 @@ export enum Tables {
   TrainingPlanLikes = 'training_plan_likes',
   WeightLog = 'weight_logs',
   BodyMeasurement = 'body_measurements',
+  MetricGoal = 'metric_goals',
 }

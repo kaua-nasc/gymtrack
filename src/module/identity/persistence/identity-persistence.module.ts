@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@src/module/shared/module/cache/cache.module';
 import { ConfigModule } from '@src/module/shared/module/config/config.module';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
 import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
+import { BodyMeasurementRepository } from './repository/body-measurement.repository';
+import { MetricGoalRepository } from './repository/metric-goal.repository';
 import { UserRepository } from './repository/user.repository';
-import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
-import { CacheModule } from '@src/module/shared/module/cache/cache.module';
 import { UserFollowsRepository } from './repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from './repository/user-privacy-settings.repository';
 import { WeightLogRepository } from './repository/weight-log.repository';
-import { BodyMeasurementRepository } from './repository/body-measurement.repository';
+import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { BodyMeasurementRepository } from './repository/body-measurement.reposit
     UserPrivacySettingsRepository,
     WeightLogRepository,
     BodyMeasurementRepository,
+    MetricGoalRepository,
   ],
   exports: [
     UserRepository,
@@ -44,6 +46,7 @@ import { BodyMeasurementRepository } from './repository/body-measurement.reposit
     UserPrivacySettingsRepository,
     WeightLogRepository,
     BodyMeasurementRepository,
+    MetricGoalRepository,
   ],
 })
 export class IdentityPersistenceModule {}

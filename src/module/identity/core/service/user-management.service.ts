@@ -6,30 +6,35 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { hash } from 'bcrypt';
-import { In, DataSource } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
+import { HeightUnit } from '../../core/enum/height-unit.enum';
+import { MeasurementType } from '../../core/enum/measurement-type.enum';
+import { MetricGoalStatus } from '../../core/enum/metric-goal-status.enum';
+import { WeightUnit } from '../../core/enum/weight-unit.enum';
+import { AddBodyMeasurementsRequestDto } from '../../http/rest/dto/request/add-body-measurements-request.dto';
+import { AddWeightLogRequestDto } from '../../http/rest/dto/request/add-weight-log-request.dto';
+import { CreateMetricGoalRequestDto } from '../../http/rest/dto/request/create-metric-goal-request.dto';
+import { UpdateMetricGoalStatusRequestDto } from '../../http/rest/dto/request/update-metric-goal-status-request.dto';
+import { UpdateUserMetricsRequestDto } from '../../http/rest/dto/request/update-user-metrics-request.dto';
 import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
 import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
+import { BodyMeasurement } from '../../persistence/entity/body-measurement.entity';
+import { MetricGoal } from '../../persistence/entity/metric-goal.entity';
 import { User } from '../../persistence/entity/user.entity';
 import { UserFollows } from '../../persistence/entity/user-follows.entity';
 import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
+import { WeightLog } from '../../persistence/entity/weight-log.entity';
+import { BodyMeasurementRepository } from '../../persistence/repository/body-measurement.repository';
+import { MetricGoalRepository } from '../../persistence/repository/metric-goal.repository';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
-import { WeightUnit } from '../../core/enum/weight-unit.enum';
-import { HeightUnit } from '../../core/enum/height-unit.enum';
-import { UpdateUserMetricsRequestDto } from '../../http/rest/dto/request/update-user-metrics-request.dto';
-import { AddWeightLogRequestDto } from '../../http/rest/dto/request/add-weight-log-request.dto';
-import { WeightLog } from '../../persistence/entity/weight-log.entity';
 import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { BodyMeasurementRepository } from '../../persistence/repository/body-measurement.repository';
-import { BodyMeasurement } from '../../persistence/entity/body-measurement.entity';
-import { AddBodyMeasurementsRequestDto } from '../../http/rest/dto/request/add-body-measurements-request.dto';
-import { MeasurementType } from '../../core/enum/measurement-type.enum';
 
 export interface CreateUserDto {
   email: string;
@@ -48,6 +53,7 @@ export class UserManagementService {
     private readonly userPrivacySettingsRepository: UserPrivacySettingsRepository,
     private readonly weightLogRepository: WeightLogRepository,
     private readonly bodyMeasurementRepository: BodyMeasurementRepository,
+    private readonly metricGoalRepository: MetricGoalRepository,
     @InjectDataSource('identity') private readonly dataSource: DataSource,
     private readonly storageService: AzureStorageService,
     private readonly logger: AppLogger,
@@ -152,7 +158,10 @@ export class UserManagementService {
       throw new NotFoundException('user(s) not exists');
     }
 
-    const userFollows = await this.userFollowsRepository.findOneByFollowerAndFollowing(user.id, followedUser.id);
+    const userFollows = await this.userFollowsRepository.findOneByFollowerAndFollowing(
+      user.id,
+      followedUser.id
+    );
 
     if (userFollows) {
       this.logger.warn(
@@ -183,7 +192,10 @@ export class UserManagementService {
       throw new NotFoundException('user(s) not exists');
     }
 
-    const userFollows = await this.userFollowsRepository.findOneByFollowerAndFollowing(user.id, followedUser.id);
+    const userFollows = await this.userFollowsRepository.findOneByFollowerAndFollowing(
+      user.id,
+      followedUser.id
+    );
 
     if (!userFollows) {
       this.logger.warn(
@@ -258,7 +270,8 @@ export class UserManagementService {
     const userId = this.request.user.id;
 
     this.logger.log(`Getting privacy configuration for user: ${userId}`);
-    const privacyConfiguration = await this.userPrivacySettingsRepository.findOneByUserId(userId);
+    const privacyConfiguration =
+      await this.userPrivacySettingsRepository.findOneByUserId(userId);
 
     if (!privacyConfiguration) {
       this.logger.warn(`Get privacy configuration failed: Not found for user: ${userId}`);
@@ -279,7 +292,8 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
-    const privacySettings = await this.userPrivacySettingsRepository.findOneByUserId(userId);
+    const privacySettings =
+      await this.userPrivacySettingsRepository.findOneByUserId(userId);
 
     if (!privacySettings) {
       this.logger.warn(
@@ -290,7 +304,9 @@ export class UserManagementService {
 
     const newPrivacySettings = new UserPrivacySettings({ ...privacySettings, ...data });
 
-    await this.userPrivacySettingsRepository.updateByUserId(userId, { ...newPrivacySettings });
+    await this.userPrivacySettingsRepository.updateByUserId(userId, {
+      ...newPrivacySettings,
+    });
     this.logger.log(`Successfully altered privacy settings for user: ${userId}`);
   }
 
@@ -387,11 +403,17 @@ export class UserManagementService {
     }
 
     if (dto.height !== undefined) {
-      user.height = this.convertToMetricHeight(dto.height, dto.heightUnit || user.heightUnit);
+      user.height = this.convertToMetricHeight(
+        dto.height,
+        dto.heightUnit || user.heightUnit
+      );
     }
 
     if (dto.currentWeight !== undefined) {
-      user.currentWeight = this.convertToMetricWeight(dto.currentWeight, dto.weightUnit || user.weightUnit);
+      user.currentWeight = this.convertToMetricWeight(
+        dto.currentWeight,
+        dto.weightUnit || user.weightUnit
+      );
     }
 
     if (dto.weightUnit) {
@@ -429,20 +451,31 @@ export class UserManagementService {
       user.currentWeight = weightInMetric;
       await manager.save(user);
 
+      await this.checkMetricGoals(userId, 'WEIGHT', weightInMetric, manager);
+
       return savedLog;
     });
   }
 
-  async getWeightHistory(page = 1, limit = 20): Promise<{ items: WeightLog[], total: number }> {
+  async getWeightHistory(
+    page = 1,
+    limit = 20
+  ): Promise<{ items: WeightLog[]; total: number }> {
     const userId = this.request.user.id;
     this.logger.log(`Fetching weight history for user: ${userId}`);
 
-    const [items, total] = await this.weightLogRepository.findAndCountByUserId(userId, page, limit);
+    const [items, total] = await this.weightLogRepository.findAndCountByUserId(
+      userId,
+      page,
+      limit
+    );
 
     return { items, total };
   }
 
-  async addBodyMeasurements(dto: AddBodyMeasurementsRequestDto): Promise<BodyMeasurement[]> {
+  async addBodyMeasurements(
+    dto: AddBodyMeasurementsRequestDto
+  ): Promise<BodyMeasurement[]> {
     const userId = this.request.user.id;
     this.logger.log(`Adding body measurements for user: ${userId}`);
 
@@ -468,6 +501,8 @@ export class UserManagementService {
 
         const saved = await manager.save(BodyMeasurement, measurement);
         savedMeasurements.push(saved);
+
+        await this.checkMetricGoals(userId, entry.type, valueInMetric, manager);
       }
 
       return savedMeasurements;
@@ -482,7 +517,12 @@ export class UserManagementService {
     const userId = this.request.user.id;
     this.logger.log(`Fetching body measurements history for user: ${userId}`);
 
-    const [items, total] = await this.bodyMeasurementRepository.findAndCountByUserId(userId, type, page, limit);
+    const [items, total] = await this.bodyMeasurementRepository.findAndCountByUserId(
+      userId,
+      type,
+      page,
+      limit
+    );
 
     return { items, total };
   }
@@ -494,16 +534,138 @@ export class UserManagementService {
     return await this.bodyMeasurementRepository.findLatestByUserId(userId);
   }
 
+  async createMetricGoal(dto: CreateMetricGoalRequestDto): Promise<MetricGoal> {
+    const userId = this.request.user.id;
+    this.logger.log(`Creating metric goal for user: ${userId}, type: ${dto.type}`);
+
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) throw new NotFoundException('user not found');
+
+    let startingValue: number;
+    if (dto.type === 'WEIGHT') {
+      startingValue = user.currentWeight || 0;
+    } else {
+      const latest = await this.bodyMeasurementRepository.findAndCountByUserId(
+        userId,
+        dto.type as MeasurementType,
+        1,
+        1
+      );
+      startingValue = latest[0][0]?.value || 0;
+    }
+
+    const goal = new MetricGoal({
+      userId,
+      type: dto.type,
+      startingValue,
+      targetValue: dto.targetValue,
+      deadline: dto.deadline ? new Date(dto.deadline) : undefined,
+      status: MetricGoalStatus.ACTIVE,
+    });
+
+    return await this.metricGoalRepository.save(goal);
+  }
+
+  async getMetricGoals(): Promise<(MetricGoal & { progress: number })[]> {
+    const userId = this.request.user.id;
+    this.logger.log(`Fetching metric goals for user: ${userId}`);
+
+    const goals = await this.metricGoalRepository.findAllByUserId(userId);
+    const user = await this.userRepository.findOneById(userId);
+
+    const goalsWithProgress = await Promise.all(
+      goals.map(async (goal) => {
+        let currentValue: number;
+        if (goal.type === 'WEIGHT') {
+          currentValue = user?.currentWeight || goal.startingValue;
+        } else {
+          const latest = await this.bodyMeasurementRepository.findAndCountByUserId(
+            userId,
+            goal.type as MeasurementType,
+            1,
+            1
+          );
+          currentValue = latest[0][0]?.value || goal.startingValue;
+        }
+
+        let progress = 0;
+        if (goal.status === MetricGoalStatus.ACHIEVED) {
+          progress = 1;
+        } else if (goal.status === MetricGoalStatus.ACTIVE) {
+          const totalDistance = goal.targetValue - goal.startingValue;
+          const currentDistance = currentValue - goal.startingValue;
+
+          if (totalDistance === 0) {
+            progress = currentValue === goal.targetValue ? 1 : 0;
+          } else {
+            progress = Number((currentDistance / totalDistance).toFixed(2));
+            progress = Math.max(0, Math.min(1, progress));
+          }
+        }
+
+        return Object.assign(goal, { progress });
+      })
+    );
+
+    return goalsWithProgress;
+  }
+
+  async updateMetricGoalStatus(
+    id: string,
+    dto: UpdateMetricGoalStatusRequestDto
+  ): Promise<void> {
+    const userId = this.request.user.id;
+    this.logger.log(`Updating metric goal status: ${id} to ${dto.status}`);
+
+    const goal = await this.metricGoalRepository.findOneById(id);
+    if (!goal || goal.userId !== userId) {
+      throw new NotFoundException('goal not found');
+    }
+
+    await this.metricGoalRepository.update({ id }, { status: dto.status });
+  }
+
+  private async checkMetricGoals(
+    userId: string,
+    type: string,
+    newValue: number,
+    manager: EntityManager
+  ): Promise<void> {
+    const activeGoals = await manager.find(MetricGoal, {
+      where: { userId, type, status: MetricGoalStatus.ACTIVE },
+    });
+
+    for (const goal of activeGoals) {
+      const isDecrease = goal.targetValue < goal.startingValue;
+      const isIncrease = goal.targetValue > goal.startingValue;
+
+      let achieved = false;
+      if (isDecrease && newValue <= goal.targetValue) achieved = true;
+      else if (isIncrease && newValue >= goal.targetValue) achieved = true;
+      else if (!isIncrease && !isDecrease && newValue === goal.targetValue)
+        achieved = true;
+
+      if (achieved) {
+        this.logger.log(`Goal achieved! User: ${userId}, Goal: ${goal.id}`);
+        await manager.update(
+          MetricGoal,
+          { id: goal.id },
+          {
+            status: MetricGoalStatus.ACHIEVED,
+            achievedAt: new Date(),
+          }
+        );
+      }
+    }
+  }
+
   private convertToMetricValue(type: MeasurementType, value: number, user: User): number {
     const compositionMetrics = [
-      MeasurementType.BODY_FAT,
+      // MeasurementType.BODY_FAT,
       MeasurementType.WATER_PERCENTAGE,
     ];
 
-    const massMetrics = [
-      MeasurementType.MUSCLE_MASS,
-      MeasurementType.BONE_MASS,
-    ];
+    const massMetrics = [MeasurementType.MUSCLE_MASS, MeasurementType.BONE_MASS];
 
     if (compositionMetrics.includes(type)) {
       return Number(value.toFixed(2)); // Percentages stay the same

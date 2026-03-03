@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 import { MeasurementType } from '../../../../core/enum/measurement-type.enum';
 
 export class BodyMeasurementEntryDto {
-  @ApiProperty({ enum: MeasurementType, example: MeasurementType.WAIST })
+  @ApiProperty({ enum: MeasurementType, enumName: 'MeasurementType', example: MeasurementType.WAIST })
   @IsEnum(MeasurementType)
   type: MeasurementType;
 
@@ -15,7 +15,7 @@ export class BodyMeasurementEntryDto {
 }
 
 export class AddBodyMeasurementsRequestDto {
-  @ApiProperty({ type: [BodyMeasurementEntryDto] })
+  @ApiProperty({ type: () => [BodyMeasurementEntryDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => BodyMeasurementEntryDto)

@@ -79,7 +79,7 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify({
           height: 180,
@@ -106,7 +106,7 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify({
           height: 70, // 70 inches
@@ -133,7 +133,7 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify({
           weight: 90,
@@ -142,7 +142,7 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      const data = await response.json();
+      const data = await response.json() as { weight: number };
       expect(data.weight).toBe(90);
 
       const updatedUser = await testDbClient(Tables.User).where({ id: user.id }).first();
@@ -165,11 +165,11 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
       ]);
 
       const response = await fetch(`${url}/identity/user/profile/weight-history?page=1&limit=2`, {
-        headers: getAuthorizationHeader(user.id),
+        headers: getAuthorizationHeader(user.id!),
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const data = await response.json();
+      const data = await response.json() as { items: { weight: number, measuredAt: string }[], total: number };
       expect(data.items.length).toBe(2);
       expect(data.total).toBe(3);
       // Ordered by measuredAt DESC

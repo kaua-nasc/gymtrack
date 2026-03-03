@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({ name: 'weight_logs' })
@@ -25,5 +25,5 @@ export class WeightLog extends DefaultEntity<WeightLog> {
     () => User,
     { onDelete: 'CASCADE' }
   )
-  user: User;
+  user: Relation<User>;
 }

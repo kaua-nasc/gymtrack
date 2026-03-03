@@ -19,6 +19,7 @@ import { dayFactory } from '../../factory/day.factory';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
 import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
+import { Exercise } from '@src/module/training-plan/persistence/entity/exercise.entity';
 
 describe('Exercise Controller - (e2e)', () => {
   let app: INestApplication;
@@ -142,7 +143,7 @@ describe('Exercise Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = await response.json();
+      const body = await response.json() as Partial<Exercise>;
       expect(body.id).toBe(exercise.id);
     });
   });

@@ -1,22 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
-import { DataSource } from 'typeorm';
-import { BodyMeasurement } from '../entity/body-measurement.entity';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { DataSource, FindOptionsOrder, FindOptionsWhere } from 'typeorm';
 import { MeasurementType } from '../../core/enum/measurement-type.enum';
-import { FindOptionsOrder, FindOptionsWhere } from 'typeorm';
+import { BodyMeasurement } from '../entity/body-measurement.entity';
 
 @Injectable()
 export class BodyMeasurementRepository extends DefaultTypeOrmRepository<BodyMeasurement> {
-  constructor(
-    @InjectDataSource('identity') dataSource: DataSource,
-    logger: AppLogger
-  ) {
+  constructor(@InjectDataSource('identity') dataSource: DataSource, logger: AppLogger) {
     super(BodyMeasurement, dataSource.createEntityManager(), logger);
   }
 
-  async findAndCountByUserId(userId: string, type?: MeasurementType, page = 1, limit = 20): Promise<[BodyMeasurement[], number]> {
+  async findAndCountByUserId(
+    userId: string,
+    type?: MeasurementType,
+    page = 1,
+    limit = 20
+  ): Promise<[BodyMeasurement[], number]> {
     const where: FindOptionsWhere<BodyMeasurement> = {
       userId,
       ...(type && { type }),

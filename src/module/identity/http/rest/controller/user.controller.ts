@@ -21,6 +21,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -42,6 +43,9 @@ import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
 import { AddBodyMeasurementsRequestDto } from '../dto/request/add-body-measurements-request.dto';
 import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-response.dto';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { CreateMetricGoalRequestDto } from '../dto/request/create-metric-goal-request.dto';
+import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
+import { UpdateMetricGoalStatusRequestDto } from '../dto/request/update-metric-goal-status-request.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -66,7 +70,7 @@ export class UserController {
   @Get(':id')
   @ApiOperation({ summary: 'Busca um usuário pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
-  @ApiResponse({ status: 200, description: 'Usuário encontrado', type: User })
+  @ApiResponse({ status: 200, description: 'Usuário encontrado', type: UserResponseDto })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
     const user = await this.userManagementService.getUserById(id);
@@ -331,7 +335,7 @@ export class UserController {
   @Post('profile/measurements')
   @ApiOperation({ summary: 'Add body measurements (bulk)' })
   @ApiBody({ type: AddBodyMeasurementsRequestDto })
-  @ApiResponse({ status: 201, description: 'Measurements added successfully', type: [BodyMeasurementResponseDto] })
+  @ApiResponse({ status: 201, description: 'Measurements added successfully', type: () => [BodyMeasurementResponseDto] })
   async addBodyMeasurements(@Body() dto: AddBodyMeasurementsRequestDto): Promise<BodyMeasurementResponseDto[]> {
     const measurements = await this.userManagementService.addBodyMeasurements(dto);
     return measurements.map(m => ({
@@ -344,6 +348,9 @@ export class UserController {
 
   @Get('profile/measurements')
   @ApiOperation({ summary: 'Get body measurements history' })
+  @ApiQuery({ name: 'type', enum: MeasurementType, enumName: 'MeasurementType', required: false, description: 'Tipo de medida para filtrar o histórico' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'History retrieved successfully' })
   async getBodyMeasurementsHistory(
     @Query('type') type?: MeasurementType,
@@ -373,5 +380,51 @@ export class UserController {
       value: m.value,
       measuredAt: m.measuredAt,
     }));
+  }
+
+  @Post('profile/goals')
+  @ApiOperation({ summary: 'Create a new metric goal' })
+  @ApiBody({ type: CreateMetricGoalRequestDto })
+  @ApiResponse({ status: 201, description: 'Goal created successfully', type: MetricGoalResponseDto })
+  async createMetricGoal(@Body() dto: CreateMetricGoalRequestDto): Promise<MetricGoalResponseDto> {
+    const goal = await this.userManagementService.createMetricGoal(dto);
+    return {
+      id: goal.id,
+      type: goal.type,
+      startingValue: goal.startingValue,
+      targetValue: goal.targetValue,
+      deadline: goal.deadline,
+      status: goal.status,
+      progress: 0,
+    };
+  }
+
+  @Get('profile/goals')
+  @ApiOperation({ summary: 'Get all metric goals' })
+  @ApiResponse({ status: 200, description: 'Goals retrieved successfully', type: [MetricGoalResponseDto] })
+  async getMetricGoals(): Promise<MetricGoalResponseDto[]> {
+    const goals = await this.userManagementService.getMetricGoals();
+    return goals.map(goal => ({
+      id: goal.id,
+      type: goal.type,
+      startingValue: goal.startingValue,
+      targetValue: goal.targetValue,
+      deadline: goal.deadline,
+      achievedAt: goal.achievedAt,
+      status: goal.status,
+      progress: goal.progress,
+    }));
+  }
+
+  @Patch('profile/goals/:id/status')
+  @ApiOperation({ summary: 'Update metric goal status' })
+  @ApiParam({ name: 'id', description: 'Goal ID' })
+  @ApiBody({ type: UpdateMetricGoalStatusRequestDto })
+  @ApiResponse({ status: 200, description: 'Goal status updated successfully' })
+  async updateMetricGoalStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateMetricGoalStatusRequestDto
+  ): Promise<void> {
+    await this.userManagementService.updateMetricGoalStatus(id, dto);
   }
 }
