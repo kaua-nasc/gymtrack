@@ -13,6 +13,8 @@ import { TrainingPlanFeedbackRepository } from './repository/training-plan-feedb
 import { TrainingPlanLikeRepository } from './repository/training-plan-like.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 import { ExerciseLogRepository } from './repository/exercise-log.repository';
+import { ActiveWorkoutSessionRepository } from './repository/active-workout-session.repository';
+import { ActiveSetLogRepository } from './repository/active-set-log.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {
@@ -40,6 +42,8 @@ export class TrainingPlanPersistenceModule {
         TrainingPlanCommentRepository,
         PlanInviteRepository,
         ExerciseLogRepository,
+        ActiveWorkoutSessionRepository,
+        ActiveSetLogRepository,
       ],
       exports: [
         PlanSubscriptionRepository,
@@ -52,6 +56,8 @@ export class TrainingPlanPersistenceModule {
         TrainingPlanCommentRepository,
         PlanInviteRepository,
         ExerciseLogRepository,
+        ActiveWorkoutSessionRepository,
+        ActiveSetLogRepository,
       ],
     };
   }

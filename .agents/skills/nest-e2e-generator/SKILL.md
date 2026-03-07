@@ -30,6 +30,14 @@ Use these `package.json` scripts to run and debug tests:
 - **Drop test database**: `bun run test:db:drop` (Uses `.env.test`)
 - **Run a specific test**: `bun test src/path/to/test.spec.ts`
 
+## 🛠️ Troubleshooting & Common Failures
+- **Relation Not Found**: `relation "table_name" does not exist`? You forgot to migrate the test database. Run `bun run test:db:setup`.
+- **Foreign Key Violation**: Ensure the `beforeEach` del orders respect dependencies (e.g., delete children before parents).
+- **In-Memory vs Persistent Database**: The project uses a persistent PostgreSQL for tests. Changes from one test may affect others if not cleaned properly in `beforeEach`.
+
+## ⏱️ Test Performance & Timeouts
+- **Workers**: Use `--workers=1` when running multiple tests that share the same database to avoid state leakage and deadlocks.
+
 ## Reference Materials
 
 -   **Test Patterns**: See [references/patterns.md](references/patterns.md) for snippets on lifecycle hooks, Auth handling, and MSW mocking.

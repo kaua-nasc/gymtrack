@@ -34,6 +34,11 @@ If communicating between modules (e.g., Training Plan needs Identity data):
 - **Boilerplate**: Use the structure in [references/e2e-boilerplate.md](references/e2e-boilerplate.md).
 - **Run Tests**: Use `bun run test:e2e` to verify.
 
+### 5. Troubleshooting & Pitfalls
+- **Circular Dependencies**: When two entities reference each other, use `Relation<T>` or `Relation<T[]>` from `typeorm` to prevent "Cannot access 'Entity' before initialization" errors during migrations.
+- **Relation Synchronization**: When saving an entity that has a new `OneToMany` relation already saved in the same transaction, TypeORM might try to update the foreign key to `null`. Use `manager.update` for the parent entity or ensure the relation is correctly mapped to avoid `23502: null value in column violates not-null constraint`.
+- **Migrations**: Always verify if a migration is needed for new entities. Run `bun run training-plan:db:migrate` (or the corresponding module script) to apply changes.
+
 ## 🏛️ Architectural Rules
 - **No Direct Imports**: Never import a service/repository from another domain module.
 - **Naming**: `kebab-case.type.ts` for files, `PascalCaseType` for classes.

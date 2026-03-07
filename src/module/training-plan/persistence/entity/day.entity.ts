@@ -37,5 +37,5 @@ export class Day extends DefaultEntity<Day> {
       cascade: true,
     }
   )
-  planDayProgress: PlanDayProgress;
+  planDayProgress: Relation<PlanDayProgress[]>;
 }
