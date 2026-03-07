@@ -4,6 +4,8 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { Between, DataSource } from 'typeorm';
 import dayjs from 'dayjs';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { PlanDayProgressStatus } from '../../core/enum/plan-day-progress-status.enum';
+import { PlanSubscription } from '../entity/plan-subscription.entity';
 
 export class PlanDayProgressRepository extends DefaultTypeOrmRepository<PlanDayProgress> {
   constructor(
@@ -44,5 +46,29 @@ export class PlanDayProgressRepository extends DefaultTypeOrmRepository<PlanDayP
     }
 
     return result;
+  }
+
+  async findCompletedTrainingDays(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Date[]> {
+    const results = await this.manager
+      .createQueryBuilder(PlanDayProgress, 'progress')
+      .innerJoin(
+        PlanSubscription,
+        'subscription',
+        'progress.planSubscriptionId = subscription.id'
+      )
+      .select('DISTINCT DATE(progress.createdAt)', 'date')
+      .where('subscription.userId = :userId', { userId })
+      .andWhere('progress.status = :status', {
+        status: PlanDayProgressStatus.COMPLETED,
+      })
+      .andWhere('progress.createdAt >= :startDate', { startDate })
+      .andWhere('progress.createdAt <= :endDate', { endDate })
+      .getRawMany();
+
+    return results.map((r) => new Date(r.date));
   }
 }

@@ -15,10 +15,17 @@ export class ActiveWorkoutSessionRepository extends DefaultTypeOrmRepository<Act
     super(ActiveWorkoutSession, dataSource.manager, logger);
   }
 
-  async findActiveSessionByUserId(userId: string): Promise<ActiveWorkoutSession | null> {
+  async findActiveSessionByUserId(
+    userId: string,
+    loadProgress = false
+  ): Promise<ActiveWorkoutSession | null> {
+    const relations = ['logs'];
+    if (loadProgress) {
+      relations.push('planDayProgress');
+    }
     return this.find({
       where: { userId },
-      relations: ['logs'],
+      relations,
     });
   }
 }

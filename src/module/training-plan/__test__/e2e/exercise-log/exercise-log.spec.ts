@@ -20,6 +20,7 @@ import { exerciseLogFactory } from '../../factory/exercise-log.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
 import { dayFactory } from '../../factory/day.factory';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
+import { planSubscriptionFactory } from '../../factory/plan-subscription.factory';
 
 describe('Exercise Log Controller - (e2e)', () => {
   let app: INestApplication;
@@ -145,5 +146,75 @@ describe('Exercise Log Controller - (e2e)', () => {
       expect(body).toHaveLength(1);
       expect(body[0].exerciseId).toBe(exercise.id!);
     });
+  });
+
+  describe('GET /exercise-log/activity/weekly/:userId', () => {
+    it('should return weekly activity with training on current day', async () => {
+      const user = userFactory.build();
+      await testDbClient(Tables.User).insert(user);
+
+      const plan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(plan);
+
+      const day = dayFactory.build({ trainingPlanId: plan.id });
+      await testDbClient(Tables.Day).insert(day);
+
+      const exercise = exerciseFactory.build({ dayId: day.id });
+      await testDbClient(Tables.Exercise).insert(exercise);
+
+      const subscription = planSubscriptionFactory.build({
+        userId: user.id,
+        trainingPlanId: plan.id,
+      });
+      await testDbClient(Tables.PlanSubscription).insert(subscription);
+
+      const authHeader = getAuthorizationHeader(user.id!);
+
+      // 1. Start session
+      await fetch(`${url}/training-plan/session/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader,
+        },
+        body: JSON.stringify({ dayId: day.id }),
+      });
+
+      // 2. Log a set (to have logs so finish works)
+      await fetch(`${url}/training-plan/session/log-set`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader,
+        },
+        body: JSON.stringify({
+          exerciseId: exercise.id,
+          reps: 10,
+          weight: 60,
+          rpe: 8,
+        }),
+      });
+
+      // 3. Finish session (marks progress as COMPLETED)
+      await fetch(`${url}/training-plan/session/finish`, {
+        method: 'POST',
+        headers: authHeader,
+      });
+
+      const response = await fetch(`${url}/exercise-log/activity/weekly`, {
+        headers: {
+          ...authHeader,
+        },
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      const body = await response.json() as any;
+      
+      const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      const todayIndex = new Date().getDay();
+      const todayKey = dayNames[todayIndex];
+
+      expect(body[todayKey]).toBe(true);
+    }, 30000);
   });
 });

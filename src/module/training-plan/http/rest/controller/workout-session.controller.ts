@@ -81,6 +81,14 @@ export class WorkoutSessionController {
     await this.workoutSessionService.finishSession();
   }
 
+  @Post('cancel')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Cancels the active workout session' })
+  @ApiResponse({ status: 204, description: 'Session cancelled successfully' })
+  async cancelSession(): Promise<void> {
+    await this.workoutSessionService.cancelSession();
+  }
+
   private mapToResponse(session: any): ActiveWorkoutSessionResponseDto {
     return {
       id: session.id,

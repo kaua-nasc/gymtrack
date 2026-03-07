@@ -119,7 +119,7 @@ describe('Workout Session Controller - (e2e)', () => {
       });
 
       expect(startResponse.status).toBe(HttpStatus.OK);
-      const session = await startResponse.json() as { id: string; userId: string; currentExerciseId: string };
+      const session = await startResponse.json() as { id: string; userId: string; currentExerciseId: string, planDayProgressId: string };
       expect(session.userId).toBe(user.id!);
       expect(session.currentExerciseId).toBe(exercise.id!);
 
@@ -177,6 +177,12 @@ describe('Workout Session Controller - (e2e)', () => {
       // reps and weight are stored as strings in SQLite/simple-array or comma-separated text
       expect(logsInDb.reps).toContain('10');
       expect(logsInDb.weight).toContain('60');
+
+      // Progress status should be COMPLETED
+      const progressInDb = await testDbClient(Tables.PlanDayProgress)
+        .where({ id: session.planDayProgressId })
+        .first();
+      expect(progressInDb.status).toBe('COMPLETED');
     }, 30000);
 
     it('should return existing session if user starts again', async () => {
@@ -220,6 +226,55 @@ describe('Workout Session Controller - (e2e)', () => {
       const session2 = await response2.json() as { id: string };
 
       expect(session1.id).toBe(session2.id);
+    });
+
+    it('should cancel an active workout session and set status to CANCELLED', async () => {
+      const user = userFactory.build();
+      await testDbClient(Tables.User).insert(user);
+
+      const plan = trainingPlanFactory.build({ authorId: user.id });
+      await testDbClient(Tables.TrainingPlan).insert(plan);
+
+      const day = dayFactory.build({ trainingPlanId: plan.id });
+      await testDbClient(Tables.Day).insert(day);
+
+      const subscription = planSubscriptionFactory.build({
+        userId: user.id,
+        trainingPlanId: plan.id,
+      });
+      await testDbClient(Tables.PlanSubscription).insert(subscription);
+
+      const authHeader = getAuthorizationHeader(user.id!);
+
+      const startResponse = await fetch(`${url}/training-plan/session/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader,
+        },
+        body: JSON.stringify({ dayId: day.id }),
+      });
+
+      const session = await startResponse.json() as { id: string; planDayProgressId: string };
+
+      const cancelResponse = await fetch(`${url}/training-plan/session/cancel`, {
+        method: 'POST',
+        headers: authHeader,
+      });
+
+      expect(cancelResponse.status).toBe(HttpStatus.NO_CONTENT);
+
+      // Active session should be deleted
+      const sessionInDb = await testDbClient(Tables.ActiveWorkoutSession)
+        .where({ id: session.id })
+        .first();
+      expect(sessionInDb).toBeUndefined();
+
+      // Progress status should be CANCELLED
+      const progressInDb = await testDbClient(Tables.PlanDayProgress)
+        .where({ id: session.planDayProgressId })
+        .first();
+      expect(progressInDb.status).toBe('CANCELLED');
     });
 
     it('should throw 404 when getting active session if none exists', async () => {

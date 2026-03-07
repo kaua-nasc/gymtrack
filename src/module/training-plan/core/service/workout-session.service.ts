@@ -18,6 +18,7 @@ import { DayRepository } from '../../persistence/repository/day.repository';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { StartWorkoutSessionRequestDto } from '../../http/rest/dto/request/start-workout-session-request.dto';
 import { LogWorkoutSetRequestDto } from '../../http/rest/dto/request/log-workout-set-request.dto';
+import { PlanDayProgressStatus } from '../enum/plan-day-progress-status.enum';
 
 @Injectable()
 export class WorkoutSessionService {
@@ -59,8 +60,6 @@ export class WorkoutSessionService {
 
     return await this.dataSource.transaction(async (manager) => {
       // Find or create PlanDayProgress for today
-      // For simplicity, we create a new one each time they start a session if one doesn't exist for today
-      // In a real app, we'd check if they already have one for today
       let progress = await manager.findOne(PlanDayProgress, {
         where: {
           planSubscriptionId: subscription.id,
@@ -69,12 +68,17 @@ export class WorkoutSessionService {
         order: { createdAt: 'DESC' },
       });
 
-      // If progress exists but was created more than 12 hours ago, create a new one
+      // If progress exists but was created more than 12 hours ago or it was finished/cancelled, create a new one
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-      if (!progress || progress.createdAt < twelveHoursAgo) {
+      if (
+        !progress ||
+        progress.createdAt < twelveHoursAgo ||
+        progress.status !== PlanDayProgressStatus.IN_PROGRESS
+      ) {
         progress = new PlanDayProgress({
           planSubscriptionId: subscription.id,
           dayId: day.id,
+          status: PlanDayProgressStatus.IN_PROGRESS,
         });
         progress = await manager.save(PlanDayProgress, progress);
       }
@@ -146,7 +150,7 @@ export class WorkoutSessionService {
 
   async finishSession(): Promise<void> {
     const userId = this.request.user.id;
-    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId);
+    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId, true); // Include progress
     if (!session) {
       throw new NotFoundException('No active workout session found');
     }
@@ -183,9 +187,37 @@ export class WorkoutSessionService {
         await manager.save(ExerciseLog, exerciseLog);
       }
 
+      // Update PlanDayProgress status to COMPLETED
+      if (session.planDayProgressId) {
+        await manager.update(PlanDayProgress, session.planDayProgressId, {
+          status: PlanDayProgressStatus.COMPLETED,
+        });
+      }
+
       // Delete active session and logs (cascade will handle logs)
       await manager.delete(ActiveWorkoutSession, { id: session.id });
       this.logger.log(`Finished workout session ${session.id} for user ${userId}`);
+    });
+  }
+
+  async cancelSession(): Promise<void> {
+    const userId = this.request.user.id;
+    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId);
+    if (!session) {
+      throw new NotFoundException('No active workout session found');
+    }
+
+    return await this.dataSource.transaction(async (manager) => {
+      // Update PlanDayProgress status to CANCELLED
+      if (session.planDayProgressId) {
+        await manager.update(PlanDayProgress, session.planDayProgressId, {
+          status: PlanDayProgressStatus.CANCELLED,
+        });
+      }
+
+      // Delete active session and logs (cascade will handle logs)
+      await manager.delete(ActiveWorkoutSession, { id: session.id });
+      this.logger.log(`Cancelled workout session ${session.id} for user ${userId}`);
     });
   }
 

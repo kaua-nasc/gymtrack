@@ -26,4 +26,20 @@ export class ExerciseLogRepository extends DefaultTypeOrmRepository<ExerciseLog>
       })) ?? []
     );
   }
+
+  async findTrainingDays(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Date[]> {
+    const logs = await this.manager
+      .createQueryBuilder(ExerciseLog, 'log')
+      .select('DISTINCT DATE(log.createdAt)', 'date')
+      .where('log.userId = :userId', { userId })
+      .andWhere('log.createdAt >= :startDate', { startDate })
+      .andWhere('log.createdAt <= :endDate', { endDate })
+      .getRawMany();
+
+    return logs.map((log) => new Date(log.date));
+  }
 }
