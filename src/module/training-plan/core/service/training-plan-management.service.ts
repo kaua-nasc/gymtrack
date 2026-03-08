@@ -114,8 +114,8 @@ export class TrainingPlanManagementService {
     }
 
     if (trainingPlan.imageUrl) {
-      this.logger.log(`Generating SAS URL for profile picture for user: ${id}`);
-      trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
+      this.logger.log(`Generating URL for profile picture for user: ${id}`);
+      trainingPlan.imageUrl = this.storageService.generateUrl(trainingPlan.imageUrl);
     }
 
     const [likesCount] = await Promise.all([
@@ -228,7 +228,7 @@ export class TrainingPlanManagementService {
       p.planSubscriptionStatus = userPlanSub ? userPlanSub.status.toString() : undefined;
 
       if (p.imageUrl) {
-        p.imageUrl = this.storageService.generateSasUrl(p.imageUrl);
+        p.imageUrl = this.storageService.generateUrl(p.imageUrl);
       }
 
       return p;
@@ -257,7 +257,7 @@ export class TrainingPlanManagementService {
           trainingPlanId: plan.id,
         });
         plan.imageUrl = plan.imageUrl
-          ? this.storageService.generateSasUrl(plan.imageUrl)
+          ? this.storageService.generateUrl(plan.imageUrl)
           : null;
         return plan;
       })
@@ -715,7 +715,7 @@ export class TrainingPlanManagementService {
     }
 
     if (trainingPlan.imageUrl) {
-      trainingPlan.imageUrl = this.storageService.generateSasUrl(trainingPlan.imageUrl);
+      trainingPlan.imageUrl = this.storageService.generateUrl(trainingPlan.imageUrl);
     }
 
     return {

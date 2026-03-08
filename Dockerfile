@@ -22,9 +22,9 @@ RUN npm ci --omit=dev && npm install tsconfig-paths --omit=dev
 # Copia o código compilado do Stage 1
 COPY --from=builder /usr/src/app/dist ./dist
 
-ENV NODE_ENV=production
-ENV PORT=8080
-EXPOSE 8080
+EXPOSE 80
 
 # CAMINHO CORRIGIDO: dist/src/main.js
+# Isso vai listar os arquivos e tentar rodar, mostrando qualquer erro de "file not found"
+# CMD sh -c "echo 'Conteudo da pasta dist:' && ls -R dist && node -r tsconfig-paths/register dist/src/main.js"
 CMD ["node", "-r", "tsconfig-paths/register", "dist/src/main.js"]

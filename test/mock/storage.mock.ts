@@ -9,8 +9,8 @@ export class MockAzureStorageService implements StorageService {
   upload = mock<StorageService['upload']>().mockResolvedValue(undefined);
   copy = mock<StorageService['copy']>().mockResolvedValue(undefined);
   delete = mock<StorageService['delete']>().mockResolvedValue(undefined);
-  generateSasUrl = mock<StorageService['generateSasUrl']>().mockImplementation(
-    (blobName: string) => `https://fake.local/${blobName}?mockedToken=123`
+  generateUrl = mock<StorageService['generateUrl']>().mockImplementation(
+    (blobName: string) => `https://fake.local/${blobName}`
   );
 }
 

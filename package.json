@@ -52,7 +52,6 @@
     "ioredis": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "minio": "^8.0.7",
-    "nest-winston": "^1.10.2",
     "nestjs-cls": "^6.2.0",
     "nodemailer": "^8.0.1",
     "pg": "^8.20.0",
@@ -67,7 +66,6 @@
     "typeorm-extension": "^3.9.0",
     "typeorm-transactional": "^0.5.0",
     "valibot": "^1.2.0",
-    "winston": "^3.19.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

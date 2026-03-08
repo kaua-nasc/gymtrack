@@ -15,7 +15,7 @@ export interface StorageService {
   upload(fileName: string, buffer: Buffer): Promise<void>;
   copy(sourceBlobName: string, targetBlobName: string): Promise<void>;
   delete(fileName: string): Promise<void>;
-  generateSasUrl(blobName: string, expiryMinutes?: number): string;
+  generateUrl(blobName: string): string;
 }
 
 @Injectable()
@@ -47,7 +47,7 @@ export class AzureStorageService implements StorageService, OnModuleInit {
 
     const targetBlobClient = containerClient.getBlockBlobClient(targetBlobName);
 
-    await targetBlobClient.beginCopyFromURL(this.generateSasUrl(sourceBlobName, 5));
+    await targetBlobClient.beginCopyFromURL(this.generateUrl(sourceBlobName));
   }
 
   async delete(fileName: string): Promise<void> {
@@ -59,24 +59,10 @@ export class AzureStorageService implements StorageService, OnModuleInit {
     await blockBlobClient.deleteIfExists();
   }
 
-  generateSasUrl(blobName: string, expiryMinutes = 10): string {
-    const now = new Date();
-    const expiresOn = new Date(now.valueOf() + expiryMinutes * 60 * 1000);
-
-    const sasToken = generateAccountSASQueryParameters(
-      {
-        expiresOn,
-        permissions: AccountSASPermissions.parse('r'),
-        resourceTypes: AccountSASResourceTypes.parse('o').toString(),
-        services: AccountSASServices.parse('b').toString(),
-        protocol: SASProtocol.HttpsAndHttp,
-      },
-      this.client.credential as StorageSharedKeyCredential
-    ).toString();
-
+  generateUrl(blobName: string): string {
     const sasUrl = `${this.configService.get(
       'storage.azure.url'
-    )}/${blobName}?${sasToken}`;
+    )}/${blobName}`;
 
     return sasUrl;
   }
