@@ -46,6 +46,8 @@ import { MeasurementType } from '@src/module/identity/core/enum/measurement-type
 import { CreateMetricGoalRequestDto } from '../dto/request/create-metric-goal-request.dto';
 import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
 import { UpdateMetricGoalStatusRequestDto } from '../dto/request/update-metric-goal-status-request.dto';
+import { UpdateTrainerInviteCodeRequestDto } from '../dto/request/update-trainer-invite-code-request.dto';
+import { LinkTrainerRequestDto } from '../dto/request/link-trainer-request.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -423,9 +425,9 @@ export class UserController {
     }));
   }
 
-  @Patch('profile/goals/:id/status')
-  @ApiOperation({ summary: 'Update metric goal status' })
-  @ApiParam({ name: 'id', description: 'Goal ID' })
+  @Patch('profile/metrics/goals/:id')
+  @ApiOperation({ summary: 'Update a metric goal status' })
+  @ApiParam({ name: 'id', description: 'ID of the goal' })
   @ApiBody({ type: UpdateMetricGoalStatusRequestDto })
   @ApiResponse({ status: 200, description: 'Goal status updated successfully' })
   async updateMetricGoalStatus(
@@ -434,4 +436,91 @@ export class UserController {
   ): Promise<void> {
     await this.userManagementService.updateMetricGoalStatus(id, dto);
   }
-}
+
+  // --- Trainer & Student Relationship Section ---
+
+  @Get('profile/trainer-code')
+  @ApiOperation({ summary: 'Get current trainer invite code (Trainer only)' })
+  @ApiResponse({ status: 200, description: 'Current invite code' })
+  async getTrainerInviteCode(): Promise<{ inviteCode?: string }> {
+    const code = await this.userManagementService.getTrainerInviteCode();
+    return { inviteCode: code };
+  }
+
+  @Patch('profile/trainer-code')
+  @ApiOperation({ summary: 'Update trainer invite code (Trainer only)' })
+  @ApiBody({ type: UpdateTrainerInviteCodeRequestDto })
+  @ApiResponse({ status: 200, description: 'Invite code updated successfully' })
+  async updateTrainerInviteCode(
+    @Body() dto: UpdateTrainerInviteCodeRequestDto
+  ): Promise<void> {
+    await this.userManagementService.updateTrainerInviteCode(dto.inviteCode);
+  }
+
+  @Post('profile/link-trainer')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Link to a trainer using invite code (Student only)' })
+  @ApiBody({ type: LinkTrainerRequestDto })
+  @ApiResponse({ status: 200, description: 'Linked to trainer successfully' })
+  async linkTrainer(@Body() dto: LinkTrainerRequestDto): Promise<void> {
+    await this.userManagementService.linkTrainer(dto.inviteCode);
+  }
+
+  @Delete('profile/unlink-trainer')
+  @ApiOperation({ summary: 'Unlink from current trainer (Student only)' })
+  @ApiResponse({ status: 200, description: 'Unlinked successfully' })
+  async unlinkTrainer(): Promise<void> {
+    await this.userManagementService.unlinkTrainer();
+  }
+
+  @Delete('profile/unlink-student/:studentId')
+  @ApiOperation({ summary: 'Unlink a student (Trainer only)' })
+  @ApiParam({ name: 'studentId', description: 'ID of the student to unlink' })
+  @ApiResponse({ status: 200, description: 'Student unlinked successfully' })
+  async unlinkStudent(@Param('studentId') studentId: string): Promise<void> {
+    await this.userManagementService.unlinkStudent(studentId);
+  }
+
+  @Get('profile/students')
+  @ApiOperation({ summary: 'List all linked students (Trainer only)' })
+  @ApiResponse({ status: 200, description: 'List of students', type: [UserResponseDto] })
+  async getStudents(): Promise<UserResponseDto[]> {
+    const students = await this.userManagementService.getStudents();
+    return students.map((s) => ({
+      id: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      email: s.email,
+      bio: s.bio,
+      profilePictureUrl: s.profilePictureUrl,
+    }));
+  }
+
+  @Get('profile/trainer')
+  @ApiOperation({ summary: 'Get current trainer information (Student only)' })
+  @ApiResponse({ status: 200, description: 'Trainer info', type: UserResponseDto })
+  async getTrainer(): Promise<UserResponseDto | null> {
+    const trainer = await this.userManagementService.getTrainer();
+    if (!trainer) return null;
+    return {
+      id: trainer.id,
+      firstName: trainer.firstName,
+      lastName: trainer.lastName,
+      email: trainer.email,
+      bio: trainer.bio,
+      profilePictureUrl: trainer.profilePictureUrl,
+    };
+  }
+
+  @Public()
+  @Get('student/:studentId/trainer-id')
+  @ApiOperation({ summary: 'Get trainer ID of a student (Internal use)' })
+  @ApiParam({ name: 'studentId', description: 'ID of the student' })
+  @ApiResponse({ status: 200, description: 'Trainer ID' })
+  async getTrainerIdByStudentId(
+    @Param('studentId') studentId: string
+  ): Promise<{ trainerId: string | null }> {
+    const trainerId = await this.userManagementService.getTrainerIdByStudentId(studentId);
+    return { trainerId };
+  }
+  }

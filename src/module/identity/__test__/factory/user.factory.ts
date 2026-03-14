@@ -5,19 +5,19 @@ import { hashSync } from 'bcrypt';
 import { PASSWORD_HASH_SALT } from '../../core/service/user-management.service';
 
 export const userFactory = Factory.Sync.makeFactory<Partial<User>>({
-  id: faker.string.uuid(),
-  firstName: faker.person.firstName(),
-  lastName: faker.person.lastName(),
-  email: faker.internet.email(),
+  id: Factory.each(() => faker.string.uuid()),
+  firstName: Factory.each(() => faker.person.firstName()),
+  lastName: Factory.each(() => faker.person.lastName()),
+  email: Factory.each(() => faker.internet.email()),
   password: hashSync('password123', PASSWORD_HASH_SALT),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  createdAt: Factory.each(() => faker.date.recent()),
+  updatedAt: Factory.each(() => faker.date.recent()),
   deletedAt: undefined,
 });
 
 export const createUserFactory = Factory.Sync.makeFactory<Partial<User>>({
-  firstName: faker.person.firstName(),
-  lastName: faker.person.lastName(),
-  email: faker.internet.email(),
+  firstName: Factory.each(() => faker.person.firstName()),
+  lastName: Factory.each(() => faker.person.lastName()),
+  email: Factory.each(() => faker.internet.email()),
   password: 'password123',
 });

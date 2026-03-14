@@ -9,6 +9,7 @@ import { UserRepository } from './repository/user.repository';
 import { UserFollowsRepository } from './repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from './repository/user-privacy-settings.repository';
 import { WeightLogRepository } from './repository/weight-log.repository';
+import { TrainerStudentRelationshipRepository } from './repository/trainer-student-relationship.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 
 @Module({
@@ -39,6 +40,7 @@ import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
     WeightLogRepository,
     BodyMeasurementRepository,
     MetricGoalRepository,
+    TrainerStudentRelationshipRepository,
   ],
   exports: [
     UserRepository,
@@ -47,6 +49,7 @@ import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
     WeightLogRepository,
     BodyMeasurementRepository,
     MetricGoalRepository,
+    TrainerStudentRelationshipRepository,
   ],
 })
 export class IdentityPersistenceModule {}

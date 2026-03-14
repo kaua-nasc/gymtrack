@@ -59,6 +59,9 @@ export class User extends DefaultEntity<User> {
   @Column({ type: 'enum', enum: HeightUnit, default: HeightUnit.cm })
   heightUnit: HeightUnit;
 
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+  trainerInviteCode?: string;
+
   @OneToMany(
     () => UserFollows,
     (follow) => follow.following

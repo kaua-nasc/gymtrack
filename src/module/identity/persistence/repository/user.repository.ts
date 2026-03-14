@@ -57,4 +57,10 @@ export class UserRepository extends DefaultTypeOrmRepository<User> {
   async getResetCode(email: string) {
     return await this.cacheService.get(email);
   }
+
+  async findByInviteCode(inviteCode: string): Promise<User | null> {
+    return this.find({
+      where: { trainerInviteCode: inviteCode },
+    });
+  }
 }

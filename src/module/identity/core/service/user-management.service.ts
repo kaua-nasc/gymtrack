@@ -36,6 +36,8 @@ import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
+import { TrainerStudentRelationshipRepository } from '../../persistence/repository/trainer-student-relationship.repository';
+import { TrainerStudentRelationship } from '../../persistence/entity/trainer-student-relationship.entity';
 
 export interface CreateUserDto {
   email: string;
@@ -56,10 +58,11 @@ export class UserManagementService {
     private readonly weightLogRepository: WeightLogRepository,
     private readonly bodyMeasurementRepository: BodyMeasurementRepository,
     private readonly metricGoalRepository: MetricGoalRepository,
+    private readonly trainerStudentRelationshipRepository: TrainerStudentRelationshipRepository,
     @InjectDataSource('identity') private readonly dataSource: DataSource,
     private readonly storageService: AzureStorageService,
     private readonly logger: AppLogger,
-    @Inject(REQUEST) private readonly request: { user: { id: string } }
+    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
   ) {}
 
   async create(user: CreateUserDto): Promise<User> {
@@ -644,6 +647,130 @@ export class UserManagementService {
     }
 
     await this.metricGoalRepository.update({ id }, { status: dto.status });
+  }
+
+  async updateTrainerInviteCode(inviteCode: string): Promise<void> {
+    const { id: userId, type } = this.request.user;
+
+    if (type !== UserType.personalTrainer) {
+      throw new BadRequestException('only personal trainers can have invite codes');
+    }
+
+    this.logger.log(`Updating invite code for trainer ${userId} to ${inviteCode}`);
+
+    const existing = await this.userRepository.findByInviteCode(inviteCode);
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('invite code already in use');
+    }
+
+    await this.userRepository.update({ id: userId }, { trainerInviteCode: inviteCode });
+  }
+
+  async getTrainerInviteCode(): Promise<string | undefined> {
+    const { id: userId, type } = this.request.user;
+
+    if (type !== UserType.personalTrainer) {
+      throw new BadRequestException('only personal trainers have invite codes');
+    }
+
+    const user = await this.userRepository.findOneById(userId);
+    return user?.trainerInviteCode;
+  }
+
+  async linkTrainer(inviteCode: string): Promise<void> {
+    const { id: studentId } = this.request.user;
+    this.logger.log(`Student ${studentId} attempting to link with code ${inviteCode}`);
+
+    const trainer = await this.userRepository.findByInviteCode(inviteCode);
+    if (!trainer || trainer.type !== UserType.personalTrainer) {
+      throw new NotFoundException('trainer not found with this code');
+    }
+
+    const existingRelationship =
+      await this.trainerStudentRelationshipRepository.findByStudentId(studentId);
+    if (existingRelationship) {
+      throw new BadRequestException('student already has a linked trainer');
+    }
+
+    const relationship = new TrainerStudentRelationship({
+      trainerId: trainer.id,
+      studentId,
+    });
+
+    await this.trainerStudentRelationshipRepository.save(relationship);
+    this.logger.log(`Successfully linked student ${studentId} to trainer ${trainer.id}`);
+
+    // Auto-follow side effect
+    try {
+      await this.followUser(trainer.id);
+    } catch (e) {
+      this.logger.warn(`Auto-follow failed during linking: ${e.message}`);
+    }
+  }
+
+  async unlinkTrainer(): Promise<void> {
+    const { id: userId, type } = this.request.user;
+    this.logger.log(`Attempting to unlink relationship for user ${userId}`);
+
+    if (type === UserType.personalTrainer) {
+      // If trainer, we need to know which student to unlink. 
+      // For now, let's keep it simple: the student must initiate or we need a studentId param.
+      // Based on design "Both can end", adding a param-less version for student 
+      // and we'll add a param version for trainer if needed.
+      throw new BadRequestException('trainer must specify studentId to unlink (not implemented yet)');
+    }
+
+    const relationship =
+      await this.trainerStudentRelationshipRepository.findByStudentId(userId);
+    if (!relationship) {
+      throw new NotFoundException('no relationship found to unlink');
+    }
+
+    await this.trainerStudentRelationshipRepository.deleteRelationship(
+      relationship.trainerId,
+      userId
+    );
+    this.logger.log(`Successfully unlinked student ${userId} from trainer ${relationship.trainerId}`);
+  }
+
+  async unlinkStudent(studentId: string): Promise<void> {
+    const { id: trainerId, type } = this.request.user;
+    if (type !== UserType.personalTrainer) {
+      throw new BadRequestException('only trainers can unlink students this way');
+    }
+
+    await this.trainerStudentRelationshipRepository.deleteRelationship(trainerId, studentId);
+    this.logger.log(`Successfully unlinked student ${studentId} from trainer ${trainerId}`);
+  }
+
+  async getStudents(): Promise<User[]> {
+    const { id: trainerId, type } = this.request.user;
+
+    if (type !== UserType.personalTrainer) {
+      throw new BadRequestException('only personal trainers can list students');
+    }
+
+    const relationships =
+      await this.trainerStudentRelationshipRepository.findByTrainerId(trainerId);
+    return relationships.map((r) => r.student);
+  }
+
+  async getTrainer(): Promise<User | null> {
+    const { id: studentId } = this.request.user;
+    return await this.getTrainerOfStudent(studentId);
+  }
+
+  async getTrainerOfStudent(studentId: string): Promise<User | null> {
+    const relationship =
+      await this.trainerStudentRelationshipRepository.findByStudentId(studentId);
+    if (!relationship) return null;
+
+    return await this.userRepository.findOneById(relationship.trainerId);
+  }
+
+  async getTrainerIdByStudentId(studentId: string): Promise<string | null> {
+    const trainer = await this.getTrainerOfStudent(studentId);
+    return trainer?.id ?? null;
   }
 
   private async checkMetricGoals(

@@ -19,4 +19,9 @@ export class IdentityApiProvider implements IdentityUserExistsApi {
     const users = await this.userManagementService.getUsersByIds(userIds);
     return users.map((user) => ({ ...user }));
   }
+
+  async getTrainerId(studentId: string): Promise<string | null> {
+    const trainer = await this.userManagementService.getTrainerOfStudent(studentId);
+    return trainer?.id ?? null;
+  }
 }

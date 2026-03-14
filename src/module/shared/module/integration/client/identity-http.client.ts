@@ -69,4 +69,27 @@ export class IdentityHttpClient implements IdentityUserExistsApi {
 
     return response;
   }
+
+  async getTrainerId(studentId: string): Promise<string | null> {
+    const serviceToken = this.configService.get('identityApi.serviceToken');
+
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${serviceToken}`,
+      },
+    };
+    const url = `${this.configService.get('identityApi.url')}/identity/user/student/${studentId}/trainer-id`;
+
+    try {
+      const response = await this.httpClient.get<{ trainerId: string | null }>(
+        url,
+        options
+      );
+      return response.trainerId;
+    } catch {
+      return null;
+    }
+  }
 }

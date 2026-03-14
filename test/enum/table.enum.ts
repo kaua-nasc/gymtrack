@@ -17,4 +17,5 @@ export enum Tables {
   MetricGoal = 'metric_goals',
   ActiveWorkoutSession = 'active_workout_sessions',
   ActiveSetLog = 'active_set_logs',
+  TrainerStudentRelationship = 'trainer_student_relationships',
 }

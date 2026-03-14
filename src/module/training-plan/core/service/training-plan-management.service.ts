@@ -108,16 +108,40 @@ export class TrainingPlanManagementService {
   async delete(id: string) {
     this.logger.log('Deleting training plan', { trainingPlanId: id });
 
-    const exists = await this.exists(id);
-    if (!exists) {
+    const trainingPlan = await this.trainingPlanRepository.findOneTrainingPlanById(id);
+    if (!trainingPlan) {
       this.logger.warn('Attempt to delete non-existing training plan', {
         trainingPlanId: id,
       });
       throw new NotFoundException(`training plan with id ${id} not found`);
     }
 
+    await this.authorizeAccess(trainingPlan);
+
     await this.trainingPlanRepository.deleteTrainingPlan(id);
     this.logger.log('Training plan deleted successfully', { trainingPlanId: id });
+  }
+
+  private async authorizeAccess(trainingPlan: TrainingPlan): Promise<void> {
+    const { id: userId } = this.request.user;
+
+    // 1. Check if the user is the author
+    if (trainingPlan.authorId === userId) {
+      return;
+    }
+
+    // 2. Check if the user is the trainer of the author (student)
+    const trainerId = await this.identityUserServiceClient.getTrainerId(
+      trainingPlan.authorId
+    );
+
+    if (trainerId === userId) {
+      this.logger.log(`Authorization granted: User ${userId} is the trainer of author ${trainingPlan.authorId}`);
+      return;
+    }
+
+    this.logger.warn(`Authorization denied for user ${userId} on plan ${trainingPlan.id}`);
+    throw new BadRequestException('you are not authorized to modify this training plan');
   }
 
   async get(id: string) {
@@ -397,6 +421,8 @@ export class TrainingPlanManagementService {
       this.logger.warn(`Add image failed: Training plan not found: ${trainingPlanId}`);
       throw new NotFoundException('training plan not exists');
     }
+
+    await this.authorizeAccess(trainingPlan);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${FilePath.trainingPlan}/training-plan-${trainingPlan.id}_${timestamp}.png`;
