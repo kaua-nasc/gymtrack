@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UserCreateRequestDto {
   @IsEmail()
@@ -23,4 +24,14 @@ export class UserCreateRequestDto {
   @IsNotEmpty()
   @ApiProperty({ example: 'Ola, tudo bom?', description: 'Bio do usuário' })
   bio: string;
+
+  @IsOptional()
+  @IsEnum(UserType)
+  @ApiProperty({
+    enum: UserType,
+    example: UserType.client,
+    description: 'Tipo de usuário (CLIENT ou PERSONAL_TRAINER)',
+    default: UserType.client,
+  })
+  type?: UserType;
 }

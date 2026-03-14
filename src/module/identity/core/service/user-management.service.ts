@@ -15,6 +15,7 @@ import { DataSource, EntityManager, In } from 'typeorm';
 import { HeightUnit } from '../../core/enum/height-unit.enum';
 import { MeasurementType } from '../../core/enum/measurement-type.enum';
 import { MetricGoalStatus } from '../../core/enum/metric-goal-status.enum';
+import { UserType } from '../../core/enum/user-type.enum';
 import { WeightUnit } from '../../core/enum/weight-unit.enum';
 import { AddBodyMeasurementsRequestDto } from '../../http/rest/dto/request/add-body-measurements-request.dto';
 import { AddWeightLogRequestDto } from '../../http/rest/dto/request/add-weight-log-request.dto';
@@ -41,6 +42,7 @@ export interface CreateUserDto {
   password: string;
   firstName: string;
   lastName: string;
+  type?: UserType;
 }
 
 export const PASSWORD_HASH_SALT = 10;
@@ -68,6 +70,7 @@ export class UserManagementService {
     }
     const newUser = new User({
       ...user,
+      type: user.type ?? UserType.client,
       password: await hash(user.password, PASSWORD_HASH_SALT),
     });
 
@@ -84,6 +87,24 @@ export class UserManagementService {
 
     this.logger.log(`Successfully created user: ${newUser.id} for email: ${user.email}`);
     return newUser;
+  }
+
+  async upgradeToPersonalTrainer(): Promise<void> {
+    const userId = this.request.user.id;
+    this.logger.log(`Upgrading user ${userId} to personal trainer`);
+
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+
+    if (user.type === UserType.personalTrainer) {
+      this.logger.warn(`User ${userId} is already a personal trainer`);
+      return;
+    }
+
+    await this.userRepository.update({ id: userId }, { type: UserType.personalTrainer });
+    this.logger.log(`User ${userId} successfully upgraded to personal trainer`);
   }
 
   async getUserById(id: string): Promise<User> {

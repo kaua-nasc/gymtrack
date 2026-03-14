@@ -301,6 +301,13 @@ export class UserController {
     await this.userManagementService.updateMetrics(dto);
   }
 
+  @Post('profile/upgrade')
+  @ApiOperation({ summary: 'Upgrade user profile to Personal Trainer' })
+  @ApiResponse({ status: 200, description: 'Profile upgraded successfully' })
+  async upgradeToPersonalTrainer(): Promise<void> {
+    await this.userManagementService.upgradeToPersonalTrainer();
+  }
+
   @Post('profile/weight')
   @ApiOperation({ summary: 'Add a new weight log entry' })
   @ApiBody({ type: AddWeightLogRequestDto })

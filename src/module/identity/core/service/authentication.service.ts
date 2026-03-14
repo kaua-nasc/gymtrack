@@ -33,13 +33,12 @@ export class AuthService {
 
     const payload = {
       sub: user.id,
+      type: user.type,
     };
 
     this.logger.log(`Sign-in successful for user ID: ${user.id}`);
     return {
-      accessToken: await this.jwtService.signAsync(payload, {
-        algorithm: 'HS256',
-      }),
+      accessToken: await this.jwtService.signAsync(payload),
     };
   }
 

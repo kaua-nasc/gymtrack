@@ -29,6 +29,7 @@ import { PlanSubscriptionRepository } from '../../persistence/repository/plan-su
 import { TrainingPlanCommentRepository } from '../../persistence/repository/training-plan-comment.repository';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -43,7 +44,7 @@ export class TrainingPlanManagementService {
     private readonly identityUserServiceClient: IdentityUserExistsApi,
     private readonly logger: AppLogger,
     private readonly storageService: AzureStorageService,
-    @Inject(REQUEST) private readonly request: { user: { id: string } }
+    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
   ) {}
 
   async traningPlanExists(trainingPlanId: string) {
@@ -52,19 +53,43 @@ export class TrainingPlanManagementService {
   }
 
   async create(trainingPlanData: CreateTrainingPlanRequestDto) {
+    const { id: userId, type: userType } = this.request.user;
+
     this.logger.log('Creating new training plan', {
-      authorId: trainingPlanData.authorId,
+      authorId: userId,
+      userType,
     });
-    const a = await this.identityUserServiceClient.userExists(trainingPlanData.authorId);
-    if (!a) {
+
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
       this.logger.warn('User not found when creating training plan', {
-        authorId: trainingPlanData.authorId,
+        userId,
       });
       throw new NotFoundException('user not found');
     }
 
+    let visibility = trainingPlanData.visibility;
+
+    if (userType === UserType.client) {
+      const plansCount = await this.trainingPlanRepository.count({
+        authorId: userId,
+      });
+
+      if (plansCount >= 1) {
+        this.logger.warn('Client already has a training plan', { userId });
+        throw new BadRequestException(
+          'Users with profile CLIENT can only have one personal training plan. Please delete your existing plan to create a new one.'
+        );
+      }
+
+      visibility = TrainingPlanVisibility.private;
+    }
+
     const trainingPlan = await this.trainingPlanRepository.save(
-      new TrainingPlan({ ...trainingPlanData })
+      new TrainingPlan({
+        ...trainingPlanData,
+        visibility,
+        authorId: userId,
+      })
     );
 
     this.logger.log('Training plan created successfully', {
