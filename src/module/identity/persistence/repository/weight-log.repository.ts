@@ -4,7 +4,7 @@ import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/
 import { DataSource } from 'typeorm';
 import { WeightLog } from '../entity/weight-log.entity';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { FindOptionsOrder, FindOptionsWhere } from 'typeorm';
+import { FindOptionsOrder, FindOptionsWhere, MoreThanOrEqual } from 'typeorm';
 
 @Injectable()
 export class WeightLogRepository extends DefaultTypeOrmRepository<WeightLog> {
@@ -15,9 +15,18 @@ export class WeightLogRepository extends DefaultTypeOrmRepository<WeightLog> {
     super(WeightLog, dataSource.createEntityManager(), logger);
   }
 
-  async findAndCountByUserId(userId: string, page: number, limit: number): Promise<[WeightLog[], number]> {
+  async findAndCountByUserId(
+    userId: string,
+    page: number,
+    limit: number,
+    minDate?: Date
+  ): Promise<[WeightLog[], number]> {
     const where: FindOptionsWhere<WeightLog> = { userId };
     const order: FindOptionsOrder<WeightLog> = { measuredAt: 'DESC' };
+
+    if (minDate) {
+      where.measuredAt = MoreThanOrEqual(minDate);
+    }
 
     return this.repository.findAndCount({
       where,

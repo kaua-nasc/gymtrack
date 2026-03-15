@@ -9,6 +9,7 @@ import { REQUEST } from '@nestjs/core';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
+import { AssignPlanRequestDto } from '../../http/rest/dto/request/assign-plan-request.dto';
 import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 import { DayRepository } from '../../persistence/repository/day.repository';
@@ -187,6 +188,66 @@ export class PlanSubscriptionManagementService {
       trainingPlanId,
       subscriptionId: subscription.id,
     });
+  }
+
+  async assignPlanToStudent(dto: AssignPlanRequestDto) {
+    const trainerId = this.request.user.id;
+    const { studentId, planId, type } = dto;
+
+    this.logger.log('Trainer attempting to assign plan to student', {
+      trainerId,
+      studentId,
+      planId,
+    });
+
+    // 1. Check if the training plan exists and belongs to the trainer
+    const trainingPlan = await this.trainingPlanRepository.findOneById(planId);
+    if (!trainingPlan) {
+      throw new NotFoundException('training plan not found');
+    }
+
+    if (trainingPlan.authorId !== trainerId) {
+      this.logger.warn(
+        `Trainer ${trainerId} attempted to assign plan ${planId} owned by ${trainingPlan.authorId}`
+      );
+      throw new BadRequestException('you can only assign plans created by yourself');
+    }
+
+    // 2. Validate trainer-student relationship
+    const officialTrainerId = await this.identityUserServiceClient.getTrainerId(studentId);
+    if (officialTrainerId !== trainerId) {
+      this.logger.warn(
+        `Trainer ${trainerId} is not the official trainer of student ${studentId}`
+      );
+      throw new BadRequestException('this user is not your linked student');
+    }
+
+    // 3. Check for existing subscription
+    const existing = await this.planSubscriptionRepository.find({
+      where: { userId: studentId, trainingPlanId: planId },
+    });
+
+    if (existing) {
+      throw new ConflictException('student is already subscribed to this plan');
+    }
+
+    // 4. Create subscription
+    const subscription = new PlanSubscription({
+      trainingPlanId: planId,
+      userId: studentId,
+      type,
+      status: PlanSubscriptionStatus.notStarted,
+    });
+
+    await this.planSubscriptionRepository.save(subscription);
+
+    this.logger.log('Plan assigned successfully', {
+      subscriptionId: subscription.id,
+      trainerId,
+      studentId,
+    });
+
+    return { subscriptionId: subscription.id };
   }
 
   async removeSubscription(trainingPlanId: string) {

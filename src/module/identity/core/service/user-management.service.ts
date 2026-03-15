@@ -773,6 +773,122 @@ export class UserManagementService {
     return trainer?.id ?? null;
   }
 
+  async getStudentWeightHistory(
+    studentId: string,
+    page = 1,
+    limit = 20
+  ): Promise<{ items: WeightLog[]; total: number }> {
+    const { minDate } = await this.validateTrainerAccess(studentId);
+
+    const [items, total] = await this.weightLogRepository.findAndCountByUserId(
+      studentId,
+      page,
+      limit,
+      minDate
+    );
+
+    return { items, total };
+  }
+
+  async getStudentBodyMeasurementsHistory(
+    studentId: string,
+    type?: MeasurementType,
+    page = 1,
+    limit = 20
+  ): Promise<{ items: BodyMeasurement[]; total: number }> {
+    const { minDate } = await this.validateTrainerAccess(studentId);
+
+    const [items, total] = await this.bodyMeasurementRepository.findAndCountByUserId(
+      studentId,
+      type,
+      page,
+      limit,
+      minDate
+    );
+
+    return { items, total };
+  }
+
+  async getStudentLatestBodyMeasurements(studentId: string): Promise<BodyMeasurement[]> {
+    const { minDate } = await this.validateTrainerAccess(studentId);
+
+    return await this.bodyMeasurementRepository.findLatestByUserId(studentId, minDate);
+  }
+
+  async getStudentMetricGoals(
+    studentId: string
+  ): Promise<(MetricGoal & { progress: number })[]> {
+    const { minDate } = await this.validateTrainerAccess(studentId);
+
+    const goals = await this.metricGoalRepository.findAllByUserId(studentId, minDate);
+    const user = await this.userRepository.findOneById(studentId);
+
+    const goalsWithProgress = await Promise.all(
+      goals.map(async (goal) => {
+        let currentValue: number;
+        if (goal.type === 'WEIGHT') {
+          currentValue = user?.currentWeight || goal.startingValue;
+        } else {
+          const latest = await this.bodyMeasurementRepository.findAndCountByUserId(
+            studentId,
+            goal.type as MeasurementType,
+            1,
+            1,
+            minDate
+          );
+          currentValue = latest[0][0]?.value || goal.startingValue;
+        }
+
+        let progress = 0;
+        if (goal.status === MetricGoalStatus.ACHIEVED) {
+          progress = 1;
+        } else if (goal.status === MetricGoalStatus.ACTIVE) {
+          const totalDistance = goal.targetValue - goal.startingValue;
+          const currentDistance = currentValue - goal.startingValue;
+
+          if (totalDistance === 0) {
+            progress = currentValue === goal.targetValue ? 1 : 0;
+          } else {
+            progress = Number((currentDistance / totalDistance).toFixed(2));
+            progress = Math.max(0, Math.min(1, progress));
+          }
+        }
+
+        return Object.assign(goal, { progress });
+      })
+    );
+
+    return goalsWithProgress;
+  }
+
+  private async validateTrainerAccess(
+    studentId: string
+  ): Promise<{ minDate?: Date }> {
+    const { id: trainerId, type } = this.request.user;
+
+    if (type !== UserType.personalTrainer) {
+      throw new BadRequestException('only personal trainers can access student metrics');
+    }
+
+    const relationship =
+      await this.trainerStudentRelationshipRepository.find({
+        where: { trainerId, studentId },
+      });
+
+    if (!relationship) {
+      this.logger.warn(`Trainer ${trainerId} attempted to access unauthorized student ${studentId}`);
+      throw new BadRequestException('this user is not your student');
+    }
+
+    const privacy = await this.userPrivacySettingsRepository.findOneByUserId(studentId);
+
+    if (!privacy?.sharePastDataWithTrainer) {
+      return { minDate: relationship.linkedAt };
+    }
+
+    return {};
+  }
+
   private async checkMetricGoals(
     userId: string,
     type: string,

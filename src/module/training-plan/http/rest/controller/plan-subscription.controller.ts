@@ -16,15 +16,18 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
+import { RolesGuard, Roles } from '@src/module/shared/module/auth/guard/roles.guard';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { PlanSubscriptionManagementService } from '@src/module/training-plan/core/service/plan-subscription-management.service';
 import { CreatePlanSubscriptionRequestDto } from '../dto/request/create-plan-subscription-request.dto';
+import { AssignPlanRequestDto } from '../dto/request/assign-plan-request.dto';
 import { DayProgressResponseDto } from '../dto/response/day-progress-response.dto';
 import { PlanSubscriptionExistsResponseDto } from '../dto/response/plan-subscription-exists-response.dto';
 import { PlanSubscriptionResponseDto } from '../dto/response/plan-subscription-response.dto';
 
 @ApiTags('Plan Subscriptions')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('training-plan')
 export class PlanSubscriptionController {
   constructor(
@@ -91,6 +94,16 @@ export class PlanSubscriptionController {
     const exists =
       await this.planSubscriptionManagementService.existsInProgress(trainingPlanId);
     return { ...exists };
+  }
+
+  @Post('/subscriptions/assign')
+  @Roles(UserType.personalTrainer)
+  @ApiOperation({ summary: 'Treinador atribui um plano diretamente ao aluno' })
+  @ApiResponse({ status: 201, description: 'Plano atribuído com sucesso' })
+  async assignPlanToStudent(
+    @Body() dto: AssignPlanRequestDto
+  ): Promise<{ subscriptionId: string }> {
+    return await this.planSubscriptionManagementService.assignPlanToStudent(dto);
   }
 
   @Post('/:trainingPlanId/subscriptions')

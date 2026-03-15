@@ -496,6 +496,63 @@ export class UserController {
     }));
   }
 
+  @Get('trainer/students/:studentId/metrics/weight')
+  @ApiOperation({ summary: 'Get weight history of a linked student (Trainer only)' })
+  @ApiParam({ name: 'studentId', description: 'ID of the student' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Weight history' })
+  async getStudentWeightHistory(
+    @Param('studentId') studentId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    return await this.userManagementService.getStudentWeightHistory(
+      studentId,
+      page,
+      limit
+    );
+  }
+
+  @Get('trainer/students/:studentId/metrics/measurements')
+  @ApiOperation({ summary: 'Get measurements history of a linked student (Trainer only)' })
+  @ApiParam({ name: 'studentId', description: 'ID of the student' })
+  @ApiQuery({ name: 'type', required: false, enum: MeasurementType })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Measurements history' })
+  async getStudentBodyMeasurementsHistory(
+    @Param('studentId') studentId: string,
+    @Query('type') type?: MeasurementType,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    return await this.userManagementService.getStudentBodyMeasurementsHistory(
+      studentId,
+      type,
+      page,
+      limit
+    );
+  }
+
+  @Get('trainer/students/:studentId/metrics/goals')
+  @ApiOperation({ summary: 'Get metric goals of a linked student (Trainer only)' })
+  @ApiParam({ name: 'studentId', description: 'ID of the student' })
+  @ApiResponse({ status: 200, description: 'Metric goals' })
+  async getStudentMetricGoals(@Param('studentId') studentId: string) {
+    const goals = await this.userManagementService.getStudentMetricGoals(studentId);
+    return goals.map((goal) => ({
+      id: goal.id,
+      type: goal.type,
+      startingValue: goal.startingValue,
+      targetValue: goal.targetValue,
+      deadline: goal.deadline,
+      achievedAt: goal.achievedAt,
+      status: goal.status,
+      progress: goal.progress,
+    }));
+  }
+
   @Get('profile/trainer')
   @ApiOperation({ summary: 'Get current trainer information (Student only)' })
   @ApiResponse({ status: 200, description: 'Trainer info', type: UserResponseDto })

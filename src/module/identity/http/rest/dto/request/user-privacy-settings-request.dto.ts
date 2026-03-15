@@ -22,4 +22,11 @@ export class UserPrivacySettingsRequestDto {
   })
   @IsOptional()
   shareTrainingProgress?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Indica se o treinador pode ver o histórico anterior ao vínculo',
+    example: false,
+  })
+  @IsOptional()
+  sharePastDataWithTrainer?: boolean;
 }

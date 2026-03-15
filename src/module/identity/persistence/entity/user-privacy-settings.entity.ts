@@ -20,4 +20,7 @@ export class UserPrivacySettings extends DefaultEntity<UserPrivacySettings> {
 
   @Column({ default: false })
   shareTrainingProgress: boolean;
+
+  @Column({ default: false })
+  sharePastDataWithTrainer: boolean;
 }
