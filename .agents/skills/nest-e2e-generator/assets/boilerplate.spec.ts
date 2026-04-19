@@ -15,7 +15,7 @@ import { testCacheClient } from '@testInfra/test-cache.setup';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
 import { HttpResponse, http } from 'msw';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 
 // IMPORT TARGET MODULE AND FACTORIES HERE
 
@@ -23,12 +23,14 @@ describe('TARGET_NAME - TARGET_NAME Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let _url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
     // Import target module
-    const setup = await createNestApp([/* TARGET_MODULE */]);
+    const setup = await createNestApp([
+      /* TARGET_MODULE */
+    ]);
     app = setup.app;
     module = setup.module;
     configuration = setup.configuration;
@@ -77,19 +79,16 @@ describe('TARGET_NAME - TARGET_NAME Controller - (e2e)', () => {
       // 1. Prepare Data (Factories + DB insertion)
       // const user = userFactory.build();
       // await testDbClient(Tables.User).insert(user);
-
       // 2. Mock External APIs if needed
       // server.use(
       //   http.get(`${configuration['identityApi.url']}/...`, () => HttpResponse.json({ ... }))
       // );
-
       // 3. Perform Request
       // const response = await fetch(`${url}/endpoint`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json', ...getAuthorizationHeader(user.id) },
       //   body: JSON.stringify({ ... }),
       // });
-
       // 4. Assertions
       // expect(response.status).toBe(HttpStatus.CREATED);
       // const dbRecord = await testDbClient(Tables.TargetTable).select('*');

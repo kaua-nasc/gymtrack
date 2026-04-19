@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UserChangeBioRequestDto {
   @IsNotEmpty()
@@ -13,4 +13,10 @@ export class UserChangeBioRequestDto {
   @IsNotEmpty()
   @ApiProperty({ example: 'Bio aleatoria', description: 'Bio do usuário' })
   bio: string;
+
+  @ApiPropertyOptional({ example: '123456-G/SP', description: 'Registro Profissional (CREF)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  cref?: string;
 }

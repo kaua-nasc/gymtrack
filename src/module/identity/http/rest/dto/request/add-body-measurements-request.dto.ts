@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsDateString, IsEnum, IsNumber, IsOptional, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MeasurementType } from '../../../../core/enum/measurement-type.enum';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 
 export class BodyMeasurementEntryDto {
-  @ApiProperty({ enum: MeasurementType, enumName: 'MeasurementType', example: MeasurementType.WAIST })
+  @ApiProperty({ type: String, enum: MeasurementType, enumName: 'MeasurementType', example: MeasurementType.WAIST })
   @IsEnum(MeasurementType)
   type: MeasurementType;
 

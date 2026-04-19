@@ -14,7 +14,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { mockEmailService } from '@testInfra/mock/email.mock';
@@ -23,7 +23,7 @@ describe('Plan Invite Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {

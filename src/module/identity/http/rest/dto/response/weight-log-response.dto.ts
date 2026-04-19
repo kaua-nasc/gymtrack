@@ -13,4 +13,12 @@ export class WeightLogResponseDto {
   @ApiProperty({ example: '2026-03-01T12:00:00Z' })
   @Expose()
   measuredAt: Date;
+
+  @ApiProperty({ example: 'Keep up the good work!', required: false })
+  @Expose()
+  trainerNote?: string;
+
+  @ApiProperty({ example: '2026-03-01T12:00:00Z', required: false })
+  @Expose()
+  trainerNoteAt?: Date;
 }

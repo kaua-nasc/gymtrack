@@ -14,7 +14,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
 import { MetricGoalStatus } from '@src/module/identity/core/enum/metric-goal-status.enum';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
@@ -23,7 +23,7 @@ describe('Identity - User Goals Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
@@ -86,7 +86,12 @@ describe('Identity - User Goals Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      const data = await response.json() as {type: string, startingValue: number, targetValue: number, status: MetricGoalStatus };
+      const data = (await response.json()) as {
+        type: string;
+        startingValue: number;
+        targetValue: number;
+        status: MetricGoalStatus;
+      };
       expect(data.type).toBe('WEIGHT');
       expect(data.startingValue).toBe(80);
       expect(data.targetValue).toBe(75);
@@ -121,7 +126,9 @@ describe('Identity - User Goals Controller - (e2e)', () => {
         }),
       });
 
-      const goal = await testDbClient(Tables.MetricGoal).where({ userId: user.id }).first();
+      const goal = await testDbClient(Tables.MetricGoal)
+        .where({ userId: user.id })
+        .first();
       expect(goal.status).toBe(MetricGoalStatus.ACHIEVED);
       expect(goal.achievedAt).not.toBeNull();
     });
@@ -152,7 +159,9 @@ describe('Identity - User Goals Controller - (e2e)', () => {
         }),
       });
 
-      const goal = await testDbClient(Tables.MetricGoal).where({ userId: user.id }).first();
+      const goal = await testDbClient(Tables.MetricGoal)
+        .where({ userId: user.id })
+        .first();
       expect(goal.status).toBe(MetricGoalStatus.ACHIEVED);
     });
   });
@@ -187,7 +196,7 @@ describe('Identity - User Goals Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const data = await response.json() as { type: string, progress: number }[];
+      const data = (await response.json()) as { type: string; progress: number }[];
       expect(data[0].progress).toBe(0.5);
     });
   });

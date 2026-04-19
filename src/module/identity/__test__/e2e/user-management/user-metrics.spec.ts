@@ -14,7 +14,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
 import { WeightUnit } from '@src/module/identity/core/enum/weight-unit.enum';
 import { HeightUnit } from '@src/module/identity/core/enum/height-unit.enum';
@@ -23,7 +23,7 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
@@ -99,7 +99,10 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
     });
 
     it('should update user metrics with unit conversion (Imperial to Metric)', async () => {
-      const user = userFactory.build({ weightUnit: WeightUnit.lb, heightUnit: HeightUnit['ft-in'] });
+      const user = userFactory.build({
+        weightUnit: WeightUnit.lb,
+        heightUnit: HeightUnit['ft-in'],
+      });
       await testDbClient(Tables.User).insert(user);
 
       const response = await fetch(`${url}/identity/user/profile/metrics`, {
@@ -142,7 +145,7 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      const data = await response.json() as { weight: number };
+      const data = (await response.json()) as { weight: number };
       expect(data.weight).toBe(90);
 
       const updatedUser = await testDbClient(Tables.User).where({ id: user.id }).first();
@@ -159,17 +162,38 @@ describe('Identity - User Metrics Controller - (e2e)', () => {
       await testDbClient(Tables.User).insert(user);
 
       await testDbClient(Tables.WeightLog).insert([
-        { id: crypto.randomUUID(), userId: user.id, weight: 80, measuredAt: new Date('2026-01-01') },
-        { id: crypto.randomUUID(), userId: user.id, weight: 81, measuredAt: new Date('2026-01-02') },
-        { id: crypto.randomUUID(), userId: user.id, weight: 82, measuredAt: new Date('2026-01-03') },
+        {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          weight: 80,
+          measuredAt: new Date('2026-01-01'),
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          weight: 81,
+          measuredAt: new Date('2026-01-02'),
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          weight: 82,
+          measuredAt: new Date('2026-01-03'),
+        },
       ]);
 
-      const response = await fetch(`${url}/identity/user/profile/weight-history?page=1&limit=2`, {
-        headers: getAuthorizationHeader(user.id!),
-      });
+      const response = await fetch(
+        `${url}/identity/user/profile/weight-history?page=1&limit=2`,
+        {
+          headers: getAuthorizationHeader(user.id!),
+        }
+      );
 
       expect(response.status).toBe(HttpStatus.OK);
-      const data = await response.json() as { items: { weight: number, measuredAt: string }[], total: number };
+      const data = (await response.json()) as {
+        items: { weight: number; measuredAt: string }[];
+        total: number;
+      };
       expect(data.items.length).toBe(2);
       expect(data.total).toBe(3);
       // Ordered by measuredAt DESC

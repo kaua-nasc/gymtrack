@@ -16,7 +16,7 @@ export class AssignPlanRequestDto {
   @ApiProperty({
     description: 'Tipo da assinatura do plano',
     enum: PlanSubscriptionType,
-    example: PlanSubscriptionType.hypertrophy,
+    example: PlanSubscriptionType.private,
   })
   @IsEnum(PlanSubscriptionType)
   @IsNotEmpty()

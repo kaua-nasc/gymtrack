@@ -18,7 +18,7 @@ import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
 import { HttpResponse, http } from 'msw';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import {
   planParticipantFactory,
   trainingPlanFactory,
@@ -29,7 +29,7 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {

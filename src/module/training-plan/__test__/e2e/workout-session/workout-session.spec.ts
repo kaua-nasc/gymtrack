@@ -15,7 +15,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { dayFactory } from '../../factory/day.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
@@ -25,7 +25,7 @@ describe('Workout Session Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
@@ -119,7 +119,12 @@ describe('Workout Session Controller - (e2e)', () => {
       });
 
       expect(startResponse.status).toBe(HttpStatus.OK);
-      const session = await startResponse.json() as { id: string; userId: string; currentExerciseId: string, planDayProgressId: string };
+      const session = (await startResponse.json()) as {
+        id: string;
+        userId: string;
+        currentExerciseId: string;
+        planDayProgressId: string;
+      };
       expect(session.userId).toBe(user.id!);
       expect(session.currentExerciseId).toBe(exercise.id!);
 
@@ -139,7 +144,10 @@ describe('Workout Session Controller - (e2e)', () => {
       });
 
       expect(logSetResponse.status).toBe(HttpStatus.OK);
-      const updatedSession = await logSetResponse.json() as { currentSetIndex: number; adaptiveRestDurationSeconds: number };
+      const updatedSession = (await logSetResponse.json()) as {
+        currentSetIndex: number;
+        adaptiveRestDurationSeconds: number;
+      };
       expect(updatedSession.currentSetIndex).toBe(1);
       expect(updatedSession.adaptiveRestDurationSeconds).toBe(90); // RPE 8 -> 90s
 
@@ -150,7 +158,10 @@ describe('Workout Session Controller - (e2e)', () => {
       });
 
       expect(activeResponse.status).toBe(HttpStatus.OK);
-      const activeSessionData = await activeResponse.json() as { id: string; logs: any[] };
+      const activeSessionData = (await activeResponse.json()) as {
+        id: string;
+        logs: any[];
+      };
       expect(activeSessionData.id).toBe(session.id!);
       expect(activeSessionData.logs).toHaveLength(1);
 
@@ -212,7 +223,7 @@ describe('Workout Session Controller - (e2e)', () => {
         body: JSON.stringify({ dayId: day.id }),
       });
 
-      const session1 = await response1.json() as { id: string };
+      const session1 = (await response1.json()) as { id: string };
 
       const response2 = await fetch(`${url}/training-plan/session/start`, {
         method: 'POST',
@@ -223,7 +234,7 @@ describe('Workout Session Controller - (e2e)', () => {
         body: JSON.stringify({ dayId: day.id }),
       });
 
-      const session2 = await response2.json() as { id: string };
+      const session2 = (await response2.json()) as { id: string };
 
       expect(session1.id).toBe(session2.id);
     });
@@ -255,7 +266,10 @@ describe('Workout Session Controller - (e2e)', () => {
         body: JSON.stringify({ dayId: day.id }),
       });
 
-      const session = await startResponse.json() as { id: string; planDayProgressId: string };
+      const session = (await startResponse.json()) as {
+        id: string;
+        planDayProgressId: string;
+      };
 
       const cancelResponse = await fetch(`${url}/training-plan/session/cancel`, {
         method: 'POST',

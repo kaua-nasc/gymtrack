@@ -15,7 +15,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { exerciseLogFactory } from '../../factory/exercise-log.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
 import { dayFactory } from '../../factory/day.factory';
@@ -26,7 +26,7 @@ describe('Exercise Log Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
@@ -127,7 +127,7 @@ describe('Exercise Log Controller - (e2e)', () => {
         reps: [10, 10], // Knex might expect a string or it might handle array if using a specific plugin, but let's see.
         weight: [50, 50],
       });
-      
+
       // Knex pg simple-array needs to be a string for insertion if not handled by an interceptor
       await testDbClient(Tables.ExerciseLog).insert({
         ...log,
@@ -135,14 +135,17 @@ describe('Exercise Log Controller - (e2e)', () => {
         weight: log.weight?.join(','),
       });
 
-      const response = await fetch(`${url}/exercise-log/history/${user.id}/${exercise.id}`, {
-        headers: {
-          ...getAuthorizationHeader(user.id!),
-        },
-      });
+      const response = await fetch(
+        `${url}/exercise-log/history/${user.id}/${exercise.id}`,
+        {
+          headers: {
+            ...getAuthorizationHeader(user.id!),
+          },
+        }
+      );
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body  = await response.json() as {exerciseId: string}[];
+      const body = (await response.json()) as { exerciseId: string }[];
       expect(body).toHaveLength(1);
       expect(body[0].exerciseId).toBe(exercise.id!);
     });
@@ -208,8 +211,8 @@ describe('Exercise Log Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = await response.json() as any;
-      
+      const body = (await response.json()) as any;
+
       const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       const todayIndex = new Date().getDay();
       const todayKey = dayNames[todayIndex];

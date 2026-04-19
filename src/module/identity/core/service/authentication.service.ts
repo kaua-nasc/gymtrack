@@ -31,12 +31,16 @@ export class AuthService {
       throw new UnauthorizedException(`cannot authorize user: ${email}`);
     }
 
+    this.logger.log(`Sign-in successful for user ID: ${user.id}`);
+    return this.generateToken(user);
+  }
+
+  async generateToken(user: { id: string; type: string }): Promise<{ accessToken: string }> {
     const payload = {
       sub: user.id,
       type: user.type,
     };
 
-    this.logger.log(`Sign-in successful for user ID: ${user.id}`);
     return {
       accessToken: await this.jwtService.signAsync(payload),
     };

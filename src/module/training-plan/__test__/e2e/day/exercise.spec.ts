@@ -14,7 +14,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { dayFactory } from '../../factory/day.factory';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
@@ -25,7 +25,7 @@ describe('Exercise Controller - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
   let configuration: { [key: string]: string | number | undefined };
 
   beforeAll(async () => {
@@ -143,7 +143,7 @@ describe('Exercise Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = await response.json() as Partial<Exercise>;
+      const body = (await response.json()) as Partial<Exercise>;
       expect(body.id).toBe(exercise.id);
     });
   });
@@ -166,7 +166,9 @@ describe('Exercise Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const dbExercise = await testDbClient(Tables.Exercise).where({ id: exercise.id }).first();
+      const dbExercise = await testDbClient(Tables.Exercise)
+        .where({ id: exercise.id })
+        .first();
       expect(dbExercise.deletedAt).not.toBeNull();
     });
   });

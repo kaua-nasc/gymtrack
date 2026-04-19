@@ -1,11 +1,4 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'bun:test';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
@@ -67,7 +60,7 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
     it('should allow trainer to assign their own plan to a linked student', async () => {
       const trainerId = crypto.randomUUID();
       const studentId = crypto.randomUUID();
-      
+
       const plan = trainingPlanFactory.build({ authorId: trainerId });
       await testDbClient(Tables.TrainingPlan).insert(plan);
 
@@ -100,7 +93,7 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
       const [subscription] = await testDbClient(Tables.PlanSubscription)
         .select('*')
         .where({ userId: studentId, trainingPlanId: plan.id });
-      
+
       expect(subscription).toBeDefined();
       expect(subscription.status).toBe('NOT_STARTED');
     });
@@ -109,7 +102,7 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
       const trainerId = crypto.randomUUID();
       const anotherTrainerId = crypto.randomUUID();
       const studentId = crypto.randomUUID();
-      
+
       const plan = trainingPlanFactory.build({ authorId: trainerId });
       await testDbClient(Tables.TrainingPlan).insert(plan);
 
@@ -134,7 +127,7 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
-      const body = await response.json();
+      const body = (await response.json()) as { message: string };
       expect(body.message).toContain('not your linked student');
     });
 
@@ -142,7 +135,7 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
       const trainerId = crypto.randomUUID();
       const studentId = crypto.randomUUID();
       const ownerId = crypto.randomUUID();
-      
+
       const plan = trainingPlanFactory.build({ authorId: ownerId });
       await testDbClient(Tables.TrainingPlan).insert(plan);
 
@@ -167,12 +160,14 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
-      expect((await response.json()).message).toContain('created by yourself');
+      expect(((await response.json()) as { message: string }).message).toContain(
+        'created by yourself'
+      );
     });
 
     it('should return 403 when CLIENT tries to access assignment endpoint', async () => {
       const clientId = crypto.randomUUID();
-      
+
       const response = await fetch(`${url}/training-plan/subscriptions/assign`, {
         method: 'POST',
         headers: {

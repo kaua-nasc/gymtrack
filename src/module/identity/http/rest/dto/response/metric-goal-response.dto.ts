@@ -31,7 +31,7 @@ export class MetricGoalResponseDto {
   @Expose()
   achievedAt?: Date;
 
-  @ApiProperty({ enum: MetricGoalStatus, enumName: 'MetricGoalStatus' })
+  @ApiProperty({ type: String, enum: MetricGoalStatus, enumName: 'MetricGoalStatus' })
   @Expose()
   status: MetricGoalStatus;
 }

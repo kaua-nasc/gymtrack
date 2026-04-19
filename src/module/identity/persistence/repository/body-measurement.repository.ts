@@ -3,7 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { DataSource, FindOptionsOrder, FindOptionsWhere, MoreThanOrEqual } from 'typeorm';
-import { MeasurementType } from '../../core/enum/measurement-type.enum';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { BodyMeasurement } from '../entity/body-measurement.entity';
 
 @Injectable()

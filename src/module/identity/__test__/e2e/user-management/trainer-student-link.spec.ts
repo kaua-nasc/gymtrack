@@ -1,11 +1,4 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'bun:test';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
@@ -15,6 +8,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { sign } from 'jsonwebtoken';
+import { WeightLog } from '@src/module/identity/persistence/entity/weight-log.entity';
 
 describe('Identity - Trainer Student Link - (e2e)', () => {
   let app: INestApplication;
@@ -103,14 +97,99 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
     });
   });
 
+  describe('Professional Verification (CREF)', () => {
+    it('should allow upgrade to trainer with CREF and set isVerified to true', async () => {
+      const user = userFactory.build({ type: UserType.client });
+      await testDbClient(Tables.User).insert(user);
+
+      const cref = '123456-G/SP';
+      const response = await fetch(`${url}/identity/user/profile/upgrade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!, UserType.client),
+        },
+        body: JSON.stringify({ cref }),
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+
+      const [updatedUser] = await testDbClient(Tables.User)
+        .select('type', 'cref', 'isVerified')
+        .where({ id: user.id });
+
+      expect(updatedUser.type).toBe(UserType.personalTrainer);
+      expect(updatedUser.cref).toBe(cref);
+      expect(updatedUser.isVerified).toBe(true);
+    });
+
+    it('should reset isVerified to false when CREF is changed', async () => {
+      const trainer = userFactory.build({
+        type: UserType.personalTrainer,
+        cref: 'OLD-CREF',
+        isVerified: true,
+      });
+      await testDbClient(Tables.User).insert(trainer);
+
+      const newCref = 'NEW-CREF-123';
+      const profileUrl = `${url}/identity/user/profile`;
+      const response = await fetch(profileUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
+        },
+        body: JSON.stringify({
+          firstName: 'New',
+          lastName: 'Name',
+          bio: 'New bio',
+          cref: newCref,
+        }),
+      });
+
+      if (response.status === 404) {
+        console.log(`404 at ${profileUrl}`);
+      }
+
+      expect(response.status).toBe(HttpStatus.OK);
+
+      const [updatedTrainer] = await testDbClient(Tables.User)
+        .select('cref', 'isVerified')
+        .where({ id: trainer.id });
+
+      expect(updatedTrainer.cref).toBe(newCref);
+      expect(updatedTrainer.isVerified).toBe(false);
+    });
+
+    it('should return 409 when attempting to use a CREF already in use', async () => {
+      const trainer1 = userFactory.build({
+        type: UserType.personalTrainer,
+        cref: 'EXISTING-CREF',
+      });
+      const user2 = userFactory.build({ type: UserType.client });
+      await testDbClient(Tables.User).insert([trainer1, user2]);
+
+      const response = await fetch(`${url}/identity/user/profile/upgrade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user2.id!, UserType.client),
+        },
+        body: JSON.stringify({ cref: 'EXISTING-CREF' }),
+      });
+
+      expect(response.status).toBe(HttpStatus.CONFLICT);
+    });
+  });
+
   describe('Linking Relationship', () => {
     it('should allow a student to link to a trainer via invite code', async () => {
-      const trainer = userFactory.build({ 
+      const trainer = userFactory.build({
         type: UserType.personalTrainer,
-        trainerInviteCode: 'LINK-ME'
+        trainerInviteCode: 'LINK-ME',
       });
       const student = userFactory.build({ type: UserType.client });
-      
+
       await testDbClient(Tables.User).insert([trainer, student]);
 
       const response = await fetch(`${url}/identity/user/profile/link-trainer`, {
@@ -127,7 +206,7 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       const [relationship] = await testDbClient(Tables.TrainerStudentRelationship)
         .select('*')
         .where({ studentId: student.id });
-      
+
       expect(relationship.trainerId).toBe(trainer.id);
     });
   });
@@ -137,7 +216,7 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       const trainer = userFactory.build({ type: UserType.personalTrainer });
       const student = userFactory.build({ type: UserType.client });
       await testDbClient(Tables.User).insert([trainer, student]);
-      
+
       await testDbClient(Tables.TrainerStudentRelationship).insert({
         trainerId: trainer.id,
         studentId: student.id,
@@ -151,12 +230,15 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       };
       await testDbClient(Tables.WeightLog).insert(weightLog);
 
-      const response = await fetch(`${url}/identity/user/trainer/students/${student.id}/metrics/weight`, {
-        headers: getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
-      });
+      const response = await fetch(
+        `${url}/identity/user/trainer/students/${student.id}/metrics/weight`,
+        {
+          headers: getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
+        }
+      );
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = await response.json();
+      const body = (await response.json()) as { items: WeightLog[] };
       expect(body.items).toHaveLength(1);
       expect(Number(body.items[0].weight)).toBe(80);
     });
@@ -165,7 +247,7 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       const trainer = userFactory.build({ type: UserType.personalTrainer });
       const student = userFactory.build({ type: UserType.client });
       await testDbClient(Tables.User).insert([trainer, student]);
-      
+
       const linkedAt = new Date();
       await testDbClient(Tables.TrainerStudentRelationship).insert({
         trainerId: trainer.id,
@@ -184,15 +266,23 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       const today = new Date();
 
       await testDbClient(Tables.WeightLog).insert([
-        { id: crypto.randomUUID(), userId: student.id, weight: 90, measuredAt: yesterday },
+        {
+          id: crypto.randomUUID(),
+          userId: student.id,
+          weight: 90,
+          measuredAt: yesterday,
+        },
         { id: crypto.randomUUID(), userId: student.id, weight: 85, measuredAt: today },
       ]);
 
-      const response = await fetch(`${url}/identity/user/trainer/students/${student.id}/metrics/weight`, {
-        headers: getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
-      });
+      const response = await fetch(
+        `${url}/identity/user/trainer/students/${student.id}/metrics/weight`,
+        {
+          headers: getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
+        }
+      );
 
-      const body = await response.json();
+      const body = (await response.json()) as { items: WeightLog[] };
       expect(body.items).toHaveLength(1);
       expect(Number(body.items[0].weight)).toBe(85);
     });
@@ -201,7 +291,7 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       const trainer = userFactory.build({ type: UserType.personalTrainer });
       const student = userFactory.build({ type: UserType.client });
       await testDbClient(Tables.User).insert([trainer, student]);
-      
+
       await testDbClient(Tables.TrainerStudentRelationship).insert({
         trainerId: trainer.id,
         studentId: student.id,
@@ -217,19 +307,21 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
-      await testDbClient(Tables.WeightLog).insert({ 
-        id: crypto.randomUUID(), 
-        userId: student.id, 
-        weight: 90, 
-        measuredAt: yesterday 
+      await testDbClient(Tables.WeightLog).insert({
+        id: crypto.randomUUID(),
+        userId: student.id,
+        weight: 90,
+        measuredAt: yesterday,
       });
 
-      const response = await fetch(`${url}/identity/user/trainer/students/${student.id}/metrics/weight`, {
-        headers: getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
-      });
+      const response = await fetch(
+        `${url}/identity/user/trainer/students/${student.id}/metrics/weight`,
+        {
+          headers: getAuthorizationHeader(trainer.id!, UserType.personalTrainer),
+        }
+      );
 
-      const body = await response.json();
-      expect(body.items).toHaveLength(1);
+      expect(((await response.json()) as { items: unknown[] }).items).toHaveLength(1);
     });
   });
 });

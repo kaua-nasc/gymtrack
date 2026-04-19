@@ -62,6 +62,12 @@ export class User extends DefaultEntity<User> {
   @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
   trainerInviteCode?: string;
 
+  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
+  cref?: string;
+
+  @Column({ type: 'boolean', default: false })
+  isVerified: boolean;
+
   @OneToMany(
     () => UserFollows,
     (follow) => follow.following

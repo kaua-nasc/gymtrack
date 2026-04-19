@@ -14,14 +14,14 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { testCacheClient } from '@testInfra/test-cache.setup';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { SetupServerApi } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
 
 describe('Auth Controller (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
-  let server: SetupServerApi;
+  let server: SetupServer;
 
   beforeAll(async () => {
     const setup = await createNestApp([IdentityModule]);

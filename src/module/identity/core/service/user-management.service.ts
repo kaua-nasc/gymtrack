@@ -13,7 +13,7 @@ import { AzureStorageService } from '@src/module/shared/module/storage/service/a
 import { hash } from 'bcrypt';
 import { DataSource, EntityManager, In } from 'typeorm';
 import { HeightUnit } from '../../core/enum/height-unit.enum';
-import { MeasurementType } from '../../core/enum/measurement-type.enum';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { MetricGoalStatus } from '../../core/enum/metric-goal-status.enum';
 import { UserType } from '../../core/enum/user-type.enum';
 import { WeightUnit } from '../../core/enum/weight-unit.enum';
@@ -26,18 +26,19 @@ import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change
 import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
 import { BodyMeasurement } from '../../persistence/entity/body-measurement.entity';
 import { MetricGoal } from '../../persistence/entity/metric-goal.entity';
+import { TrainerStudentRelationship } from '../../persistence/entity/trainer-student-relationship.entity';
 import { User } from '../../persistence/entity/user.entity';
 import { UserFollows } from '../../persistence/entity/user-follows.entity';
 import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
 import { WeightLog } from '../../persistence/entity/weight-log.entity';
 import { BodyMeasurementRepository } from '../../persistence/repository/body-measurement.repository';
 import { MetricGoalRepository } from '../../persistence/repository/metric-goal.repository';
+import { TrainerStudentRelationshipRepository } from '../../persistence/repository/trainer-student-relationship.repository';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
-import { TrainerStudentRelationshipRepository } from '../../persistence/repository/trainer-student-relationship.repository';
-import { TrainerStudentRelationship } from '../../persistence/entity/trainer-student-relationship.entity';
+import { AuthService } from './authentication.service';
 
 export interface CreateUserDto {
   email: string;
@@ -62,6 +63,7 @@ export class UserManagementService {
     @InjectDataSource('identity') private readonly dataSource: DataSource,
     private readonly storageService: AzureStorageService,
     private readonly logger: AppLogger,
+    private readonly authService: AuthService,
     @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
   ) {}
 
@@ -92,9 +94,9 @@ export class UserManagementService {
     return newUser;
   }
 
-  async upgradeToPersonalTrainer(): Promise<void> {
+  async upgradeToPersonalTrainer(cref: string): Promise<{ accessToken: string }> {
     const userId = this.request.user.id;
-    this.logger.log(`Upgrading user ${userId} to personal trainer`);
+    this.logger.log(`Upgrading user ${userId} to personal trainer with CREF: ${cref}`);
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
@@ -103,11 +105,60 @@ export class UserManagementService {
 
     if (user.type === UserType.personalTrainer) {
       this.logger.warn(`User ${userId} is already a personal trainer`);
-      return;
+      return this.authService.generateToken(user);
     }
 
-    await this.userRepository.update({ id: userId }, { type: UserType.personalTrainer });
+    const existing = await this.userRepository.find({ where: { cref } });
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('CREF already in use');
+    }
+
+    await this.userRepository.update(
+      { id: userId },
+      {
+        type: UserType.personalTrainer,
+        cref,
+        isVerified: true,
+      }
+    );
     this.logger.log(`User ${userId} successfully upgraded to personal trainer`);
+
+    const updatedUser = await this.userRepository.findOneById(userId);
+    return this.authService.generateToken(updatedUser!);
+  }
+
+  async downgradeToClient(): Promise<{ accessToken: string }> {
+    const userId = this.request.user.id;
+    this.logger.log(`Downgrading user ${userId} to client`);
+
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+
+    if (user.type === UserType.client) {
+      this.logger.warn(`User ${userId} is already a client`);
+      return this.authService.generateToken(user);
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      // Clear all students relationships if this trainer had any
+      await manager.delete(TrainerStudentRelationship, { trainerId: userId });
+
+      await manager.update(
+        User,
+        { id: userId },
+        {
+          type: UserType.client,
+          isVerified: false,
+        }
+      );
+    });
+
+    this.logger.log(`User ${userId} successfully downgraded to client`);
+
+    const updatedUser = await this.userRepository.findOneById(userId);
+    return this.authService.generateToken(updatedUser!);
   }
 
   async getUserById(id: string): Promise<User> {
@@ -345,9 +396,20 @@ export class UserManagementService {
       throw new NotFoundException('user not exists');
     }
 
+    let isVerified = user.isVerified;
+    if (data.cref && data.cref !== user.cref) {
+      this.logger.log(`CREF changed for user ${userId}. Resetting verification status.`);
+      const existing = await this.userRepository.find({ where: { cref: data.cref } });
+      if (existing && existing.id !== userId) {
+        throw new ConflictException('CREF already in use');
+      }
+      isVerified = false;
+    }
+
     const changedUser = new User({
       ...user,
       ...data,
+      isVerified,
     });
 
     await this.userRepository.update({ id: userId }, { ...changedUser });
@@ -704,7 +766,7 @@ export class UserManagementService {
     try {
       await this.followUser(trainer.id);
     } catch (e) {
-      this.logger.warn(`Auto-follow failed during linking: ${e.message}`);
+      this.logger.warn(`Auto-follow failed during linking: ${(e as Error).message}`);
     }
   }
 
@@ -713,11 +775,13 @@ export class UserManagementService {
     this.logger.log(`Attempting to unlink relationship for user ${userId}`);
 
     if (type === UserType.personalTrainer) {
-      // If trainer, we need to know which student to unlink. 
+      // If trainer, we need to know which student to unlink.
       // For now, let's keep it simple: the student must initiate or we need a studentId param.
-      // Based on design "Both can end", adding a param-less version for student 
+      // Based on design "Both can end", adding a param-less version for student
       // and we'll add a param version for trainer if needed.
-      throw new BadRequestException('trainer must specify studentId to unlink (not implemented yet)');
+      throw new BadRequestException(
+        'trainer must specify studentId to unlink (not implemented yet)'
+      );
     }
 
     const relationship =
@@ -730,7 +794,9 @@ export class UserManagementService {
       relationship.trainerId,
       userId
     );
-    this.logger.log(`Successfully unlinked student ${userId} from trainer ${relationship.trainerId}`);
+    this.logger.log(
+      `Successfully unlinked student ${userId} from trainer ${relationship.trainerId}`
+    );
   }
 
   async unlinkStudent(studentId: string): Promise<void> {
@@ -739,8 +805,13 @@ export class UserManagementService {
       throw new BadRequestException('only trainers can unlink students this way');
     }
 
-    await this.trainerStudentRelationshipRepository.deleteRelationship(trainerId, studentId);
-    this.logger.log(`Successfully unlinked student ${studentId} from trainer ${trainerId}`);
+    await this.trainerStudentRelationshipRepository.deleteRelationship(
+      trainerId,
+      studentId
+    );
+    this.logger.log(
+      `Successfully unlinked student ${studentId} from trainer ${trainerId}`
+    );
   }
 
   async getStudents(): Promise<User[]> {
@@ -861,22 +932,57 @@ export class UserManagementService {
     return goalsWithProgress;
   }
 
-  private async validateTrainerAccess(
-    studentId: string
-  ): Promise<{ minDate?: Date }> {
+  async addWeightLogNote(logId: string, note: string): Promise<void> {
+    this.logger.log(`Trainer adding note to weight log: ${logId}`);
+    const log = await this.weightLogRepository.findOneById(logId);
+    if (!log) {
+      throw new NotFoundException('weight log not found');
+    }
+
+    await this.validateTrainerAccess(log.userId);
+
+    await this.weightLogRepository.update(
+      { id: logId },
+      {
+        trainerNote: note,
+        trainerNoteAt: new Date(),
+      }
+    );
+  }
+
+  async addBodyMeasurementNote(measurementId: string, note: string): Promise<void> {
+    this.logger.log(`Trainer adding note to body measurement: ${measurementId}`);
+    const measurement = await this.bodyMeasurementRepository.findOneById(measurementId);
+    if (!measurement) {
+      throw new NotFoundException('body measurement not found');
+    }
+
+    await this.validateTrainerAccess(measurement.userId);
+
+    await this.bodyMeasurementRepository.update(
+      { id: measurementId },
+      {
+        trainerNote: note,
+        trainerNoteAt: new Date(),
+      }
+    );
+  }
+
+  private async validateTrainerAccess(studentId: string): Promise<{ minDate?: Date }> {
     const { id: trainerId, type } = this.request.user;
 
     if (type !== UserType.personalTrainer) {
       throw new BadRequestException('only personal trainers can access student metrics');
     }
 
-    const relationship =
-      await this.trainerStudentRelationshipRepository.find({
-        where: { trainerId, studentId },
-      });
+    const relationship = await this.trainerStudentRelationshipRepository.find({
+      where: { trainerId, studentId },
+    });
 
     if (!relationship) {
-      this.logger.warn(`Trainer ${trainerId} attempted to access unauthorized student ${studentId}`);
+      this.logger.warn(
+        `Trainer ${trainerId} attempted to access unauthorized student ${studentId}`
+      );
       throw new BadRequestException('this user is not your student');
     }
 
