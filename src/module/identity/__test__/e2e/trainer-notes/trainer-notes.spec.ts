@@ -15,7 +15,7 @@ import { MeasurementType } from '@src/module/identity/core/enum/measurement-type
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
 import { randomUUID } from 'node:crypto';
@@ -64,12 +64,12 @@ describe('Identity - Trainer Notes Controller - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string, type: UserType) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
           type,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };

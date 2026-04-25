@@ -13,7 +13,7 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
@@ -63,11 +63,11 @@ describe('Plan Invite Controller - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };

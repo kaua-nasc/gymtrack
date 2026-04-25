@@ -27,10 +27,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { TrainerRelationshipService } from '../../../core/service/trainer-relationship.service';
+import { UserFollowsService } from '../../../core/service/user-follows.service';
 import { UserManagementService } from '../../../core/service/user-management.service';
 import { UserMetricsService } from '../../../core/service/user-metrics.service';
-import { UserFollowsService } from '../../../core/service/user-follows.service';
-import { TrainerRelationshipService } from '../../../core/service/trainer-relationship.service';
 import { UserPrivacyService } from '../../../core/service/user-privacy.service';
 import { UserCreateRequestDto } from '../dto/request/user-create-request.dto';
 import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
@@ -68,7 +68,7 @@ export class UserController {
     private readonly userFollowsService: UserFollowsService,
     private readonly trainerRelationshipService: TrainerRelationshipService,
     private readonly userPrivacyService: UserPrivacyService,
-    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
+    @Inject(REQUEST) private readonly request: { user: { id: string } }
   ) {}
 
   @Get()
@@ -222,8 +222,7 @@ export class UserController {
     type: UserPrivacySettingsResponseDto,
   })
   async getPrivacyConfiguration(): Promise<UserPrivacySettingsResponseDto> {
-    const privacyConfiguration =
-      await this.userPrivacyService.getPrivacyConfiguration();
+    const privacyConfiguration = await this.userPrivacyService.getPrivacyConfiguration();
     return { ...privacyConfiguration };
   }
 
@@ -490,11 +489,7 @@ export class UserController {
     @Query('page') page?: number,
     @Query('limit') limit?: number
   ) {
-    return await this.userMetricsService.getStudentWeightHistory(
-      studentId,
-      page,
-      limit
-    );
+    return await this.userMetricsService.getStudentWeightHistory(studentId, page, limit);
   }
 
   @Get('trainer/students/:studentId/metrics/measurements')
@@ -576,7 +571,8 @@ export class UserController {
   async getTrainerIdByStudentId(
     @Param('studentId') studentId: string
   ): Promise<{ trainerId: string | null }> {
-    const trainerId = await this.trainerRelationshipService.getTrainerIdByStudentId(studentId);
+    const trainerId =
+      await this.trainerRelationshipService.getTrainerIdByStudentId(studentId);
     return { trainerId };
   }
 

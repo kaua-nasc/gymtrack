@@ -291,4 +291,19 @@ export class UserManagementService {
     );
     this.logger.log(`Successfully removed profile picture for user ${userId}.`);
   }
+
+  async getTrainerOfStudent(studentId: string): Promise<User | null> {
+    this.logger.log(`Fetching trainer for student ID: ${studentId}`);
+    const relationship = await this.dataSource
+      .getRepository(TrainerStudentRelationship)
+      .findOne({ where: { studentId }, relations: ['trainer'] });
+
+    if (!relationship) {
+      this.logger.warn(`No trainer found for student ID: ${studentId}`);
+      return null;
+    }
+
+    this.logger.log(`Successfully fetched trainer for student ID: ${studentId}`);
+    return relationship.trainer;
+  }
 }

@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedDomainException } from '@src/module/shared/core/exception/unauthorized.exception';
 import { EmailService } from '@src/module/shared/module/email/service/email.service';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { compare } from 'bcrypt';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { InvalidCredentialsException } from '../exception/invalid-credentials.exception';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
 import { TokenMismatchException } from '../exception/token-mismatch.exception';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
-import { UnauthorizedDomainException } from '@src/module/shared/core/exception/unauthorized.exception';
+import { UserNotFoundException } from '../exception/user-not-found.exception';
 
 @Injectable()
 export class AuthService {
@@ -35,7 +34,10 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async generateToken(user: { id: string; type: string }): Promise<{ accessToken: string }> {
+  async generateToken(user: {
+    id: string;
+    type: string;
+  }): Promise<{ accessToken: string }> {
     const payload = {
       sub: user.id,
       type: user.type,

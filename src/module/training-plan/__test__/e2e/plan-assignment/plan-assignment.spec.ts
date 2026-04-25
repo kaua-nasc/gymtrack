@@ -7,16 +7,17 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { http, HttpResponse } from 'msw';
 import { PlanSubscriptionType } from '@src/module/training-plan/core/enum/plan-subscription-type.enum';
+import { SetupServer } from 'msw/lib/node';
 
 describe('Training Plan - Plan Assignment - (e2e)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let url: string;
   let configuration: { [key: string]: string | number | undefined };
-  let server: { listen: () => void; close: () => void; resetHandlers: () => void };
+  let server: SetupServer;
 
   beforeAll(async () => {
     const setup = await createNestApp([TrainingPlanModule]);
@@ -46,12 +47,12 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string, type: UserType) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
           type,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };

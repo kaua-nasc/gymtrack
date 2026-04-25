@@ -6,7 +6,7 @@ export class HttpClientInternalException extends Error {
 }
 
 export class HttpClientException extends Error {
-  public cause: unknown;
+  public override cause: unknown;
 
   constructor(message: string, cause?: unknown) {
     super(message);

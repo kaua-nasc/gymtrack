@@ -77,26 +77,28 @@ export class UserFollowsService {
   }
 
   async countFollowing(userId: string): Promise<number> {
-    return await this.userFollowsRepository.count({ where: { followerId: userId } });
+    return await this.userFollowsRepository.count({ followerId: userId });
   }
 
   async countFollowers(userId: string): Promise<number> {
-    return await this.userFollowsRepository.count({ where: { followingId: userId } });
+    return await this.userFollowsRepository.count({ followingId: userId });
   }
 
   async getFollowing(userId: string) {
-    const follows = await this.userFollowsRepository.findMany({
-      where: { followerId: userId },
-      relations: ['following'],
-    });
+    const follows =
+      (await this.userFollowsRepository.findMany({
+        where: { followerId: userId },
+        relations: ['following'],
+      })) ?? [];
     return follows.map((f) => f.following);
   }
 
   async getFollowers(userId: string) {
-    const follows = await this.userFollowsRepository.findMany({
-      where: { followingId: userId },
-      relations: ['follower'],
-    });
+    const follows =
+      (await this.userFollowsRepository.findMany({
+        where: { followingId: userId },
+        relations: ['follower'],
+      })) ?? [];
     return follows.map((f) => f.follower);
   }
 }

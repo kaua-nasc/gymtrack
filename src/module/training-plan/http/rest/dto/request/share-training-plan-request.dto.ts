@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 export class ShareTrainingPlanRequestDto {
   @ApiProperty({

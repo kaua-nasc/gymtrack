@@ -1,15 +1,6 @@
+import { BlobServiceClient, BlockBlobClient } from '@azure/storage-blob';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '../../config/service/config.service';
-import {
-  BlobServiceClient,
-  BlockBlobClient,
-  generateAccountSASQueryParameters,
-  AccountSASPermissions,
-  AccountSASResourceTypes,
-  AccountSASServices,
-  SASProtocol,
-  StorageSharedKeyCredential,
-} from '@azure/storage-blob';
 
 export interface StorageService {
   upload(fileName: string, buffer: Buffer): Promise<void>;
@@ -60,9 +51,7 @@ export class AzureStorageService implements StorageService, OnModuleInit {
   }
 
   generateUrl(blobName: string): string {
-    const sasUrl = `${this.configService.get(
-      'storage.azure.url'
-    )}/${blobName}`;
+    const sasUrl = `${this.configService.get('storage.azure.url')}/${blobName}`;
 
     return sasUrl;
   }

@@ -18,6 +18,9 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
     "outDir": "./dist",
     "paths": {
       "@src/*": ["./src/*"],
@@ -43,7 +46,8 @@
     "strictNullChecks": true,
     "target": "ES2021",
     "types": ["bun"],
-    "moduleResolution": "node"
+    "useUnknownInCatchVariables": true,
+    "noEmitOnError": true,
   },
   "include": ["src/**/*", "test/**/*.spec.ts", "test/**/*.test.ts"],
   "exclude": ["**/*.e2e.ts"]

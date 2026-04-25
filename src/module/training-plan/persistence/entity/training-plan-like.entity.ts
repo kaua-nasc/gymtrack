@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne, type Relation } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { TrainingPlan } from './training-plan.entity';
 
 @Entity({ name: 'training_plan_likes' })

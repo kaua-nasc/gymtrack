@@ -15,7 +15,7 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { HttpResponse, http } from 'msw';
 import { SetupServer } from 'msw/node';
 import { planSubscriptionFactory } from '../../factory/plan-subscription.factory';
@@ -62,11 +62,11 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };
@@ -315,7 +315,6 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
           ...getAuthorizationHeader(user.id!),
         },
       });
-      const body = (await res.json()) as { message: string };
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });

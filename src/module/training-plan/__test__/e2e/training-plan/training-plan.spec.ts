@@ -16,7 +16,7 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { HttpResponse, http } from 'msw';
 import { SetupServer } from 'msw/node';
 import {
@@ -66,12 +66,12 @@ describe('Training Plan - Training Plan Controller - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string, type: UserType = UserType.client) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
           type,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };

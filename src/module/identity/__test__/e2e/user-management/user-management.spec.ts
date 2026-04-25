@@ -13,7 +13,7 @@ import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { createUserFactory, userFactory } from '../../factory/user.factory';
 import { userFollowsFactory } from '../../factory/user-follows.factory';
@@ -58,11 +58,11 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };

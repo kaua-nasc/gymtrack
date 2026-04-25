@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { AppModule } from './app.module';
-import { AppLogger } from './module/shared/module/logger/service/app-logger.service';
 import { GlobalHttpExceptionFilter } from './module/shared/http/filter/global-http-exception.filter';
+import { AppLogger } from './module/shared/module/logger/service/app-logger.service';
 
 async function bootstrap() {
   initializeTransactionalContext();

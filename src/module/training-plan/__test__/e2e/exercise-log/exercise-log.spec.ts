@@ -14,7 +14,7 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { sign } from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { exerciseLogFactory } from '../../factory/exercise-log.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
@@ -69,11 +69,11 @@ describe('Exercise Log Controller - (e2e)', () => {
 
   const getAuthorizationHeader = (userId: string) => {
     return {
-      Authorization: `Bearer ${sign(
+      Authorization: `Bearer ${new JwtService().sign(
         {
           sub: userId,
         },
-        configuration['auth.jwtSecret'] as string
+        { secret: configuration['auth.jwtSecret'] as string }
       )}`,
     };
   };
@@ -211,7 +211,7 @@ describe('Exercise Log Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = (await response.json()) as Record<string, { total: number }>;
+      const body = (await response.json()) as Record<string, boolean>;
 
       const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       const todayIndex = new Date().getDay();

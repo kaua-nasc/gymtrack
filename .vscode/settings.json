@@ -1,5 +1,8 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "js/ts.validate.enabled": true,
+  "js/ts.tsserver.experimental.enableProjectDiagnostics": true,
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
