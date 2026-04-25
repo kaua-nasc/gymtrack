@@ -86,4 +86,6 @@ export class User extends DefaultEntity<User> {
     { cascade: true }
   )
   privacySettings: UserPrivacySettings;
+
+  isFollowing?: boolean;
 }

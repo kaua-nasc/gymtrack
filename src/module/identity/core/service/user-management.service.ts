@@ -24,6 +24,7 @@ import { UpdateMetricGoalStatusRequestDto } from '../../http/rest/dto/request/up
 import { UpdateUserMetricsRequestDto } from '../../http/rest/dto/request/update-user-metrics-request.dto';
 import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
 import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-privacy-settings-request.dto';
+import { UserResponseDto } from '../../http/rest/dto/response/user-response.dto';
 import { BodyMeasurement } from '../../persistence/entity/body-measurement.entity';
 import { MetricGoal } from '../../persistence/entity/metric-goal.entity';
 import { TrainerStudentRelationship } from '../../persistence/entity/trainer-student-relationship.entity';
@@ -161,7 +162,9 @@ export class UserManagementService {
     return this.authService.generateToken(updatedUser!);
   }
 
-  async getUserById(id: string): Promise<User> {
+  async getUserById(id: string) {
+    const userId = this.request.user.id;
+
     this.logger.log(`Fetching user by ID: ${id}`);
     const user = await this.userRepository.findOneById(id);
 
@@ -176,7 +179,7 @@ export class UserManagementService {
     }
 
     this.logger.log(`Successfully fetched user: ${id}`);
-    return user;
+    return { ...user, isFollowing: await this.isFollowing(userId, id) };
   }
 
   async getUsersByIds(userIds: string[]): Promise<User[]> {
@@ -218,6 +221,14 @@ export class UserManagementService {
     const exists = await this.userRepository.exists(userId);
     this.logger.log(`User ${userId} existence check result: ${exists}`);
     return exists;
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const follow = await this.userFollowsRepository.findOneByFollowerAndFollowing(
+      followerId,
+      followingId
+    );
+    return !!follow;
   }
 
   async followUser(followedId: string): Promise<void> {

@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Param,
   Patch,
   Post,
@@ -13,7 +14,6 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  Inject,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -35,23 +35,23 @@ import { UserFollowCountResponseDto } from '../dto/response/user-follow-count-re
 import { UserPrivacySettingsResponseDto } from '../dto/response/user-privacy-settings-response.dto';
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import 'multer';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { Public } from '../../../../shared/module/auth/guard/jwt-auth.guard';
-import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.dto';
-import { UpdateUserMetricsRequestDto } from '../dto/request/update-user-metrics-request.dto';
-import { AddWeightLogRequestDto } from '../dto/request/add-weight-log-request.dto';
-import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
 import { AddBodyMeasurementsRequestDto } from '../dto/request/add-body-measurements-request.dto';
-import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-response.dto';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { AddWeightLogRequestDto } from '../dto/request/add-weight-log-request.dto';
 import { CreateMetricGoalRequestDto } from '../dto/request/create-metric-goal-request.dto';
-import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
+import { LinkTrainerRequestDto } from '../dto/request/link-trainer-request.dto';
 import { UpdateMetricGoalStatusRequestDto } from '../dto/request/update-metric-goal-status-request.dto';
 import { UpdateTrainerInviteCodeRequestDto } from '../dto/request/update-trainer-invite-code-request.dto';
-import { LinkTrainerRequestDto } from '../dto/request/link-trainer-request.dto';
+import { UpdateTrainerNoteRequestDto } from '../dto/request/update-trainer-note-request.dto';
+import { UpdateUserMetricsRequestDto } from '../dto/request/update-user-metrics-request.dto';
 import { UpgradeToPersonalTrainerRequestDto } from '../dto/request/upgrade-to-personal-trainer-request.dto';
 import { UserChangeBioRequestDto } from '../dto/request/user-change-bio-request.dto';
-import { UpdateTrainerNoteRequestDto } from '../dto/request/update-trainer-note-request.dto';
+import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.dto';
+import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-response.dto';
+import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
+import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -590,6 +590,7 @@ export class UserController {
       type: user.type,
       cref: user.cref,
       isVerified: user.isVerified,
+      isFollowing: user.isFollowing,
     };
   }
 }

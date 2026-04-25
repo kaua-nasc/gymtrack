@@ -46,4 +46,10 @@ export class UserResponseDto {
     example: 'TEAM-SILVA-2026',
   })
   trainerInviteCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Indica se o usuário logado segue este usuário',
+    example: true,
+  })
+  isFollowing?: boolean;
 }
