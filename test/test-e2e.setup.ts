@@ -5,7 +5,6 @@ import { ConfigService } from '@src/module/shared/module/config/service/config.s
 import { LoggerModule } from '@src/module/shared/module/logger/logger.module';
 import { StorageModule } from '@src/module/shared/module/storage/storage.module';
 import { EmailModule } from '@src/module/shared/module/email/email.module';
-import { initializeTransactionalContext } from 'typeorm-transactional';
 import { MockStorageModule } from './mock/storage.mock';
 import { MockEmailModule } from './mock/email.mock';
 import { configureMswServer } from './msw.setup';
@@ -17,17 +16,10 @@ type Override =
   | { provide: unknown; useValue: unknown }
   | { provide: unknown; useClass: unknown };
 
-let isTransactionalContextInitialized = false;
-
 export const createNestApp = async (
   modules: unknown[] = [AppModule],
   overrides: Override[] = []
 ) => {
-  if (!isTransactionalContextInitialized) {
-    initializeTransactionalContext();
-    isTransactionalContextInitialized = true;
-  }
-
   const configuration = getTestConfig();
   const server = configureMswServer();
 
