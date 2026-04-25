@@ -3,11 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedDomainException } from '@src/module/shared/core/exception/unauthorized.exception';
 import { EmailService } from '@src/module/shared/module/email/service/email.service';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { compare } from 'bcrypt';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { InvalidCredentialsException } from '../exception/invalid-credentials.exception';
 import { TokenMismatchException } from '../exception/token-mismatch.exception';
 import { UserNotFoundException } from '../exception/user-not-found.exception';
+import { hashPassword, verifyPassword } from '../util/password.util';
 
 @Injectable()
 export class AuthService {
@@ -52,7 +52,7 @@ export class AuthService {
     password: string,
     actualPasword: string
   ): Promise<boolean> {
-    return compare(password, actualPasword);
+    return verifyPassword(password, actualPasword);
   }
 
   async requestResetPassword({ email }: { email: string }): Promise<void> {
@@ -128,10 +128,7 @@ export class AuthService {
       throw new UnauthorizedDomainException('cannot authorize user: ' + data.newPassword);
     }
 
-    this.logger.warn(
-      `Saving new password for user ID: ${data.userId}. Ensure hashing logic is in place (e.g., repository hook).`
-    );
-    user.password = data.newPassword;
+    user.password = await hashPassword(data.newPassword);
 
     await this.userRepository.save(user);
     this.logger.log(`Password changed successfully for user ID: ${data.userId}`);

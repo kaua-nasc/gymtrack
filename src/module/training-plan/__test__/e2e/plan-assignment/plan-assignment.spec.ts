@@ -1,15 +1,15 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { trainingPlanFactory } from '@src/module/training-plan/__test__/factory/training-plan.factory';
+import { PlanSubscriptionType } from '@src/module/training-plan/core/enum/plan-subscription-type.enum';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
-import { http, HttpResponse } from 'msw';
-import { PlanSubscriptionType } from '@src/module/training-plan/core/enum/plan-subscription-type.enum';
+import { HttpResponse, http } from 'msw';
 import { SetupServer } from 'msw/lib/node';
 
 describe('Training Plan - Plan Assignment - (e2e)', () => {

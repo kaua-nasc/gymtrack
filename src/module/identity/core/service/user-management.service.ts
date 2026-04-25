@@ -5,7 +5,6 @@ import { DomainException } from '@src/module/shared/core/exception/domain.except
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
-import { hash } from 'bcrypt';
 import { DataSource, In } from 'typeorm';
 import { UserType } from '../../core/enum/user-type.enum';
 import { UserChangeBioRequestDto } from '../../http/rest/dto/request/user-change-bio-request.dto';
@@ -18,6 +17,7 @@ import { EmailAlreadyInUseException } from '../exception/email-already-in-use.ex
 import { UserNotFoundException } from '../exception/user-not-found.exception';
 import { AuthService } from './authentication.service';
 import { UserFollowsService } from './user-follows.service';
+import { hashPassword } from '../util/password.util';
 
 export interface CreateUserDto {
   email: string;
@@ -26,8 +26,6 @@ export interface CreateUserDto {
   lastName: string;
   type?: UserType;
 }
-
-export const PASSWORD_HASH_SALT = 10;
 
 @Injectable()
 export class UserManagementService {
@@ -51,7 +49,7 @@ export class UserManagementService {
     const newUser = new User({
       ...user,
       type: user.type ?? UserType.client,
-      password: await hash(user.password, PASSWORD_HASH_SALT),
+      password: await hashPassword(user.password),
     });
 
     await this.userRepository.save(newUser);
