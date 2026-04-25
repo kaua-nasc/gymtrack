@@ -1,73 +1,119 @@
 import { Injectable } from '@nestjs/common';
-import { HttpClientException } from '@src/module/shared/module/http-client/exception/http-client.exception';
+import {
+  HttpClientException,
+  HttpClientTimeoutException,
+} from '@src/module/shared/module/http-client/exception/http-client.exception';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+
+export interface HttpClientRequestOptions extends RequestInit {
+  timeoutMs?: number;
+}
 
 @Injectable()
 export class HttpClient {
+  private readonly defaultTimeoutMs = 8000;
+
   constructor(private readonly logger: AppLogger) {}
 
-  async get<T>(url: string, options: RequestInit = {}): Promise<T> {
-    this.logger.log(`HTTP GET Request: ${url}`, { method: 'GET', url });
-    const startTime = Date.now();
-
-    try {
-      const response = await fetch(url, options);
-      const duration = Date.now() - startTime;
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        this.logger.error(`HTTP GET Failed: ${url} [${response.status}]`, {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-          duration,
-        });
-        throw new Error(`[${response.status}] ${response.statusText} - ${errorText}`);
-      }
-
-      this.logger.log(`HTTP GET Success: ${url}`, { status: response.status, duration });
-      const data = await response.json();
-      return data as T;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      this.logger.error(`HTTP GET Error: ${url}`, { err: error, duration });
-      throw new HttpClientException(`Error fetching data from ${url}: ${error}`, error);
-    }
+  async get<T>(url: string, options: HttpClientRequestOptions = {}): Promise<T> {
+    return this.request<T>('GET', url, options);
   }
 
-  async post<T>(url: string, body: unknown, options: RequestInit = {}): Promise<T> {
-    this.logger.log(`HTTP POST Request: ${url}`, { method: 'POST', url });
+  async post<T>(
+    url: string,
+    body: unknown,
+    options: HttpClientRequestOptions = {}
+  ): Promise<T> {
+    const headers = new Headers(options.headers);
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    return this.request<T>('POST', url, { ...options, headers }, JSON.stringify(body));
+  }
+
+  private async request<T>(
+    method: string,
+    url: string,
+    options: HttpClientRequestOptions,
+    body?: RequestInit['body']
+  ): Promise<T> {
+    this.logger.log(`HTTP ${method} Request: ${url}`, { method, url });
     const startTime = Date.now();
+    const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const signal = options.signal
+      ? AbortSignal.any([options.signal, controller.signal])
+      : controller.signal;
 
     try {
       const response = await fetch(url, {
         ...options,
-        body: JSON.stringify(body),
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        method,
+        signal,
+        body,
       });
       const duration = Date.now() - startTime;
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
-        this.logger.error(`HTTP POST Failed: ${url} [${response.status}]`, {
+        this.logger.error(`HTTP ${method} Failed: ${url} [${response.status}]`, {
+          method,
+          url,
           status: response.status,
           statusText: response.statusText,
           errorText,
           duration,
         });
-        throw new Error(`[${response.status}] ${response.statusText} - ${errorText}`);
+
+        throw new HttpClientException(
+          `[${response.status}] ${response.statusText} - ${errorText}`,
+          undefined,
+          { statusCode: response.status, method, url }
+        );
       }
 
-      this.logger.log(`HTTP POST Success: ${url}`, { status: response.status, duration });
-      const data = await response.json();
-      return data as T;
+      this.logger.log(`HTTP ${method} Success: ${url}`, {
+        method,
+        url,
+        status: response.status,
+        duration,
+      });
+
+      if (response.status === 204) {
+        return undefined as T;
+      }
+
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('application/json')) {
+        return (await response.json()) as T;
+      }
+
+      return (await response.text()) as T;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.logger.error(`HTTP POST Error: ${url}`, { err: error, duration });
-      throw new HttpClientException(`Error fetching data from ${url}: ${error}`, error);
+      this.logger.error(`HTTP ${method} Error: ${url}`, { err: error, duration });
+
+      if (error instanceof HttpClientException) {
+        throw error;
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new HttpClientTimeoutException(
+          `Request timeout after ${timeoutMs}ms`,
+          error,
+          { statusCode: 408, method, url }
+        );
+      }
+
+      throw new HttpClientException(`Error fetching data from ${url}: ${String(error)}`, error, {
+        method,
+        url,
+      });
+    } finally {
+      clearTimeout(timeout);
     }
   }
 }
