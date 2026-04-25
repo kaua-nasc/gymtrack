@@ -35,19 +35,11 @@ export class TrainingPlanRepository extends DefaultTypeOrmRepository<TrainingPla
     return trainingPlans;
   }
 
-  async findOneTrainingPlanById(id: string, relations?: string[]): Promise<TrainingPlan> {
-    const trainingPlan = await super.findOneById(id, relations);
-
-    if (!trainingPlan) {
-      throw new Error();
-    }
-
-    return trainingPlan;
+  async findOneTrainingPlanById(id: string, relations?: string[]): Promise<TrainingPlan | null> {
+    return await super.findOneById(id, relations);
   }
 
   async deleteTrainingPlan(id: string): Promise<void> {
-    const trainingPlan = await this.findOneTrainingPlanById(id);
-
-    await this.delete({ id: trainingPlan.id });
+    await this.delete({ id });
   }
 }

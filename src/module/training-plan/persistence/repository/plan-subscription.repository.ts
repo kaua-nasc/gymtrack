@@ -3,6 +3,8 @@ import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/
 import { DataSource, In } from 'typeorm';
 import { PlanSubscription } from '../entity/plan-subscription.entity';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { PlanDayProgress } from '../entity/plan-day-progress.entity';
+import { PlanDayProgressStatus } from '../../core/enum/plan-day-progress-status.enum';
 
 export class PlanSubscriptionRepository extends DefaultTypeOrmRepository<PlanSubscription> {
   constructor(
@@ -29,5 +31,15 @@ export class PlanSubscriptionRepository extends DefaultTypeOrmRepository<PlanSub
         },
       })) ?? []
     );
+  }
+
+  async logDayProgress(planSubscriptionId: string, dayId: string): Promise<void> {
+    const progress = new PlanDayProgress({
+      planSubscriptionId,
+      dayId,
+      status: PlanDayProgressStatus.COMPLETED,
+    });
+
+    await this.manager.save(PlanDayProgress, progress);
   }
 }

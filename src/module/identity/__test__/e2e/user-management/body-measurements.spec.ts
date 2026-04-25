@@ -165,7 +165,7 @@ describe('Identity - Body Measurements Controller - (e2e)', () => {
       const data = (await response.json()) as { type: MeasurementType; value: number }[];
       expect(data.length).toBe(2);
 
-      const waist = data.find((m: any) => m.type === MeasurementType.WAIST);
+      const waist = data.find((m: { type: string; value: number }) => m.type === MeasurementType.WAIST);
       expect(Number(waist?.value)).toBe(85);
     });
   });

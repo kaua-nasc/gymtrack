@@ -3,6 +3,10 @@ import { IdentityPersistenceModule } from './persistence/identity-persistence.mo
 import { DomainModuleIntegrationModule } from '../shared/module/integration/interface/domain-module-integration.module';
 import { AuthService } from './core/service/authentication.service';
 import { UserManagementService } from './core/service/user-management.service';
+import { UserMetricsService } from './core/service/user-metrics.service';
+import { UserFollowsService } from './core/service/user-follows.service';
+import { TrainerRelationshipService } from './core/service/trainer-relationship.service';
+import { UserPrivacyService } from './core/service/user-privacy.service';
 import { AuthModule } from '../shared/module/auth/auth.module';
 import { AuthController } from './http/rest/controller/auth.controller';
 import { UserController } from './http/rest/controller/user.controller';
@@ -17,7 +21,14 @@ import { StorageModule } from '../shared/module/storage/storage.module';
     EmailModule,
     StorageModule,
   ],
-  providers: [AuthService, UserManagementService],
+  providers: [
+    AuthService,
+    UserManagementService,
+    UserMetricsService,
+    UserFollowsService,
+    TrainerRelationshipService,
+    UserPrivacyService,
+  ],
   controllers: [AuthController, UserController],
 })
 export class IdentityModule {}

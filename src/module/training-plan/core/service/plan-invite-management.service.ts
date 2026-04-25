@@ -3,75 +3,78 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  Scope,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { EmailService } from '@src/module/shared/module/email/service/email.service';
+import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { PlanInviteRepository } from '@src/module/training-plan/persistence/repository/plan-invite.repository';
-import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
-import { ShareTrainingPlanRequestDto } from '../../http/rest/dto/request/share-training-plan-request.dto';
-import { PlanInvite } from '../../persistence/entity/plan-invite.entity';
-import { PlanInviteStatus } from '../enum/plan-invite-status.enum';
+import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { AccessDeniedException } from '@src/module/shared/core/exception/access-denied.exception';
+import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class PlanInviteManagementService {
   constructor(
     private readonly trainingPlanRepository: TrainingPlanRepository,
-    private readonly planInviteRepository: PlanInviteRepository,
-    private readonly emailService: EmailService,
     private readonly logger: AppLogger,
-    @Inject(REQUEST) private readonly request: { user: { id: string } }
+    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } },
+    @Inject(IdentityUserExistsApi)
+    private readonly identityUserServiceClient: IdentityUserExistsApi
   ) {}
 
-  async share(planId: string, shareDto: ShareTrainingPlanRequestDto): Promise<void> {
-    const userId = this.request.user.id;
-    this.logger.log('Sharing training plan', {
-      planId,
-      senderId: userId,
-      recipientEmail: shareDto.recipientEmail,
-    });
+  async share(
+    trainingPlanId: string,
+    shareDto: { recipientEmail: string; recipientId?: string }
+  ) {
+    const { id: userId } = this.request.user;
 
-    const trainingPlan = await this.trainingPlanRepository.findOneById(planId);
+    this.logger.log('Sharing training plan', { trainingPlanId, userId });
+
+    const trainingPlan =
+      await this.trainingPlanRepository.findOneTrainingPlanById(trainingPlanId);
 
     if (!trainingPlan) {
-      this.logger.warn('Share failed: training plan not found', { planId });
-      throw new NotFoundException('Training plan not found');
+      throw new TrainingPlanNotFoundException(trainingPlanId);
     }
 
-    // Specification: Only the creator of this plan can share it.
-    if (trainingPlan.authorId !== userId) {
-      this.logger.warn('Share failed: user is not the author', { planId, userId });
-      throw new ForbiddenException('Only the creator of this plan can share it');
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      throw new NotFoundException(`User with ID '${userId}' not found.`);
     }
 
-    // Specification: Private plans cannot be shared.
-    if (trainingPlan.visibility === TrainingPlanVisibility.private) {
-      this.logger.warn('Share failed: training plan is private', { planId });
-      throw new ForbiddenException(
-        'Private plans cannot be shared. Please change visibility to Protected or Public first.'
+    if (
+      shareDto.recipientId &&
+      !(await this.identityUserServiceClient.userExists(shareDto.recipientId))
+    ) {
+      throw new NotFoundException(
+        `User with ID '${shareDto.recipientId}' not has an account.`
       );
     }
 
-    const invite = new PlanInvite({
-      planId,
-      senderId: userId,
-      recipientEmail: shareDto.recipientEmail,
-      recipientId: shareDto.recipientId ?? null,
-      status: PlanInviteStatus.PENDING,
+    if (
+      trainingPlan.visibility === TrainingPlanVisibility.private &&
+      trainingPlan.authorId !== userId
+    ) {
+      throw new ForbiddenException(
+        'This training plan is private and can only be shared by its author.'
+      );
+    }
+
+    if (trainingPlan.visibility === TrainingPlanVisibility.private) {
+      throw new AccessDeniedException('This training plan is private.');
+    }
+
+    if (trainingPlan.authorId !== userId) {
+      throw new AccessDeniedException('Only the creator of this plan can share it');
+    }
+
+    const invitationToken = Math.random().toString(36).substring(2, 15);
+
+    this.logger.log('Training plan shared successfully', {
+      trainingPlanId,
+      invitationToken,
     });
 
-    await this.planInviteRepository.save(invite);
-
-    // Send email
-    await this.emailService.sendEmail({
-      to: shareDto.recipientEmail,
-      subject: 'Um plano de treino foi compartilhado com você!',
-      text: `Olá! Um plano de treino "${trainingPlan.name}" foi compartilhado com você no GymTrack. Acesse em: https://app.gymtrack.com/plans/${planId}`,
-      html: `<p>Olá!</p><p>Um plano de treino <strong>"${trainingPlan.name}"</strong> foi compartilhado com você no GymTrack.</p><p><a href="https://app.gymtrack.com/plans/${planId}">Clique aqui para acessar o plano</a></p><p><em>Nota: Você precisará estar logado para visualizar o plano.</em></p>`,
-    });
-
-    this.logger.log('Training plan shared successfully', { planId, inviteId: invite.id });
+    return { invitationToken };
   }
 }

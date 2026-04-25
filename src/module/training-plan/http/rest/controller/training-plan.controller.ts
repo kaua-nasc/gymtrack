@@ -24,6 +24,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
+import { TrainingPlanCommentService } from '@src/module/training-plan/core/service/training-plan-comment.service';
+import { TrainingPlanFeedbackService } from '@src/module/training-plan/core/service/training-plan-feedback.service';
+import { TrainingPlanLikeService } from '@src/module/training-plan/core/service/training-plan-like.service';
 import { TrainingPlanManagementService } from '@src/module/training-plan/core/service/training-plan-management.service';
 import { CreateTrainingPlanRequestDto } from '@src/module/training-plan/http/rest/dto/request/create-training-plan-request.dto';
 import { CreateTrainingPlanFeedbackRequestDto } from '../dto/request/create-training-plan-feedback-request.dto';
@@ -41,7 +44,10 @@ import {
 @Controller('training-plan')
 export class TrainingPlanController {
   constructor(
-    private readonly trainingPlanManagementService: TrainingPlanManagementService
+    private readonly trainingPlanManagementService: TrainingPlanManagementService,
+    private readonly trainingPlanFeedbackService: TrainingPlanFeedbackService,
+    private readonly trainingPlanLikeService: TrainingPlanLikeService,
+    private readonly trainingPlanCommentService: TrainingPlanCommentService
   ) {}
 
   @Get()
@@ -150,7 +156,7 @@ export class TrainingPlanController {
   async giveFeedback(
     @Body() feedback: CreateTrainingPlanFeedbackRequestDto
   ): Promise<void> {
-    await this.trainingPlanManagementService.giveFeedback({ ...feedback });
+    await this.trainingPlanFeedbackService.giveFeedback({ ...feedback });
   }
 
   @Get(':trainingPlanId/feedbacks')
@@ -186,7 +192,7 @@ export class TrainingPlanController {
   ): Promise<TrainingPlanFeedbackResponseDto> {
     const parsedLimit = Number(limit);
 
-    return this.trainingPlanManagementService.getFeedbacks(
+    return this.trainingPlanFeedbackService.getFeedbacks(
       trainingPlanId,
       parsedLimit,
       cursor
@@ -228,7 +234,7 @@ export class TrainingPlanController {
     description: 'ID of the training plan',
   })
   async like(@Param('trainingPlanId') trainingPlanId: string) {
-    await this.trainingPlanManagementService.like(trainingPlanId);
+    await this.trainingPlanLikeService.like(trainingPlanId);
   }
 
   @Delete('/:trainingPlanId/like')
@@ -241,7 +247,7 @@ export class TrainingPlanController {
     description: 'ID of the training plan',
   })
   async removeLike(@Param('trainingPlanId') trainingPlanId: string) {
-    await this.trainingPlanManagementService.removeLike(trainingPlanId);
+    await this.trainingPlanLikeService.removeLike(trainingPlanId);
   }
 
   @Post('/:trainingPlanId/clone')
@@ -326,7 +332,7 @@ export class TrainingPlanController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: number
   ) {
-    const comments = await this.trainingPlanManagementService.listComments(
+    const comments = await this.trainingPlanCommentService.listComments(
       trainingPlanId,
       cursor,
       limit ?? 10
@@ -356,7 +362,7 @@ export class TrainingPlanController {
     @Param('trainingPlanId') trainingPlanId: string,
     @Body('message') message: string
   ) {
-    await this.trainingPlanManagementService.addComment(trainingPlanId, message);
+    await this.trainingPlanCommentService.addComment(trainingPlanId, message);
   }
 
   @Delete('comments/:commentId')
@@ -367,7 +373,7 @@ export class TrainingPlanController {
   })
   @ApiResponse({ status: 200, description: 'Comentário removido com sucesso' })
   async removeComment(@Param('commentId') commentId: string) {
-    await this.trainingPlanManagementService.removeComment(commentId);
+    await this.trainingPlanCommentService.removeComment(commentId);
   }
 
   @Get('/active-training-plan')

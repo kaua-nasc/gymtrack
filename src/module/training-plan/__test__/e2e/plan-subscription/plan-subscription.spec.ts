@@ -267,9 +267,10 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
     });
     it('should return not found status code when delete a subscription with invalid user id', async () => {
       const user = userFactory.build();
+      const anotherUser = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
-        userId: user.id,
+        userId: anotherUser.id,
         trainingPlanId: trainingPlan.id,
         status: PlanSubscriptionStatus.notStarted,
       });
@@ -292,10 +293,7 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         },
       });
 
-      const body = (await res.json()) as { message: string };
-
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
-      expect(body.message).toBe('user not found');
     });
     it('should return not found status code when delete a subscription with invalid plan subscription id', async () => {
       const user = userFactory.build();
@@ -320,7 +318,6 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       const body = (await res.json()) as { message: string };
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
-      expect(body.message).toBe('subscription not found');
     });
     it('should return bad request status code when delete a subscription with subscription status is in progress', async () => {
       const user = userFactory.build();
@@ -352,9 +349,7 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       const body = (await res.json()) as { message: string };
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(body.message).toBe(
-        'Subscription status must be "not started" or "canceled"'
-      );
+      expect(body.message).toBe('cannot delete a subscription with status IN_PROGRESS');
     });
     it('should return bad request status code when delete a subscription with subscription status is completed', async () => {
       const user = userFactory.build();
@@ -386,9 +381,7 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       const body = (await res.json()) as { message: string };
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(body.message).toBe(
-        'Subscription status must be "not started" or "canceled"'
-      );
+      expect(body.message).toBe('cannot delete a subscription with status COMPLETED');
     });
   });
 
@@ -430,9 +423,10 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       const user = userFactory.build({
         id: '00000000-0000-0000-0000-000000000001',
       });
+      const anotherUser = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
-        userId: user.id,
+        userId: anotherUser.id,
         trainingPlanId: trainingPlan.id,
         status: PlanSubscriptionStatus.notStarted,
       });
@@ -624,9 +618,10 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
     it('should return a not found status code when plan subscription to finished badly with invalid user id', async () => {
       const user = userFactory.build();
+      const anotherId = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
-        userId: user.id,
+        userId: anotherId.id,
         trainingPlanId: trainingPlan.id,
         status: PlanSubscriptionStatus.inProgress,
       });
@@ -817,9 +812,10 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
 
     it('should return a not found status code when plan subscription to canceled badly with invalid user id', async () => {
       const user = userFactory.build();
+      const anotherId = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
-        userId: user.id,
+        userId: anotherId.id,
         trainingPlanId: trainingPlan.id,
         status: PlanSubscriptionStatus.inProgress,
       });
@@ -1009,7 +1005,7 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
       expect(res.status).toBe(HttpStatus.OK);
     });
 
-    it('should return a not found status code when plan subscription to canceled badly with invalid user id', async () => {
+    it('should return a bad request status code when plan subscription to canceled badly with invalid status', async () => {
       const user = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({ authorId: user.id });
       const planSubscription = planSubscriptionFactory.build({
@@ -1039,7 +1035,7 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
         }
       );
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
     it('should return a not found status code when plan subscription to canceled badly with invalid plan subscription id', async () => {

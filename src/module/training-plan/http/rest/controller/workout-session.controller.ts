@@ -20,6 +20,8 @@ import { WorkoutSessionService } from '@src/module/training-plan/core/service/wo
 import { StartWorkoutSessionRequestDto } from '../dto/request/start-workout-session-request.dto';
 import { LogWorkoutSetRequestDto } from '../dto/request/log-workout-set-request.dto';
 import { ActiveWorkoutSessionResponseDto } from '../dto/response/active-workout-session-response.dto';
+import { ActiveWorkoutSession } from '@src/module/training-plan/persistence/entity/active-workout-session.entity';
+import { ActiveSetLog } from '@src/module/training-plan/persistence/entity/active-set-log.entity';
 
 @ApiTags('Workout Sessions')
 @ApiBearerAuth('JWT-auth')
@@ -89,25 +91,25 @@ export class WorkoutSessionController {
     await this.workoutSessionService.cancelSession();
   }
 
-  private mapToResponse(session: any): ActiveWorkoutSessionResponseDto {
+  private mapToResponse(session: ActiveWorkoutSession): ActiveWorkoutSessionResponseDto {
     return {
       id: session.id,
       userId: session.userId,
       planDayProgressId: session.planDayProgressId,
-      currentExerciseId: session.currentExerciseId,
+      currentExerciseId: session.currentExerciseId || undefined,
       currentSetIndex: session.currentSetIndex,
-      restStartedAt: session.restStartedAt,
-      adaptiveRestDurationSeconds: session.adaptiveRestDurationSeconds,
+      restStartedAt: session.restStartedAt || undefined,
+      adaptiveRestDurationSeconds: session.adaptiveRestDurationSeconds || undefined,
       startedAt: session.startedAt,
       lastActiveAt: session.lastActiveAt,
       logs:
-        session.logs?.map((log: any) => ({
+        session.logs?.map((log: ActiveSetLog) => ({
           id: log.id,
           exerciseId: log.exerciseId,
           setIndex: log.setIndex,
           reps: log.reps,
           weight: log.weight,
-          rpe: log.rpe,
+          rpe: log.rpe || undefined,
         })) ?? [],
     };
   }

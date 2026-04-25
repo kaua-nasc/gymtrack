@@ -169,8 +169,6 @@ describe('Identity - User Management Controller - (e2e)', () => {
     it('should return not found when user not exists', async () => {
       const anotherUser = userFactory.build({ email: 'another@example.com' });
 
-      await testDbClient(Tables.User).insert(anotherUser);
-
       const res = await fetch(`${url}/identity/user/follow/${anotherUser.id}`, {
         method: 'POST',
         headers: {
@@ -199,7 +197,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
 
-    it('should return bad request when user already follow another user', async () => {
+    it('should return created response when user already follow another user', async () => {
       const user = userFactory.build();
       const anotherUser = userFactory.build({
         id: '5e2a62de-6ead-4678-a12f-8c17e91513a3',
@@ -223,7 +221,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
         },
       });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.CREATED);
     });
   });
   describe('Unfollow user', () => {
@@ -287,7 +285,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
-    it('should return bad request when user not follow another user', async () => {
+    it('should return ok response when user not follow another user', async () => {
       const user = userFactory.build();
       const anotherUser = userFactory.build({
         id: '5e2a62de-6ead-4678-a12f-8c17e91513a3',
@@ -305,7 +303,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
         },
       });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.OK);
     });
   });
 

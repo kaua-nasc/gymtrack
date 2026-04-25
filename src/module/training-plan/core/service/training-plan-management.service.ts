@@ -1,14 +1,7 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-  Scope,
-} from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { Cursor } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
 import { AzureStorageService } from '@src/module/shared/module/storage/service/azure-storage.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
@@ -22,23 +15,18 @@ import { Day } from '../../persistence/entity/day.entity';
 import { Exercise } from '../../persistence/entity/exercise.entity';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
-import { TrainingPlanComment } from '../../persistence/entity/training-plan-comment.entity';
-import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
-import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
-import { TrainingPlanCommentRepository } from '../../persistence/repository/training-plan-comment.repository';
-import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
+import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TrainingPlanManagementService {
   constructor(
     private readonly trainingPlanRepository: TrainingPlanRepository,
-    private readonly trainingPlanFeedbackRepository: TrainingPlanFeedbackRepository,
     private readonly trainingPlanLikeRepository: TrainingPlanLikeRepository,
-    private readonly trainingPlanCommentRepository: TrainingPlanCommentRepository,
     private readonly planSubscriptionRepository: PlanSubscriptionRepository,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
@@ -64,7 +52,7 @@ export class TrainingPlanManagementService {
       this.logger.warn('User not found when creating training plan', {
         userId,
       });
-      throw new NotFoundException('user not found');
+      throw new DomainException('user not found');
     }
 
     let visibility = trainingPlanData.visibility;
@@ -76,7 +64,7 @@ export class TrainingPlanManagementService {
 
       if (plansCount >= 1) {
         this.logger.warn('Client already has a training plan', { userId });
-        throw new BadRequestException(
+        throw new DomainException(
           'Users with profile CLIENT can only have one personal training plan. Please delete your existing plan to create a new one.'
         );
       }
@@ -113,7 +101,7 @@ export class TrainingPlanManagementService {
       this.logger.warn('Attempt to delete non-existing training plan', {
         trainingPlanId: id,
       });
-      throw new NotFoundException(`training plan with id ${id} not found`);
+      throw new TrainingPlanNotFoundException(id);
     }
 
     await this.authorizeAccess(trainingPlan);
@@ -136,12 +124,16 @@ export class TrainingPlanManagementService {
     );
 
     if (trainerId === userId) {
-      this.logger.log(`Authorization granted: User ${userId} is the trainer of author ${trainingPlan.authorId}`);
+      this.logger.log(
+        `Authorization granted: User ${userId} is the trainer of author ${trainingPlan.authorId}`
+      );
       return;
     }
 
-    this.logger.warn(`Authorization denied for user ${userId} on plan ${trainingPlan.id}`);
-    throw new BadRequestException('you are not authorized to modify this training plan');
+    this.logger.warn(
+      `Authorization denied for user ${userId} on plan ${trainingPlan.id}`
+    );
+    throw new DomainException('you are not authorized to modify this training plan');
   }
 
   async get(id: string) {
@@ -159,7 +151,7 @@ export class TrainingPlanManagementService {
 
     if (!trainingPlan) {
       this.logger.warn('Training plan not found', { trainingPlanId: id });
-      throw new NotFoundException();
+      throw new TrainingPlanNotFoundException(id);
     }
 
     if (trainingPlan.imageUrl) {
@@ -315,111 +307,11 @@ export class TrainingPlanManagementService {
     return plansWithLikes;
   }
 
-  async giveFeedback(newFeedback: {
-    trainingPlanId: string;
-    rating: number;
-    message: string | null;
-  }) {
-    const userId = this.request.user.id;
-    this.logger.log('Giving feedback to training plan', {
-      trainingPlanId: newFeedback.trainingPlanId,
-      userId,
-      rating: newFeedback.rating,
-    });
-
-    const trainingPlan = await this.trainingPlanRepository.findOneById(
-      newFeedback.trainingPlanId
-    );
-    if (!trainingPlan) {
-      this.logger.warn('Feedback failed: training plan not found', {
-        trainingPlanId: newFeedback.trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-
-    if (trainingPlan?.authorId === userId) {
-      this.logger.warn('Training plan author attempted to give feedback to own plan', {
-        trainingPlanId: newFeedback.trainingPlanId,
-        userId,
-      });
-      throw new BadRequestException(
-        'training plan author cannot give feedback to your training plan'
-      );
-    }
-
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Feedback failed: user not found', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    const feedback = new TrainingPlanFeedback({
-      userId,
-      trainingPlanId: newFeedback.trainingPlanId,
-      rating: newFeedback.rating,
-      message: newFeedback.message,
-    });
-
-    await this.trainingPlanFeedbackRepository.save(feedback);
-    this.logger.log('Feedback saved successfully', {
-      trainingPlanId: newFeedback.trainingPlanId,
-      userId,
-    });
-  }
-  async getFeedbacks(
-    trainingPlanId: string,
-    limit: number,
-    lastCursor?: string
-  ): Promise<{
-    data: {
-      trainingPlanId: string;
-      userId: string;
-      rating: number;
-      message: string | null;
-    }[];
-    nextCursor: string | null;
-    hasNextPage: boolean;
-  }> {
-    this.logger.log('Fetching feedbacks for training plan', {
-      trainingPlanId,
-      limit,
-      lastCursor,
-    });
-
-    const decodedCursor = lastCursor
-      ? JSON.parse(Buffer.from(lastCursor, 'base64').toString())
-      : undefined;
-
-    const { data: feedbacks, nextCursor: rawNextCursor } =
-      await this.trainingPlanFeedbackRepository.findManyWithCursor(
-        { trainingPlanId },
-        limit,
-        decodedCursor,
-        'createdAt'
-      );
-
-    this.logger.log('Feedbacks fetched successfully', {
-      trainingPlanId,
-      feedbackCount: feedbacks.length,
-      hasNextPage: !!rawNextCursor,
-    });
-
-    const nextCursorString = rawNextCursor
-      ? Buffer.from(JSON.stringify(rawNextCursor)).toString('base64')
-      : null;
-
-    return {
-      data: feedbacks,
-      nextCursor: nextCursorString,
-      hasNextPage: !!nextCursorString,
-    };
-  }
-
   async addImage(trainingPlanId: string, file: Buffer) {
     this.logger.log(`Attempting to add image for training plan: ${trainingPlanId}`);
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      this.logger.warn(`Add image failed: Training plan not found: ${trainingPlanId}`);
-      throw new NotFoundException('training plan not exists');
+      throw new TrainingPlanNotFoundException(trainingPlanId);
     }
 
     await this.authorizeAccess(trainingPlan);
@@ -446,107 +338,11 @@ export class TrainingPlanManagementService {
     );
   }
 
-  async like(trainingPlanId: string) {
-    const userId = this.request.user.id;
-    this.logger.log(
-      `Starting like operation. trainingPlanId=${trainingPlanId}, userId=${userId}`
-    );
-
-    this.logger.log(`Checking if user exists: ${userId}`);
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn(`User does not exist: ${userId}`);
-      throw new NotFoundException('user not exists');
-    }
-
-    this.logger.log(`Fetching training plan: ${trainingPlanId}`);
-    const trainingPlan = await this.trainingPlanRepository.find({
-      where: { id: trainingPlanId },
-      relations: { privateParticipants: true },
-    });
-    if (!trainingPlan) {
-      this.logger.warn(`Training plan not found: ${trainingPlanId}`);
-      throw new NotFoundException('training plan not exists');
-    }
-
-    this.logger.log(`Validating training plan visibility for user: ${userId}`);
-
-    if (
-      trainingPlan.visibility === TrainingPlanVisibility.private &&
-      trainingPlan.authorId !== userId
-    ) {
-      this.logger.warn(
-        `User attempted to like a private training plan: ${trainingPlanId}`
-      );
-      throw new NotFoundException('training plan not exists');
-    }
-
-    if (
-      trainingPlan.visibility === TrainingPlanVisibility.protected &&
-      !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
-      trainingPlan.authorId !== userId
-    ) {
-      this.logger.warn(
-        `User ${userId} attempted to like a protected training plan without permission: ${trainingPlanId}`
-      );
-      throw new NotFoundException('training plan not exists');
-    }
-
-    this.logger.log(`Checking if like already exists`);
-    const alreadyLiked = await this.trainingPlanLikeRepository.existsBy({
-      trainingPlanId,
-      likedBy: userId,
-    });
-
-    if (alreadyLiked) {
-      this.logger.log(`User already liked this training plan. No action taken.`);
-      return;
-    }
-
-    this.logger.log(
-      `Saving like for userId=${userId} on trainingPlanId=${trainingPlanId}`
-    );
-    await this.trainingPlanLikeRepository.save(
-      new TrainingPlanLike({
-        likedBy: userId,
-        trainingPlanId,
-      })
-    );
-
-    this.logger.log(`Like operation completed successfully.`);
-  }
-
-  async removeLike(trainingPlanId: string) {
-    const userId = this.request.user.id;
-    this.logger.log(
-      `Starting removeLike operation. trainingPlanId=${trainingPlanId}, userId=${userId}`
-    );
-
-    this.logger.log(`Checking if user exists: ${userId}`);
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn(`User does not exist: ${userId}`);
-      throw new NotFoundException('user not exists');
-    }
-
-    this.logger.log(`Fetching training plan: ${trainingPlanId}`);
-    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
-    if (!trainingPlan) {
-      this.logger.warn(`Training plan not found: ${trainingPlanId}`);
-      throw new NotFoundException('training plan not exists');
-    }
-
-    this.logger.log(
-      `Attempting to remove like. trainingPlanId=${trainingPlanId}, userId=${userId}`
-    );
-    await this.trainingPlanLikeRepository.delete({ trainingPlanId, likedBy: userId });
-
-    this.logger.log(`Remove like operation completed successfully.`);
-  }
-
   async clone(trainingPlanId: string) {
     const userId = this.request.user.id;
     this.logger.log('Cloning training plan', { userId, trainingPlanId });
     if (!(await this.identityUserServiceClient.userExists(userId))) {
-      throw new NotFoundException('user not found');
+      throw new DomainException('user not found');
     }
 
     const trainingPlan = await this.trainingPlanRepository.find({
@@ -555,11 +351,11 @@ export class TrainingPlanManagementService {
     });
 
     if (!trainingPlan) {
-      throw new NotFoundException('training plan not found');
+      throw new TrainingPlanNotFoundException(trainingPlanId);
     }
 
     if (trainingPlan?.visibility === TrainingPlanVisibility.private) {
-      throw new NotFoundException('training plan not found');
+      throw new TrainingPlanNotFoundException(trainingPlanId);
     }
 
     if (
@@ -567,7 +363,7 @@ export class TrainingPlanManagementService {
       !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
       trainingPlan.authorId !== userId
     ) {
-      throw new NotFoundException('training plan not found');
+      throw new TrainingPlanNotFoundException(trainingPlanId);
     }
 
     const clonedTrainingPlan = new TrainingPlan({
@@ -607,117 +403,6 @@ export class TrainingPlanManagementService {
     }
 
     await this.trainingPlanRepository.save(clonedTrainingPlan);
-  }
-
-  async listComments(
-    trainingPlanId: string,
-    cursor?: string,
-    limit: number = 10
-  ): Promise<TrainingPlanComment[]> {
-    this.logger.log('Listing comments for training plan', { trainingPlanId });
-
-    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
-    if (!trainingPlan) {
-      this.logger.warn('Attempted to list comments for non-existing training plan', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-
-    const decodedCursor: Cursor = cursor
-      ? JSON.parse(Buffer.from(cursor, 'base64').toString())
-      : undefined;
-
-    if (decodedCursor && decodedCursor.value) {
-      decodedCursor.value = new Date(decodedCursor.value);
-    }
-
-    const { data: comments } =
-      await this.trainingPlanCommentRepository.findManyWithCursor(
-        { trainingPlanId },
-        limit,
-        decodedCursor,
-        'createdAt'
-      );
-
-    const users = await this.identityUserServiceClient.getUsers(
-      comments.map((c) => c.authorId)
-    );
-
-    const usersMap = new Map(users.map((u) => [u['id'], u]));
-    comments.forEach((comment) => {
-      comment.author = usersMap.get(comment.authorId);
-    });
-
-    this.logger.log('Comments listed successfully', {
-      trainingPlanId,
-      commentCount: comments.length,
-    });
-
-    return comments;
-  }
-
-  async addComment(trainingPlanId: string, message: string): Promise<void> {
-    const userId = this.request.user.id;
-    this.logger.log('Adding comment to training plan', {
-      trainingPlanId,
-      userId,
-    });
-
-    const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
-    if (!trainingPlan) {
-      this.logger.warn('Attempted to comment on non-existing training plan', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Attempted to comment by non-existing user', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    const comment = new TrainingPlanComment({
-      authorId: userId,
-      content: message,
-      trainingPlanId: trainingPlan.id,
-    });
-
-    await this.trainingPlanCommentRepository.save(comment);
-
-    this.logger.log('Comment added successfully', {
-      trainingPlanId,
-      userId,
-    });
-  }
-
-  async removeComment(commentId: string): Promise<void> {
-    const userId = this.request.user.id;
-    this.logger.log('Removing comment from training plan', {
-      commentId,
-      userId,
-    });
-
-    const comment = await this.trainingPlanCommentRepository.findOneById(commentId);
-    if (!comment) {
-      this.logger.warn('Attempted to remove non-existing comment', { commentId });
-      throw new NotFoundException('comment not found');
-    }
-
-    if (comment.authorId !== userId) {
-      this.logger.warn('User attempted to remove comment they do not own', {
-        commentId,
-        userId,
-      });
-      throw new BadRequestException('cannot remove comment of another user');
-    }
-
-    await this.trainingPlanCommentRepository.delete({ id: commentId });
-
-    this.logger.log('Comment removed successfully', {
-      commentId,
-      userId,
-    });
   }
 
   async getTrainingPlanInProgress(): Promise<TrainingPlanResponseDto | null> {

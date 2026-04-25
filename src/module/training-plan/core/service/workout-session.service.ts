@@ -1,229 +1,200 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { InjectDataSource } from '@nestjs/typeorm';
+import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { DataSource } from 'typeorm';
+import { ActiveWorkoutSessionRepository } from '../../persistence/repository/active-workout-session.repository';
+import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
+import { PlanSubscriptionStatus } from '../enum/plan-subscription-status.enum';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { ActiveWorkoutSession } from '../../persistence/entity/active-workout-session.entity';
 import { ActiveSetLog } from '../../persistence/entity/active-set-log.entity';
-import { ExerciseLog } from '../../persistence/entity/exercise-log.entity';
-import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
-import { ActiveWorkoutSessionRepository } from '../../persistence/repository/active-workout-session.repository';
-import { ActiveSetLogRepository } from '../../persistence/repository/active-set-log.repository';
-import { DayRepository } from '../../persistence/repository/day.repository';
-import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
+import { DayNotFoundException } from '../exception/day-not-found.exception';
+import { ActiveWorkoutSessionNotFoundException } from '../exception/active-workout-session-not-found.exception';
 import { StartWorkoutSessionRequestDto } from '../../http/rest/dto/request/start-workout-session-request.dto';
 import { LogWorkoutSetRequestDto } from '../../http/rest/dto/request/log-workout-set-request.dto';
+import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 import { PlanDayProgressStatus } from '../enum/plan-day-progress-status.enum';
+import { ExerciseLog } from '../../persistence/entity/exercise-log.entity';
+import { In } from 'typeorm';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class WorkoutSessionService {
   constructor(
-    private readonly activeSessionRepository: ActiveWorkoutSessionRepository,
-    private readonly activeSetLogRepository: ActiveSetLogRepository,
-    private readonly dayRepository: DayRepository,
+    private readonly activeWorkoutSessionRepository: ActiveWorkoutSessionRepository,
     private readonly planSubscriptionRepository: PlanSubscriptionRepository,
-    @InjectDataSource('training-plan') private readonly dataSource: DataSource,
     private readonly logger: AppLogger,
-    @Inject(REQUEST) private readonly request: { user: { id: string } }
+    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
   ) {}
 
   async startSession(dto: StartWorkoutSessionRequestDto): Promise<ActiveWorkoutSession> {
-    const userId = this.request.user.id;
-    this.logger.log(`User ${userId} attempting to start workout session for day ${dto.dayId}`);
+    const { id: userId } = this.request.user;
+    const { dayId } = dto;
+    
+    this.logger.log(`Starting workout session for user ${userId}, day ${dayId}`);
 
-    const activeSession = await this.activeSessionRepository.findActiveSessionByUserId(userId);
+    const activeSession = await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (activeSession) {
-      this.logger.log(`User ${userId} already has an active session: ${activeSession.id}`);
       return activeSession;
     }
 
-    const day = await this.dayRepository.findDayById(dto.dayId, true);
-    if (!day) {
-      throw new NotFoundException('Day not found');
+    const subscription = await this.planSubscriptionRepository.find({
+      where: { userId },
+      relations: { trainingPlan: { days: { exercises: true } } },
+    });
+
+    if (!subscription) {
+      throw new DomainException('User is not subscribed to this training plan');
     }
 
-    const subscriptions = await this.planSubscriptionRepository.getUserSubscriptionForPlan(
-      userId,
-      [day.trainingPlanId]
+    const day = subscription.trainingPlan.days.find((d) => d.id === dayId);
+    if (!day) {
+      throw new DayNotFoundException(dayId);
+    }
+
+    if (subscription.status !== PlanSubscriptionStatus.inProgress) {
+      await this.planSubscriptionRepository.update(
+        { id: subscription.id },
+        { status: PlanSubscriptionStatus.inProgress }
+      );
+    }
+
+    const firstExerciseId = day.exercises?.[0]?.id;
+
+    const progress = await this.activeWorkoutSessionRepository.manager.save(
+      new PlanDayProgress({
+        planSubscriptionId: subscription.id,
+        dayId,
+        status: PlanDayProgressStatus.IN_PROGRESS,
+      })
     );
 
-    if (!subscriptions || subscriptions.length === 0) {
-      throw new BadRequestException('User is not subscribed to this training plan');
-    }
-
-    const subscription = subscriptions[0];
-
-    return await this.dataSource.transaction(async (manager) => {
-      // Find or create PlanDayProgress for today
-      let progress = await manager.findOne(PlanDayProgress, {
-        where: {
-          planSubscriptionId: subscription.id,
-          dayId: day.id,
-        },
-        order: { createdAt: 'DESC' },
-      });
-
-      // If progress exists but was created more than 12 hours ago or it was finished/cancelled, create a new one
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-      if (
-        !progress ||
-        progress.createdAt < twelveHoursAgo ||
-        progress.status !== PlanDayProgressStatus.IN_PROGRESS
-      ) {
-        progress = new PlanDayProgress({
-          planSubscriptionId: subscription.id,
-          dayId: day.id,
-          status: PlanDayProgressStatus.IN_PROGRESS,
-        });
-        progress = await manager.save(PlanDayProgress, progress);
-      }
-
-      const firstExerciseId = day.exercises && day.exercises.length > 0 
-        ? day.exercises[0].id 
-        : undefined;
-
-      const session = new ActiveWorkoutSession({
-        userId,
-        planDayProgressId: progress.id,
-        currentExerciseId: firstExerciseId,
-        currentSetIndex: 0,
-        startedAt: new Date(),
-        lastActiveAt: new Date(),
-      });
-
-      const savedSession = await manager.save(ActiveWorkoutSession, session);
-      this.logger.log(`Successfully started workout session ${savedSession.id} for user ${userId}`);
-      return savedSession;
+    const session = new ActiveWorkoutSession({
+      userId,
+      trainingPlanId: subscription.trainingPlanId,
+      dayId,
+      planDayProgressId: progress.id,
+      currentExerciseId: firstExerciseId,
+      currentSetIndex: 0,
+      startedAt: new Date(),
     });
+
+    return await this.activeWorkoutSessionRepository.save(session);
   }
 
   async getActiveSession(): Promise<ActiveWorkoutSession> {
-    const userId = this.request.user.id;
-    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId);
+    const { id: userId } = this.request.user;
+    const session = await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new NotFoundException('No active workout session found');
+      throw new ActiveWorkoutSessionNotFoundException();
     }
     return session;
   }
 
   async logSet(dto: LogWorkoutSetRequestDto): Promise<ActiveWorkoutSession> {
-    const userId = this.request.user.id;
-    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId);
+    const { id: userId } = this.request.user;
+    const session = await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new NotFoundException('No active workout session found');
+      throw new ActiveWorkoutSessionNotFoundException();
     }
 
-    return await this.dataSource.transaction(async (manager) => {
-      const log = new ActiveSetLog({
-        sessionId: session.id,
-        exerciseId: dto.exerciseId,
-        setIndex: session.currentSetIndex,
-        reps: dto.reps,
-        weight: dto.weight,
-        rpe: dto.rpe,
-      });
+    const exerciseLogs = session.logs?.filter(l => l.exerciseId === dto.exerciseId) ?? [];
+    const setIndex = exerciseLogs.length;
 
-      await manager.save(ActiveSetLog, log);
-
-      // Update session state
-      const updateData = {
-        currentExerciseId: dto.exerciseId,
-        currentSetIndex: session.currentSetIndex + 1,
-        restStartedAt: new Date(),
-        adaptiveRestDurationSeconds: this.calculateAdaptiveRest(dto.rpe),
-        lastActiveAt: new Date(),
-      };
-
-      await manager.update(ActiveWorkoutSession, session.id, updateData);
-      
-      this.logger.log(`Logged set for user ${userId} in session ${session.id}`);
-      
-      // Return updated session
-      return Object.assign(session, updateData);
+    const setLog = new ActiveSetLog({
+      sessionId: session.id,
+      exerciseId: dto.exerciseId,
+      reps: dto.reps,
+      weight: dto.weight,
+      rpe: dto.rpe,
+      setIndex,
+      performedAt: new Date(),
     });
+
+    await this.activeWorkoutSessionRepository.manager.save(ActiveSetLog, setLog);
+    
+    let adaptiveRest = 60;
+    if (dto.rpe) {
+        if (dto.rpe >= 10) adaptiveRest = 180;
+        else if (dto.rpe >= 9) adaptiveRest = 120;
+        else if (dto.rpe >= 8) adaptiveRest = 90;
+    }
+
+    await this.activeWorkoutSessionRepository.update(
+      { id: session.id },
+      { 
+        currentExerciseId: dto.exerciseId,
+        currentSetIndex: setIndex + 1,
+        adaptiveRestDurationSeconds: adaptiveRest,
+        restStartedAt: new Date(),
+        lastActiveAt: new Date()
+      }
+    );
+
+    const updatedSession = await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
+    return updatedSession!;
   }
 
   async finishSession(): Promise<void> {
-    const userId = this.request.user.id;
-    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId, true); // Include progress
+    const { id: userId } = this.request.user;
+    const session = await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new NotFoundException('No active workout session found');
+      throw new ActiveWorkoutSessionNotFoundException();
     }
 
-    const logs = await this.activeSetLogRepository.findLogsBySessionId(session.id);
-    if (!logs || logs.length === 0) {
-      // If no logs, just delete the session
-      await this.activeSessionRepository.delete({ id: session.id });
-      return;
-    }
-
-    return await this.dataSource.transaction(async (manager) => {
-      // Group logs by exerciseId
-      const groupedLogs = logs.reduce((acc, log) => {
-        if (!acc[log.exerciseId]) {
-          acc[log.exerciseId] = {
-            reps: [],
-            weight: [],
-          };
+    await this.activeWorkoutSessionRepository.manager.transaction(async (manager) => {
+        // Group logs by exerciseId
+        const exerciseLogsMap = new Map<string, { reps: number[], weight: number[] }>();
+        
+        for (const log of session.logs ?? []) {
+            if (!exerciseLogsMap.has(log.exerciseId)) {
+                exerciseLogsMap.set(log.exerciseId, { reps: [], weight: [] });
+            }
+            const data = exerciseLogsMap.get(log.exerciseId)!;
+            data.reps.push(log.reps);
+            data.weight.push(log.weight);
         }
-        acc[log.exerciseId].reps.push(log.reps);
-        acc[log.exerciseId].weight.push(Number(log.weight));
-        return acc;
-      }, {} as Record<string, { reps: number[]; weight: number[] }>);
 
-      // Create permanent ExerciseLog entries
-      for (const [exerciseId, data] of Object.entries(groupedLogs)) {
-        const exerciseLog = new ExerciseLog({
-          userId,
-          exerciseId,
-          reps: data.reps,
-          weight: data.weight,
-        });
-        await manager.save(ExerciseLog, exerciseLog);
-      }
+        // Save ExerciseLogs
+        for (const [exerciseId, data] of exerciseLogsMap.entries()) {
+            const exerciseLog = new ExerciseLog({
+                userId,
+                exerciseId,
+                reps: data.reps,
+                weight: data.weight,
+            });
+            await manager.save(ExerciseLog, exerciseLog);
+        }
 
-      // Update PlanDayProgress status to COMPLETED
-      if (session.planDayProgressId) {
-        await manager.update(PlanDayProgress, session.planDayProgressId, {
-          status: PlanDayProgressStatus.COMPLETED,
-        });
-      }
+        await manager.update(
+            PlanDayProgress,
+            { id: session.planDayProgressId },
+            { status: PlanDayProgressStatus.COMPLETED }
+        );
 
-      // Delete active session and logs (cascade will handle logs)
-      await manager.delete(ActiveWorkoutSession, { id: session.id });
-      this.logger.log(`Finished workout session ${session.id} for user ${userId}`);
+        await manager.delete(ActiveWorkoutSession, { id: session.id });
     });
+
+    this.logger.log(`Workout session ${session.id} finished (and converted to exercise logs)`);
   }
 
   async cancelSession(): Promise<void> {
-    const userId = this.request.user.id;
-    const session = await this.activeSessionRepository.findActiveSessionByUserId(userId);
+    const { id: userId } = this.request.user;
+    const session = await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new NotFoundException('No active workout session found');
+      throw new ActiveWorkoutSessionNotFoundException();
     }
 
-    return await this.dataSource.transaction(async (manager) => {
-      // Update PlanDayProgress status to CANCELLED
-      if (session.planDayProgressId) {
-        await manager.update(PlanDayProgress, session.planDayProgressId, {
-          status: PlanDayProgressStatus.CANCELLED,
-        });
-      }
+    await this.activeWorkoutSessionRepository.manager.transaction(async (manager) => {
+        await manager.update(
+            PlanDayProgress,
+            { id: session.planDayProgressId },
+            { status: PlanDayProgressStatus.CANCELLED }
+        );
 
-      // Delete active session and logs (cascade will handle logs)
-      await manager.delete(ActiveWorkoutSession, { id: session.id });
-      this.logger.log(`Cancelled workout session ${session.id} for user ${userId}`);
+        await manager.delete(ActiveWorkoutSession, { id: session.id });
     });
-  }
-
-  private calculateAdaptiveRest(rpe?: number): number {
-    if (!rpe || rpe <= 6) return 60;
-    if (rpe <= 8) return 90;
-    return 120;
+    
+    this.logger.log(`Workout session ${session.id} cancelled`);
   }
 }

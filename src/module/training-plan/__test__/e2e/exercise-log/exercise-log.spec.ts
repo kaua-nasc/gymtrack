@@ -211,7 +211,7 @@ describe('Exercise Log Controller - (e2e)', () => {
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const body = (await response.json()) as any;
+      const body = (await response.json()) as Record<string, { total: number }>;
 
       const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       const todayIndex = new Date().getDay();

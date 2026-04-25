@@ -28,6 +28,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserManagementService } from '../../../core/service/user-management.service';
+import { UserMetricsService } from '../../../core/service/user-metrics.service';
+import { UserFollowsService } from '../../../core/service/user-follows.service';
+import { TrainerRelationshipService } from '../../../core/service/trainer-relationship.service';
+import { UserPrivacyService } from '../../../core/service/user-privacy.service';
 import { UserCreateRequestDto } from '../dto/request/user-create-request.dto';
 import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
 import { UserExistsResponseDto } from '../dto/response/user-exists-response.dto';
@@ -60,7 +64,11 @@ import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
 export class UserController {
   constructor(
     private readonly userManagementService: UserManagementService,
-    @Inject(REQUEST) private readonly request: any
+    private readonly userMetricsService: UserMetricsService,
+    private readonly userFollowsService: UserFollowsService,
+    private readonly trainerRelationshipService: TrainerRelationshipService,
+    private readonly userPrivacyService: UserPrivacyService,
+    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
   ) {}
 
   @Get()
@@ -133,7 +141,7 @@ export class UserController {
   @ApiOperation({ summary: 'Seguir outro usuário' })
   @ApiParam({ name: 'followedId', description: 'Id do usuário a ser seguido' })
   async followUser(@Param('followedId') followedId: string) {
-    await this.userManagementService.followUser(followedId);
+    await this.userFollowsService.followUser(followedId);
   }
 
   @Post('unfollow/:followedId')
@@ -142,7 +150,7 @@ export class UserController {
   @ApiOperation({ summary: 'Deixar de seguir outro usuário' })
   @ApiParam({ name: 'followedId', description: 'Id do usuário sendo deixado de seguir' })
   async unfollowUser(@Param('followedId') followedId: string) {
-    await this.userManagementService.unfollowUser(followedId);
+    await this.userFollowsService.unfollowUser(followedId);
   }
 
   @Get('/:userId/following/count')
@@ -152,7 +160,7 @@ export class UserController {
   async countFollowing(
     @Param('userId') userId: string
   ): Promise<UserFollowCountResponseDto> {
-    const count = await this.userManagementService.countFollowing(userId);
+    const count = await this.userFollowsService.countFollowing(userId);
     return { count };
   }
 
@@ -163,7 +171,7 @@ export class UserController {
   async countFollowers(
     @Param('userId') userId: string
   ): Promise<UserFollowCountResponseDto> {
-    const count = await this.userManagementService.countFollowers(userId);
+    const count = await this.userFollowsService.countFollowers(userId);
     return { count };
   }
 
@@ -172,7 +180,7 @@ export class UserController {
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, type: [UserResponseDto] })
   async getFollowing(@Param('userId') userId: string): Promise<UserResponseDto[]> {
-    const users = await this.userManagementService.getFollowing(userId);
+    const users = await this.userFollowsService.getFollowing(userId);
     return users.map((u) => ({
       id: u.id,
       email: u.email,
@@ -191,7 +199,7 @@ export class UserController {
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, type: [UserResponseDto] })
   async getFollowers(@Param('userId') userId: string): Promise<UserResponseDto[]> {
-    const users = await this.userManagementService.getFollowers(userId);
+    const users = await this.userFollowsService.getFollowers(userId);
     return users.map((u) => ({
       id: u.id,
       email: u.email,
@@ -215,7 +223,7 @@ export class UserController {
   })
   async getPrivacyConfiguration(): Promise<UserPrivacySettingsResponseDto> {
     const privacyConfiguration =
-      await this.userManagementService.getPrivacyConfiguration();
+      await this.userPrivacyService.getPrivacyConfiguration();
     return { ...privacyConfiguration };
   }
 
@@ -228,7 +236,7 @@ export class UserController {
   })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
   async alterPrivacySettings(@Body() createDto: UserPrivacySettingsRequestDto) {
-    await this.userManagementService.alterPrivacySettings({ ...createDto });
+    await this.userPrivacyService.alterPrivacySettings({ ...createDto });
   }
 
   @Post('profile/picture')
@@ -276,7 +284,7 @@ export class UserController {
   @ApiBody({ type: UpdateUserMetricsRequestDto })
   @ApiResponse({ status: 200, description: 'Metrics updated successfully' })
   async updateMetrics(@Body() dto: UpdateUserMetricsRequestDto): Promise<void> {
-    await this.userManagementService.updateMetrics(dto);
+    await this.userMetricsService.updateMetrics(dto);
   }
 
   @Post('profile/upgrade')
@@ -307,7 +315,7 @@ export class UserController {
     type: WeightLogResponseDto,
   })
   async addWeightLog(@Body() dto: AddWeightLogRequestDto): Promise<WeightLogResponseDto> {
-    const log = await this.userManagementService.addWeightLog(dto);
+    const log = await this.userMetricsService.addWeightLog(dto);
     return { id: log.id, weight: log.weight, measuredAt: log.measuredAt };
   }
 
@@ -317,7 +325,7 @@ export class UserController {
     @Query('page') page = 1,
     @Query('limit') limit = 20
   ): Promise<{ items: WeightLogResponseDto[]; total: number }> {
-    const { items, total } = await this.userManagementService.getWeightHistory(
+    const { items, total } = await this.userMetricsService.getWeightHistory(
       Number(page),
       Number(limit)
     );
@@ -337,7 +345,7 @@ export class UserController {
   async addBodyMeasurements(
     @Body() dto: AddBodyMeasurementsRequestDto
   ): Promise<BodyMeasurementResponseDto[]> {
-    const measurements = await this.userManagementService.addBodyMeasurements(dto);
+    const measurements = await this.userMetricsService.addBodyMeasurements(dto);
     return measurements.map((m) => ({
       id: m.id,
       type: m.type,
@@ -354,7 +362,7 @@ export class UserController {
     @Query('page') page = 1,
     @Query('limit') limit = 20
   ): Promise<{ items: BodyMeasurementResponseDto[]; total: number }> {
-    const { items, total } = await this.userManagementService.getBodyMeasurementsHistory(
+    const { items, total } = await this.userMetricsService.getBodyMeasurementsHistory(
       type as MeasurementType,
       Number(page),
       Number(limit)
@@ -373,7 +381,7 @@ export class UserController {
   @Get('profile/measurements/latest')
   @ApiOperation({ summary: 'Get latest body measurements for all types' })
   async getLatestBodyMeasurements(): Promise<BodyMeasurementResponseDto[]> {
-    const measurements = await this.userManagementService.getLatestBodyMeasurements();
+    const measurements = await this.userMetricsService.getLatestBodyMeasurements();
     return measurements.map((m) => ({
       id: m.id,
       type: m.type,
@@ -387,7 +395,7 @@ export class UserController {
   async createMetricGoal(
     @Body() dto: CreateMetricGoalRequestDto
   ): Promise<MetricGoalResponseDto> {
-    const goal = await this.userManagementService.createMetricGoal(dto);
+    const goal = await this.userMetricsService.createMetricGoal(dto);
     return {
       id: goal.id,
       type: goal.type,
@@ -402,7 +410,7 @@ export class UserController {
   @Get('profile/goals')
   @ApiOperation({ summary: 'Get all metric goals' })
   async getMetricGoals(): Promise<MetricGoalResponseDto[]> {
-    const goals = await this.userManagementService.getMetricGoals();
+    const goals = await this.userMetricsService.getMetricGoals();
     return goals.map((goal) => ({
       id: goal.id,
       type: goal.type,
@@ -421,13 +429,13 @@ export class UserController {
     @Param('id') id: string,
     @Body() dto: UpdateMetricGoalStatusRequestDto
   ): Promise<void> {
-    await this.userManagementService.updateMetricGoalStatus(id, dto);
+    await this.userMetricsService.updateMetricGoalStatus(id, dto);
   }
 
   @Get('profile/trainer-code')
   @ApiOperation({ summary: 'Get current trainer invite code (Trainer only)' })
   async getTrainerInviteCode(): Promise<{ inviteCode?: string }> {
-    const code = await this.userManagementService.getTrainerInviteCode();
+    const code = await this.trainerRelationshipService.getTrainerInviteCode();
     return { inviteCode: code };
   }
 
@@ -436,32 +444,32 @@ export class UserController {
   async updateTrainerInviteCode(
     @Body() dto: UpdateTrainerInviteCodeRequestDto
   ): Promise<void> {
-    await this.userManagementService.updateTrainerInviteCode(dto.inviteCode);
+    await this.trainerRelationshipService.updateTrainerInviteCode(dto.inviteCode);
   }
 
   @Post('profile/link-trainer')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Link to a trainer using invite code (Student only)' })
   async linkTrainer(@Body() dto: LinkTrainerRequestDto): Promise<void> {
-    await this.userManagementService.linkTrainer(dto.inviteCode);
+    await this.trainerRelationshipService.linkTrainer(dto.inviteCode);
   }
 
   @Delete('profile/unlink-trainer')
   @ApiOperation({ summary: 'Unlink from current trainer (Student only)' })
   async unlinkTrainer(): Promise<void> {
-    await this.userManagementService.unlinkTrainer();
+    await this.trainerRelationshipService.unlinkTrainer();
   }
 
   @Delete('profile/unlink-student/:studentId')
   @ApiOperation({ summary: 'Unlink a student (Trainer only)' })
   async unlinkStudent(@Param('studentId') studentId: string): Promise<void> {
-    await this.userManagementService.unlinkStudent(studentId);
+    await this.trainerRelationshipService.unlinkStudent(studentId);
   }
 
   @Get('profile/students')
   @ApiOperation({ summary: 'List all linked students (Trainer only)' })
   async getStudents(): Promise<UserResponseDto[]> {
-    const students = await this.userManagementService.getStudents();
+    const students = await this.trainerRelationshipService.getStudents();
     return students.map((s) => ({
       id: s.id,
       firstName: s.firstName,
@@ -482,7 +490,7 @@ export class UserController {
     @Query('page') page?: number,
     @Query('limit') limit?: number
   ) {
-    return await this.userManagementService.getStudentWeightHistory(
+    return await this.userMetricsService.getStudentWeightHistory(
       studentId,
       page,
       limit
@@ -500,7 +508,7 @@ export class UserController {
     @Query('page') page?: number,
     @Query('limit') limit?: number
   ) {
-    return await this.userManagementService.getStudentBodyMeasurementsHistory(
+    return await this.userMetricsService.getStudentBodyMeasurementsHistory(
       studentId,
       type as MeasurementType,
       page,
@@ -511,7 +519,7 @@ export class UserController {
   @Get('trainer/students/:studentId/metrics/goals')
   @ApiOperation({ summary: 'Get metric goals of a linked student (Trainer only)' })
   async getStudentMetricGoals(@Param('studentId') studentId: string) {
-    const goals = await this.userManagementService.getStudentMetricGoals(studentId);
+    const goals = await this.userMetricsService.getStudentMetricGoals(studentId);
     return goals.map((goal) => ({
       id: goal.id,
       type: goal.type,
@@ -531,7 +539,7 @@ export class UserController {
     @Param('id') id: string,
     @Body() dto: UpdateTrainerNoteRequestDto
   ): Promise<void> {
-    await this.userManagementService.addWeightLogNote(id, dto.note);
+    await this.userMetricsService.addWeightLogNote(id, dto.note);
   }
 
   @Patch('trainer/body-measurement/:id/note')
@@ -541,13 +549,13 @@ export class UserController {
     @Param('id') id: string,
     @Body() dto: UpdateTrainerNoteRequestDto
   ): Promise<void> {
-    await this.userManagementService.addBodyMeasurementNote(id, dto.note);
+    await this.userMetricsService.addBodyMeasurementNote(id, dto.note);
   }
 
   @Get('profile/trainer')
   @ApiOperation({ summary: 'Get current trainer information (Student only)' })
   async getTrainer(): Promise<UserResponseDto | null> {
-    const trainer = await this.userManagementService.getTrainer();
+    const trainer = await this.trainerRelationshipService.getTrainer();
     if (!trainer) return null;
     return {
       id: trainer.id,
@@ -568,7 +576,7 @@ export class UserController {
   async getTrainerIdByStudentId(
     @Param('studentId') studentId: string
   ): Promise<{ trainerId: string | null }> {
-    const trainerId = await this.userManagementService.getTrainerIdByStudentId(studentId);
+    const trainerId = await this.trainerRelationshipService.getTrainerIdByStudentId(studentId);
     return { trainerId };
   }
 

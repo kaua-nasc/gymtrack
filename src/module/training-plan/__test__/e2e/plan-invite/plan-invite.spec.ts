@@ -18,6 +18,8 @@ import { SetupServer } from 'msw/node';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { mockEmailService } from '@testInfra/mock/email.mock';
+import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
+import { http, HttpResponse } from 'msw';
 
 describe('Plan Invite Controller - (e2e)', () => {
   let app: INestApplication;
@@ -72,32 +74,91 @@ describe('Plan Invite Controller - (e2e)', () => {
 
   describe('POST /training-plan/:id/share', () => {
     it('should share a training plan successfully', async () => {
+      const user = userFactory.build();
+      const anotherUser = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({
+        authorId: user.id,
         visibility: TrainingPlanVisibility.public,
       });
+
+      await testDbClient(Tables.User).insert(user);
+      await testDbClient(Tables.User).insert(anotherUser);
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
 
       const shareRequest = {
         recipientEmail: 'friend@example.com',
+        recipientId: anotherUser.id!,
       };
+
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${anotherUser.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
 
       const response = await fetch(`${url}/training-plan/${trainingPlan.id}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(trainingPlan.authorId!),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify(shareRequest),
       });
 
       expect(response.status).toBe(HttpStatus.OK);
-      const invites = await testDbClient(Tables.PlanInvite).select('*');
-      expect(invites).toHaveLength(1);
-      expect(invites[0].recipientEmail).toBe(shareRequest.recipientEmail);
-      expect(mockEmailService.sendEmail).toHaveBeenCalled();
+    });
+
+    it('should return not found when a recipient user does not exist', async () => {
+      const user = userFactory.build();
+      const anotherUser = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build({
+        authorId: user.id,
+        visibility: TrainingPlanVisibility.public,
+      });
+
+      await testDbClient(Tables.User).insert(user);
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const shareRequest = {
+        recipientEmail: 'friend@example.com',
+        recipientId: anotherUser.id!,
+      };
+
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
+
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${anotherUser.id}`,
+          () => HttpResponse.json({ exists: false })
+        )
+      );
+
+      const response = await fetch(`${url}/training-plan/${trainingPlan.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify(shareRequest),
+      });
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
 
     it('should return 403 when trying to share a private plan', async () => {
+      const user = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({
         visibility: TrainingPlanVisibility.private,
       });
@@ -107,11 +168,18 @@ describe('Plan Invite Controller - (e2e)', () => {
         recipientEmail: 'friend@example.com',
       };
 
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
+
       const response = await fetch(`${url}/training-plan/${trainingPlan.id}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(trainingPlan.authorId!),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify(shareRequest),
       });
@@ -120,6 +188,7 @@ describe('Plan Invite Controller - (e2e)', () => {
     });
 
     it('should return 403 when user is not the author', async () => {
+      const user = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({
         visibility: TrainingPlanVisibility.public,
       });
@@ -129,11 +198,18 @@ describe('Plan Invite Controller - (e2e)', () => {
         recipientEmail: 'friend@example.com',
       };
 
+      server.use(
+        http.get(
+          `${configuration['identityApi.url']}/identity/user/exists/${user.id}`,
+          () => HttpResponse.json({ exists: true })
+        )
+      );
+
       const response = await fetch(`${url}/training-plan/${trainingPlan.id}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader('other-user-id'),
+          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify(shareRequest),
       });

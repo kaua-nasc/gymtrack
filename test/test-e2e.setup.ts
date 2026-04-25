@@ -11,6 +11,7 @@ import { MockEmailModule } from './mock/email.mock';
 import { configureMswServer } from './msw.setup';
 import { getTestConfig } from './test.setup';
 import { MockLoggerModule } from './mock/logger.mock';
+import { GlobalHttpExceptionFilter } from '@src/module/shared/http/filter/global-http-exception.filter';
 
 type Override =
   | { provide: unknown; useValue: unknown }
@@ -56,7 +57,14 @@ export const createNestApp = async (
   const app = module.createNestApplication({
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  
+  // Disable strict whitelist for E2E tests as factories often pass extra fields
+  app.useGlobalPipes(new ValidationPipe({ 
+    transform: true,
+    whitelist: false, 
+  }));
+  
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
 
   return { module, app, configuration, server };
 };

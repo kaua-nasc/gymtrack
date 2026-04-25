@@ -3,10 +3,13 @@ import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { AppModule } from './app.module';
 import { AppLogger } from './module/shared/module/logger/service/app-logger.service';
+import { GlobalHttpExceptionFilter } from './module/shared/http/filter/global-http-exception.filter';
 
 async function bootstrap() {
   initializeTransactionalContext();
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('GymTrack API')

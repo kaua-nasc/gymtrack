@@ -16,7 +16,7 @@ describe('Training Plan - Plan Assignment - (e2e)', () => {
   let module: TestingModule;
   let url: string;
   let configuration: { [key: string]: string | number | undefined };
-  let server: any;
+  let server: { listen: () => void; close: () => void; resetHandlers: () => void };
 
   beforeAll(async () => {
     const setup = await createNestApp([TrainingPlanModule]);

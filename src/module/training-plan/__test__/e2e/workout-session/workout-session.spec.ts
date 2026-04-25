@@ -160,7 +160,7 @@ describe('Workout Session Controller - (e2e)', () => {
       expect(activeResponse.status).toBe(HttpStatus.OK);
       const activeSessionData = (await activeResponse.json()) as {
         id: string;
-        logs: any[];
+        logs: { exerciseId: string; reps: number; weight: number }[];
       };
       expect(activeSessionData.id).toBe(session.id!);
       expect(activeSessionData.logs).toHaveLength(1);

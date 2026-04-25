@@ -1,568 +1,274 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
+import { ResourceAlreadyExistsException } from '@src/module/shared/core/exception/resource-already-exists.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
-import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
+import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
+import { TrainingPlanManagementService } from '../../core/service/training-plan-management.service';
 import { AssignPlanRequestDto } from '../../http/rest/dto/request/assign-plan-request.dto';
-import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
+import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
-import { DayRepository } from '../../persistence/repository/day.repository';
-import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
-import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
-import { PlanSubscriptionStatus } from '../enum/plan-subscription-status.enum';
+import { PlanSubscriptionNotFoundException } from '../exception/plan-subscription-not-found.exception';
+import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
   constructor(
-    private readonly trainingPlanRepository: TrainingPlanRepository,
     private readonly planSubscriptionRepository: PlanSubscriptionRepository,
-    private readonly planDayProgressRepository: PlanDayProgressRepository,
-    private readonly dayRepository: DayRepository,
+    private readonly trainingPlanManagementService: TrainingPlanManagementService,
     @Inject(IdentityUserExistsApi)
     private readonly identityUserServiceClient: IdentityUserExistsApi,
     private readonly logger: AppLogger,
-    @Inject(REQUEST) private readonly request: { user: { id: string } }
+    @Inject(REQUEST) private readonly request: { user: { id: string; type: UserType } }
   ) {}
-
-  async getInProgressSubscription(): Promise<PlanSubscription> {
-    const userId = this.request.user.id;
-
-    this.logger.log('Fetching in-progress subscription for user', { userId });
-    const subscription = await this.planSubscriptionRepository.find({
-      where: { userId, status: PlanSubscriptionStatus.inProgress },
-      relations: {
-        planDayProgress: true,
-      },
-    });
-
-    if (!subscription) {
-      this.logger.warn('In-progress subscription not found for user', { userId });
-      throw new NotFoundException(
-        `Subscription by user with id ${userId} in progress not found`
-      );
-    }
-
-    this.logger.log('Successfully fetched in-progress subscription', {
-      userId,
-      subscriptionId: subscription.id,
-    });
-    return subscription;
-  }
-
-  async getSubscriptions(): Promise<PlanSubscription[]> {
-    const userId = this.request.user.id;
-    this.logger.log('Fetching all subscriptions for user', { userId });
-    const subscriptions = await this.planSubscriptionRepository.findMany({
-      where: { userId },
-      relations: {
-        trainingPlan: {
-          days: true,
-        },
-      },
-    });
-
-    if (!subscriptions || subscriptions.length === 0) {
-      this.logger.log('No subscriptions found for user', { userId });
-      return [];
-    }
-
-    let inProgressDays: Array<PlanDayProgress | null> = Array(7).fill(null);
-    for (let i = 0; i < subscriptions.length; i++) {
-      if (subscriptions[i].status === PlanSubscriptionStatus.inProgress) {
-        this.logger.log('Fetching day progress for in-progress subscription', {
-          subscriptionId: subscriptions[i].id,
-        });
-        const daysProgress = await this.planDayProgressRepository.getDaysProgressAtWeek(
-          subscriptions[i].id
-        );
-        if (daysProgress) {
-          inProgressDays = daysProgress;
-        }
-      }
-    }
-
-    this.logger.log(
-      `Successfully fetched ${subscriptions.length} subscriptions for user`,
-      {
-        userId,
-      }
-    );
-    return subscriptions.map((s) =>
-      s.status === PlanSubscriptionStatus.inProgress
-        ? Object.assign(s, { planDayProgress: inProgressDays })
-        : s
-    );
-  }
-
-  async exists(trainingPlanId: string) {
-    const userId = this.request.user.id;
-
-    this.logger.log('Checking if subscription exists', { userId, trainingPlanId });
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-      },
-    });
-
-    const exists = subscription ? true : false;
-    this.logger.log('Subscription existence check complete', {
-      userId,
-      trainingPlanId,
-      exists,
-    });
-    return { exists };
-  }
-
-  async existsInProgress(trainingPlanId: string) {
-    const userId = this.request.user.id;
-    this.logger.log('Checking if in-progress subscription exists', {
-      userId,
-      trainingPlanId,
-    });
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-        status: PlanSubscriptionStatus.inProgress,
-      },
-    });
-
-    const exists = subscription ? true : false;
-    this.logger.log('In-progress subscription existence check complete', {
-      userId,
-      trainingPlanId,
-      exists,
-    });
-    return { exists };
-  }
 
   async createSubscription(
     trainingPlanId: string,
-    planSubscription: CreatePlanSubscriptionRequestDto
+    dto: CreatePlanSubscriptionRequestDto
   ) {
-    const userId = this.request.user.id;
+    const { id: userId } = this.request.user;
 
-    this.logger.log('Attempting to create subscription', { userId, trainingPlanId });
-    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
-      this.logger.warn('Create subscription failed: Training plan not found', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Create subscription failed: User not found', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    if (
-      await this.planSubscriptionRepository.find({
-        where: {
-          userId: userId,
-          trainingPlanId: trainingPlanId,
-        },
-      })
-    ) {
-      this.logger.warn('Create subscription failed: User already subscribed', {
-        userId,
-        trainingPlanId,
-      });
-      throw new ConflictException('user already subscribed in this training plan');
-    }
-
-    const subscription = new PlanSubscription({
-      trainingPlanId: trainingPlanId,
-      userId: userId,
-      type: planSubscription.type,
-    });
-    await this.planSubscriptionRepository.save(subscription);
-    this.logger.log('Successfully created subscription', {
+    this.logger.log('Subscribing user to training plan', {
       userId,
       trainingPlanId,
-      subscriptionId: subscription.id,
     });
+
+    if (!(await this.trainingPlanManagementService.exists(trainingPlanId))) {
+      throw new TrainingPlanNotFoundException(trainingPlanId);
+    }
+
+    if (!(await this.identityUserServiceClient.userExists(userId))) {
+      throw new DomainException('user not found');
+    }
+
+    const existingSubscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId,
+        trainingPlanId,
+      },
+    });
+
+    if (existingSubscription) {
+      throw new ResourceAlreadyExistsException(
+        'user already subscribed in this training plan'
+      );
+    }
+
+    const subscription = await this.planSubscriptionRepository.save(
+      new PlanSubscription({
+        userId,
+        trainingPlanId,
+        status: PlanSubscriptionStatus.notStarted,
+        type: dto.type,
+      })
+    );
+
+    return subscription;
   }
 
   async assignPlanToStudent(dto: AssignPlanRequestDto) {
-    const trainerId = this.request.user.id;
-    const { studentId, planId, type } = dto;
+    const { id: trainerId, type } = this.request.user;
+    const { studentId, planId } = dto;
 
-    this.logger.log('Trainer attempting to assign plan to student', {
-      trainerId,
-      studentId,
-      planId,
-    });
+    if (type !== UserType.personalTrainer) {
+      throw new DomainException('only personal trainers can assign plans to students');
+    }
 
-    // 1. Check if the training plan exists and belongs to the trainer
-    const trainingPlan = await this.trainingPlanRepository.findOneById(planId);
+    const trainingPlan = await this.trainingPlanManagementService.get(planId);
     if (!trainingPlan) {
-      throw new NotFoundException('training plan not found');
+      throw new TrainingPlanNotFoundException(planId);
     }
 
     if (trainingPlan.authorId !== trainerId) {
-      this.logger.warn(
-        `Trainer ${trainerId} attempted to assign plan ${planId} owned by ${trainingPlan.authorId}`
+      throw new DomainException('you can only assign plans created by yourself');
+    }
+
+    const trainerOfStudentId =
+      await this.identityUserServiceClient.getTrainerId(studentId);
+    if (trainerOfStudentId !== trainerId) {
+      throw new DomainException('this user is not your linked student');
+    }
+
+    const existingSubscription = await this.planSubscriptionRepository.find({
+      where: {
+        userId: studentId,
+        trainingPlanId: dto.planId,
+      },
+    });
+
+    if (existingSubscription) {
+      throw new ResourceAlreadyExistsException(
+        'student is already subscribed to this plan'
       );
-      throw new BadRequestException('you can only assign plans created by yourself');
     }
 
-    // 2. Validate trainer-student relationship
-    const officialTrainerId = await this.identityUserServiceClient.getTrainerId(studentId);
-    if (officialTrainerId !== trainerId) {
-      this.logger.warn(
-        `Trainer ${trainerId} is not the official trainer of student ${studentId}`
-      );
-      throw new BadRequestException('this user is not your linked student');
-    }
+    const sub = await this.planSubscriptionRepository.save(
+      new PlanSubscription({
+        userId: studentId,
+        trainingPlanId: dto.planId,
+        status: PlanSubscriptionStatus.notStarted,
+        type: dto.type,
+      })
+    );
 
-    // 3. Check for existing subscription
-    const existing = await this.planSubscriptionRepository.find({
-      where: { userId: studentId, trainingPlanId: planId },
-    });
-
-    if (existing) {
-      throw new ConflictException('student is already subscribed to this plan');
-    }
-
-    // 4. Create subscription
-    const subscription = new PlanSubscription({
-      trainingPlanId: planId,
-      userId: studentId,
-      type,
-      status: PlanSubscriptionStatus.notStarted,
-    });
-
-    await this.planSubscriptionRepository.save(subscription);
-
-    this.logger.log('Plan assigned successfully', {
-      subscriptionId: subscription.id,
-      trainerId,
-      studentId,
-    });
-
-    return { subscriptionId: subscription.id };
+    return { subscriptionId: sub.id };
   }
 
   async removeSubscription(trainingPlanId: string) {
-    const userId = this.request.user.id;
-
-    this.logger.log('Attempting to remove subscription', { userId, trainingPlanId });
-    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
-      this.logger.warn('Remove subscription failed: Training plan not found', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Remove subscription failed: User not found', { userId });
-      throw new NotFoundException('user not found');
-    }
+    const { id: userId } = this.request.user;
+    this.logger.log('Deleting subscription', { userId, trainingPlanId });
 
     const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-      },
+      where: { userId, trainingPlanId },
     });
 
     if (!subscription) {
-      this.logger.warn('Remove subscription failed: Subscription not found', {
-        userId,
-        trainingPlanId,
-      });
-      throw new NotFoundException('subscription not found');
-    }
-
-    if (
-      subscription.status !== PlanSubscriptionStatus.canceled &&
-      subscription.status !== PlanSubscriptionStatus.notStarted
-    ) {
-      this.logger.warn('Remove subscription failed: Invalid status for removal', {
-        subscriptionId: subscription.id,
-        status: subscription.status,
-      });
-      throw new BadRequestException(
-        'Subscription status must be "not started" or "canceled"'
+      throw new NotFoundException(
+        `Plan subscription with ID '${trainingPlanId}' was not found.`
       );
     }
 
-    await this.planSubscriptionRepository.remove(subscription);
-    this.logger.log('Successfully removed subscription', {
-      userId,
-      trainingPlanId,
-      subscriptionId: subscription.id,
+    if (
+      subscription.status === PlanSubscriptionStatus.inProgress ||
+      subscription.status === PlanSubscriptionStatus.completed
+    ) {
+      throw new DomainException(
+        `cannot delete a subscription with status ${subscription.status}`
+      );
+    }
+
+    await this.planSubscriptionRepository.delete({ id: subscription.id });
+  }
+
+  async getInProgressSubscription() {
+    const { id: userId } = this.request.user;
+    const subscription = await this.planSubscriptionRepository.find({
+      where: { userId, status: PlanSubscriptionStatus.inProgress },
+      relations: ['trainingPlan'],
     });
+    if (!subscription) throw new PlanSubscriptionNotFoundException('in-progress');
+    return subscription;
+  }
+
+  async getSubscriptions() {
+    const { id: userId } = this.request.user;
+    const subscriptions = await this.planSubscriptionRepository.findMany({
+      where: { userId },
+      relations: ['trainingPlan'],
+    });
+    return subscriptions ?? [];
+  }
+
+  async exists(trainingPlanId: string) {
+    const { id: userId } = this.request.user;
+    const sub = await this.planSubscriptionRepository.find({
+      where: { userId, trainingPlanId },
+    });
+    return { exists: !!sub };
+  }
+
+  async existsInProgress(trainingPlanId: string) {
+    const { id: userId } = this.request.user;
+    const sub = await this.planSubscriptionRepository.find({
+      where: { userId, trainingPlanId, status: PlanSubscriptionStatus.inProgress },
+    });
+    return { exists: !!sub };
   }
 
   async updateStatusToInProgress(trainingPlanId: string) {
-    const userId = this.request.user.id;
-
-    this.logger.log('Updating subscription status to IN_PROGRESS', {
-      userId,
-      trainingPlanId,
-    });
-    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
-      this.logger.warn('Update status failed: Training plan not found', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Update status failed: User not found', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-      },
-    });
-
-    if (!subscription) {
-      this.logger.warn('Update status failed: Subscription not found', {
-        userId,
-        trainingPlanId,
-      });
-      throw new NotFoundException('subscription not found');
-    }
+    const { id: userId } = this.request.user;
+    const subscription = await this.findSubscriptionOrThrow(userId, trainingPlanId);
 
     if (subscription.status !== PlanSubscriptionStatus.notStarted) {
-      this.logger.warn('Update status failed: Status not NOT_STARTED', {
-        subscriptionId: subscription.id,
-        status: subscription.status,
-      });
-      throw new BadRequestException('Subscription status must be "not started"');
+      throw new DomainException('Subscription status must be "not started"');
     }
 
     await this.planSubscriptionRepository.update(
       { id: subscription.id },
       { status: PlanSubscriptionStatus.inProgress }
     );
-    this.logger.log('Successfully updated subscription status to IN_PROGRESS', {
-      subscriptionId: subscription.id,
-    });
   }
 
   async updateStatusToFinished(trainingPlanId: string) {
-    const userId = this.request.user.id;
-
-    this.logger.log('Updating subscription status to FINISHED', {
-      userId,
-      trainingPlanId,
-    });
-    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
-      this.logger.warn('Update status failed: Training plan not found', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Update status failed: User not found', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-      },
-    });
-
-    if (!subscription) {
-      this.logger.warn('Update status failed: Subscription not found', {
-        userId,
-        trainingPlanId,
-      });
-      throw new NotFoundException('subscription not found');
-    }
+    const { id: userId } = this.request.user;
+    const subscription = await this.findSubscriptionOrThrow(userId, trainingPlanId);
 
     if (subscription.status !== PlanSubscriptionStatus.inProgress) {
-      this.logger.warn('Update status failed: Status not IN_PROGRESS', {
-        subscriptionId: subscription.id,
-        status: subscription.status,
-      });
-      throw new BadRequestException('Subscription status must be "in progress".');
+      throw new DomainException('Subscription status must be "in progress"');
     }
 
     await this.planSubscriptionRepository.update(
       { id: subscription.id },
       { status: PlanSubscriptionStatus.completed }
     );
-    this.logger.log('Successfully updated subscription status to FINISHED', {
-      subscriptionId: subscription.id,
-    });
   }
 
   async updateStatusToCanceled(trainingPlanId: string) {
-    const userId = this.request.user.id;
-
-    this.logger.log('Updating subscription status to CANCELED', {
-      userId,
-      trainingPlanId,
-    });
-    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
-      this.logger.warn('Update status failed: Training plan not found', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Update status failed: User not found', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-      },
-    });
-
-    if (!subscription) {
-      this.logger.warn('Update status failed: Subscription not found', {
-        userId,
-        trainingPlanId,
-      });
-      throw new NotFoundException('subscription not found');
-    }
+    const { id: userId } = this.request.user;
+    const subscription = await this.findSubscriptionOrThrow(userId, trainingPlanId);
 
     if (subscription.status !== PlanSubscriptionStatus.inProgress) {
-      this.logger.warn('Update status failed: Status not IN_PROGRESS', {
-        subscriptionId: subscription.id,
-        status: subscription.status,
-      });
-      throw new BadRequestException('Subscription status must be "in progress".');
+      throw new DomainException('Subscription status must be "in progress"');
     }
 
     await this.planSubscriptionRepository.update(
       { id: subscription.id },
       { status: PlanSubscriptionStatus.canceled }
     );
-    this.logger.log('Successfully updated subscription status to CANCELED', {
-      subscriptionId: subscription.id,
-    });
   }
 
   async updateStatusToNotStarted(trainingPlanId: string) {
-    const userId = this.request.user.id;
-
-    this.logger.log('Updating subscription status to NOT_STARTED', {
-      userId,
-      trainingPlanId,
-    });
-    if (!(await this.trainingPlanRepository.exists(trainingPlanId))) {
-      this.logger.warn('Update status failed: Training plan not found', {
-        trainingPlanId,
-      });
-      throw new NotFoundException('training plan not found');
-    }
-    if (!(await this.identityUserServiceClient.userExists(userId))) {
-      this.logger.warn('Update status failed: User not found', { userId });
-      throw new NotFoundException('user not found');
-    }
-
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        userId,
-        trainingPlanId,
-      },
-    });
-
-    if (!subscription) {
-      this.logger.warn('Update status failed: Subscription not found', {
-        userId,
-        trainingPlanId,
-      });
-      throw new NotFoundException('subscription not found');
-    }
+    const { id: userId } = this.request.user;
+    const subscription = await this.findSubscriptionOrThrow(userId, trainingPlanId);
 
     if (subscription.status !== PlanSubscriptionStatus.canceled) {
-      this.logger.warn('Update status failed: Status not CANCELED', {
-        subscriptionId: subscription.id,
-        status: subscription.status,
-      });
-      throw new BadRequestException('Subscription status must be "canceled".');
+      throw new DomainException('Subscription status must be "canceled"');
     }
 
     await this.planSubscriptionRepository.update(
       { id: subscription.id },
       { status: PlanSubscriptionStatus.notStarted }
     );
-    this.logger.log('Successfully updated subscription status to NOT_STARTED', {
-      subscriptionId: subscription.id,
+  }
+
+  private async findSubscriptionOrThrow(userId: string, trainingPlanId: string) {
+    const subscription = await this.planSubscriptionRepository.find({
+      where: { userId, trainingPlanId },
     });
+
+    if (!subscription) {
+      throw new NotFoundException(
+        `Plan subscription for training plan ${trainingPlanId} not found.`
+      );
+    }
+    return subscription;
   }
 
   async createDayProgress(planSubscriptionId: string, dayId: string) {
-    this.logger.log('Attempting to create day progress', { planSubscriptionId, dayId });
-    const subscription = await this.planSubscriptionRepository.find({
-      where: {
-        id: planSubscriptionId,
-        status: PlanSubscriptionStatus.inProgress,
-      },
-    });
+    const { id: userId } = this.request.user;
 
-    if (!subscription) {
-      this.logger.warn('Create day progress failed: In-progress subscription not found', {
-        planSubscriptionId,
-      });
-      throw new NotFoundException('subscription not found');
+    const sub = await this.planSubscriptionRepository.findOneById(planSubscriptionId);
+    if (!sub || sub.userId !== userId)
+      throw new NotFoundException(
+        `Plan subscription for training plan ${planSubscriptionId} not found.`
+      );
+
+    if (sub.status !== PlanSubscriptionStatus.inProgress) {
+      throw new NotFoundException('Plan subscription in progress not found.');
     }
 
-    const day = await this.dayRepository.findDayById(dayId);
-
-    if (!day) {
-      this.logger.warn('Create day progress failed: Day not found', { dayId });
-      throw new NotFoundException('day not found');
-    }
-
-    const newDayProgress = await this.planDayProgressRepository.create(
-      new PlanDayProgress({ dayId, planSubscriptionId })
-    );
-
-    this.logger.log('Successfully created day progress', {
-      planSubscriptionId,
-      dayId,
-      dayProgressId: newDayProgress.id,
-    });
-    return newDayProgress;
+    await this.planSubscriptionRepository.logDayProgress(planSubscriptionId, dayId);
   }
 
-  async getDaysProgress(): Promise<PlanDayProgress[]> {
-    const userId = this.request.user.id;
-
-    this.logger.log('Fetching days progress for user', { userId });
-    const subscription = await this.planSubscriptionRepository.find({
-      where: { userId, status: PlanSubscriptionStatus.inProgress },
+  async getDaysProgress() {
+    const { id: userId } = this.request.user;
+    const subs = await this.planSubscriptionRepository.findMany({
+      where: { userId },
+      relations: ['planDayProgress'],
     });
-
-    if (!subscription) {
-      this.logger.warn(
-        'Get days progress failed: In-progress subscription not found for user',
-        {
-          userId,
-        }
-      );
-      throw new NotFoundException('subscription not found');
-    }
-
-    const daysProgress = await this.planDayProgressRepository.findMany({
-      where: { planSubscriptionId: subscription.id },
-    });
-
-    this.logger.log('Successfully fetched days progress', {
-      userId,
-      subscriptionId: subscription.id,
-      progressCount: daysProgress?.length ?? 0,
-    });
-    return daysProgress ?? [];
+    return subs?.flatMap((s) => s.planDayProgress) ?? [];
   }
 }
