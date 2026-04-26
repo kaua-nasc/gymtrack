@@ -38,7 +38,7 @@ export class TrainingPlanCommentService {
       ? JSON.parse(Buffer.from(cursor, 'base64').toString())
       : undefined;
 
-    if (decodedCursor && decodedCursor.value) {
+    if (decodedCursor?.value) {
       decodedCursor.value = new Date(decodedCursor.value);
     }
 
@@ -54,7 +54,7 @@ export class TrainingPlanCommentService {
       comments.map((c) => c.authorId)
     );
 
-    const usersMap = new Map(users.map((u) => [u['id'], u]));
+    const usersMap = new Map(users.map((u) => [u.id, u]));
     comments.forEach((comment) => {
       comment.author = usersMap.get(comment.authorId);
     });

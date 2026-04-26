@@ -1,5 +1,5 @@
+import { join } from 'node:path';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
-import { join } from 'path';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions.js';
 
 export const dataSourceOptionsFactory = (

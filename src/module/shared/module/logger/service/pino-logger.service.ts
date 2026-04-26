@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { IncomingMessage, ServerResponse } from 'node:http';
 import {
   DynamicModule,
   Global,
@@ -13,8 +15,6 @@ import {
   Provider,
   Scope,
 } from '@nestjs/common';
-import { AsyncLocalStorage } from 'async_hooks';
-import { IncomingMessage, ServerResponse } from 'http';
 import pino, { DestinationStream, Level, Logger as PinoTypesLogger } from 'pino';
 import { Options, pinoHttp } from 'pino-http';
 
