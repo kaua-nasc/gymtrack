@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DayRepository } from '@src/module/training-plan/persistence/repository/day.repository';
-import { CreateDayRequestDto } from '../../http/rest/dto/request/create-day-request.dto';
+import type { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import type { DayRepository } from '@src/module/training-plan/persistence/repository/day.repository';
+import type { CreateDayRequestDto } from '../../http/rest/dto/request/create-day-request.dto';
+import type { CreateManyDayRequestDto } from '../../http/rest/dto/request/create-many-day-request.dto';
 import { Day } from '../../persistence/entity/day.entity';
-import { CreateManyDayRequestDto } from '../../http/rest/dto/request/create-many-day-request.dto';
 import { Exercise } from '../../persistence/entity/exercise.entity';
-import { ExerciseRepository } from '../../persistence/repository/exercise.repository';
-import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import type { ExerciseRepository } from '../../persistence/repository/exercise.repository';
 
 @Injectable()
 export class DayManagementService {

@@ -17,11 +17,11 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { WorkoutSessionService } from '@src/module/training-plan/core/service/workout-session.service';
-import { StartWorkoutSessionRequestDto } from '../dto/request/start-workout-session-request.dto';
-import { LogWorkoutSetRequestDto } from '../dto/request/log-workout-set-request.dto';
-import { ActiveWorkoutSessionResponseDto } from '../dto/response/active-workout-session-response.dto';
-import { ActiveWorkoutSession } from '@src/module/training-plan/persistence/entity/active-workout-session.entity';
 import { ActiveSetLog } from '@src/module/training-plan/persistence/entity/active-set-log.entity';
+import { ActiveWorkoutSession } from '@src/module/training-plan/persistence/entity/active-workout-session.entity';
+import { LogWorkoutSetRequestDto } from '../dto/request/log-workout-set-request.dto';
+import { StartWorkoutSessionRequestDto } from '../dto/request/start-workout-session-request.dto';
+import { ActiveWorkoutSessionResponseDto } from '../dto/response/active-workout-session-response.dto';
 
 @ApiTags('Workout Sessions')
 @ApiBearerAuth('JWT-auth')

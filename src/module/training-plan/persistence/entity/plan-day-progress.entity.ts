@@ -1,8 +1,8 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
-import { PlanSubscription } from './plan-subscription.entity';
-import { Day } from './day.entity';
 import { PlanDayProgressStatus } from '../../core/enum/plan-day-progress-status.enum';
+import { Day } from './day.entity';
+import { PlanSubscription } from './plan-subscription.entity';
 
 @Entity({ name: 'plan_day_progress' })
 export class PlanDayProgress extends DefaultEntity<PlanDayProgress> {

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { UserType } from '../../core/enum/user-type.enum';
 import { UserFollows } from '../../persistence/entity/user-follows.entity';
-import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserRepository } from '../../persistence/repository/user.repository';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
+import { UserFollowsRepository } from '../../persistence/repository/user-follows.repository';
 import { UserNotFoundException } from '../exception/user-not-found.exception';
 
 @Injectable()

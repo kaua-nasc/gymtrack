@@ -1,7 +1,7 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
-import { TrainingPlan } from './training-plan.entity';
 import { PlanAccessRequestStatus } from '../../core/enum/plan-access-request-status.enum';
+import { TrainingPlan } from './training-plan.entity';
 
 @Entity('plan_access_request')
 export class PlanAccessRequest extends DefaultEntity<PlanAccessRequest> {

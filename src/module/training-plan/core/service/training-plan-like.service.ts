@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
-import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 

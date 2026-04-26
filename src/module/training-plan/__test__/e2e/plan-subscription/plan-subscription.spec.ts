@@ -8,6 +8,7 @@ import {
   it,
 } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
 import { PlanSubscriptionStatus } from '@src/module/training-plan/core/enum/plan-subscription-status.enum';
@@ -15,7 +16,6 @@ import { TrainingPlanModule } from '@src/module/training-plan/training-plan.modu
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
 import { HttpResponse, http } from 'msw';
 import { SetupServer } from 'msw/node';
 import { planSubscriptionFactory } from '../../factory/plan-subscription.factory';

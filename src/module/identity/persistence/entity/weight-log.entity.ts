@@ -27,9 +27,6 @@ export class WeightLog extends DefaultEntity<WeightLog> {
   @Column({ type: 'timestamp', nullable: true })
   trainerNoteAt?: Date;
 
-  @ManyToOne(
-    () => User,
-    { onDelete: 'CASCADE' }
-  )
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: Relation<User>;
 }

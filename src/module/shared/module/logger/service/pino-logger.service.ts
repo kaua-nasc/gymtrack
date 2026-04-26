@@ -194,7 +194,7 @@ export class PinoLogger implements PinoMethods {
       }
     }
 
-    // @ts-ignore args are union of tuple types
+    // @ts-expect-error args are union of tuple types
     this.logger[method](...args);
   }
 }

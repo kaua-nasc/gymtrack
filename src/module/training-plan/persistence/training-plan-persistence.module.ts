@@ -2,8 +2,11 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@src/module/shared/module/config/config.module';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
 import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
+import { ActiveSetLogRepository } from './repository/active-set-log.repository';
+import { ActiveWorkoutSessionRepository } from './repository/active-workout-session.repository';
 import { DayRepository } from './repository/day.repository';
 import { ExerciseRepository } from './repository/exercise.repository';
+import { ExerciseLogRepository } from './repository/exercise-log.repository';
 import { PlanDayProgressRepository } from './repository/plan-day-progress.repository';
 import { PlanInviteRepository } from './repository/plan-invite.repository';
 import { PlanSubscriptionRepository } from './repository/plan-subscription.repository';
@@ -12,9 +15,6 @@ import { TrainingPlanCommentRepository } from './repository/training-plan-commen
 import { TrainingPlanFeedbackRepository } from './repository/training-plan-feedback.repository';
 import { TrainingPlanLikeRepository } from './repository/training-plan-like.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
-import { ExerciseLogRepository } from './repository/exercise-log.repository';
-import { ActiveWorkoutSessionRepository } from './repository/active-workout-session.repository';
-import { ActiveSetLogRepository } from './repository/active-set-log.repository';
 
 @Module({})
 export class TrainingPlanPersistenceModule {

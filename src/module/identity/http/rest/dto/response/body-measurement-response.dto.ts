@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { Expose } from 'class-transformer';
 
 export class BodyMeasurementResponseDto {
   @ApiProperty({ example: 'b863a0a1-cbe0-4bc0-b605-16361e3618da' })

@@ -8,11 +8,11 @@ import {
   OneToOne,
   type Relation,
 } from 'typeorm';
-import { TrainingPlan } from './training-plan.entity';
-import { PlanDayProgress } from './plan-day-progress.entity';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
 import { PlanSubscriptionType } from '../../core/enum/plan-subscription-type.enum';
+import { PlanDayProgress } from './plan-day-progress.entity';
 import { PlanSubscriptionPrivacySettings } from './plan-subscription-privacy-settings.entity';
+import { TrainingPlan } from './training-plan.entity';
 
 @Entity({ name: 'plan_subscription' })
 export class PlanSubscription extends DefaultEntity<PlanSubscription> {

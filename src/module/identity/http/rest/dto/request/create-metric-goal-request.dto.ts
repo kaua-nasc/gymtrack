@@ -7,4 +7,6 @@ export const CreateMetricGoalRequestSchema = z.object({
   deadline: z.string().datetime().optional().describe('2026-06-01T00:00:00Z'),
 });
 
-export class CreateMetricGoalRequestDto extends createZodDto(CreateMetricGoalRequestSchema) {}
+export class CreateMetricGoalRequestDto extends createZodDto(
+  CreateMetricGoalRequestSchema
+) {}

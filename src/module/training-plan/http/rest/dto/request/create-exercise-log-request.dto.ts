@@ -9,4 +9,6 @@ export const CreateExerciseLogRequestSchema = z.object({
   notes: z.string().optional().describe('Optional notes for the log entry.'),
 });
 
-export class CreateExerciseLogRequestDto extends createZodDto(CreateExerciseLogRequestSchema) {}
+export class CreateExerciseLogRequestDto extends createZodDto(
+  CreateExerciseLogRequestSchema
+) {}

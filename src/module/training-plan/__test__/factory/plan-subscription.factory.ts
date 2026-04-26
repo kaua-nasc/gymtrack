@@ -1,8 +1,8 @@
-import * as Factory from 'factory.ts';
 import { faker } from '@faker-js/faker';
-import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
+import * as Factory from 'factory.ts';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
 import { PlanSubscriptionType } from '../../core/enum/plan-subscription-type.enum';
+import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 
 export const planSubscriptionFactory = Factory.Sync.makeFactory<
   Partial<PlanSubscription>

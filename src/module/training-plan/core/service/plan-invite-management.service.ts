@@ -5,13 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { AccessDeniedException } from '@src/module/shared/core/exception/access-denied.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
-import { UserType } from '@src/module/identity/core/enum/user-type.enum';
-import { AccessDeniedException } from '@src/module/shared/core/exception/access-denied.exception';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
+import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class PlanInviteManagementService {

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { DataSource, FindOptionsOrder, FindOptionsWhere, MoreThanOrEqual } from 'typeorm';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { BodyMeasurement } from '../entity/body-measurement.entity';
 
 @Injectable()

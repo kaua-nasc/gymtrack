@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { WeightUnit } from '../../../../core/enum/weight-unit.enum';
 import { HeightUnit } from '../../../../core/enum/height-unit.enum';
+import { WeightUnit } from '../../../../core/enum/weight-unit.enum';
 
 export const UpdateUserMetricsRequestSchema = z.object({
   height: z.number().min(0).optional().describe('User height'),
@@ -10,4 +10,6 @@ export const UpdateUserMetricsRequestSchema = z.object({
   heightUnit: z.nativeEnum(HeightUnit).optional().describe('Unidade de altura'),
 });
 
-export class UpdateUserMetricsRequestDto extends createZodDto(UpdateUserMetricsRequestSchema) {}
+export class UpdateUserMetricsRequestDto extends createZodDto(
+  UpdateUserMetricsRequestSchema
+) {}

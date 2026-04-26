@@ -15,9 +15,9 @@ import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { EmailAlreadyInUseException } from '../exception/email-already-in-use.exception';
 import { UserNotFoundException } from '../exception/user-not-found.exception';
+import { hashPassword } from '../util/password.util';
 import { AuthService } from './authentication.service';
 import { UserFollowsService } from './user-follows.service';
-import { hashPassword } from '../util/password.util';
 
 export interface CreateUserDto {
   email: string;

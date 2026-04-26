@@ -1,7 +1,7 @@
-import * as Factory from 'factory.ts';
-import { Exercise } from '../../persistence/entity/exercise.entity';
-import { ExerciseType } from '../../core/enum/exercise-type.enum';
 import { faker } from '@faker-js/faker';
+import * as Factory from 'factory.ts';
+import { ExerciseType } from '../../core/enum/exercise-type.enum';
+import { Exercise } from '../../persistence/entity/exercise.entity';
 
 export const exerciseFactory = Factory.Sync.makeFactory<Partial<Exercise>>({
   id: Factory.each(() => faker.string.uuid()),

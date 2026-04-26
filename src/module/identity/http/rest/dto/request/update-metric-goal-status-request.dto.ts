@@ -6,4 +6,6 @@ export const UpdateMetricGoalStatusRequestSchema = z.object({
   status: z.nativeEnum(MetricGoalStatus).describe('Status do objetivo métrico'),
 });
 
-export class UpdateMetricGoalStatusRequestDto extends createZodDto(UpdateMetricGoalStatusRequestSchema) {}
+export class UpdateMetricGoalStatusRequestDto extends createZodDto(
+  UpdateMetricGoalStatusRequestSchema
+) {}

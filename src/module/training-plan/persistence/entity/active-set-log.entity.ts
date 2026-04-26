@@ -23,7 +23,11 @@ export class ActiveSetLog extends DefaultEntity<ActiveSetLog> {
   @Column({ type: 'int', nullable: true })
   rpe?: number;
 
-  @ManyToOne(() => ActiveWorkoutSession, (session) => session.logs, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => ActiveWorkoutSession,
+    (session) => session.logs,
+    { onDelete: 'CASCADE' }
+  )
   @JoinColumn({ name: 'sessionId' })
   session: Relation<ActiveWorkoutSession>;
 

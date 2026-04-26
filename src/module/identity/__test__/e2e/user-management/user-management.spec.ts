@@ -7,14 +7,14 @@ import {
   expect,
   it,
 } from 'bun:test';
-import { HttpStatus, INestApplication } from '@nestjs/common';
-import { TestingModule } from '@nestjs/testing';
+import { HttpStatus, type INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import type { TestingModule } from '@nestjs/testing';
 import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
-import { SetupServer } from 'msw/node';
+import type { SetupServer } from 'msw/node';
 import { createUserFactory, userFactory } from '../../factory/user.factory';
 import { userFollowsFactory } from '../../factory/user-follows.factory';
 import { userPrivacySettingsFactory } from '../../factory/user-privacy-settings.factory';
@@ -75,26 +75,26 @@ describe('Identity - User Management Controller - (e2e)', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify(user),
       });
 
       expect(response.status).toBe(HttpStatus.CREATED);
     });
+
     it('should throws error by already used email', async () => {
       const user = createUserFactory.build();
+      const existingUserId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
 
       await testDbClient(Tables.User).insert({
         ...user,
-        id: '5e2a62de-6ead-4678-a12f-8c17e91513a3',
+        id: existingUserId,
       });
 
       const res = await fetch(`${url}/identity/user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthorizationHeader(user.id!),
         },
         body: JSON.stringify(user),
       });
@@ -181,12 +181,12 @@ describe('Identity - User Management Controller - (e2e)', () => {
     });
 
     it('should return not found when followed user not exists', async () => {
-      const userId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
+      const targetUserId = '5e2a62de-6ead-4678-a12f-8c17e91513a3';
       const user = userFactory.build();
 
       await testDbClient(Tables.User).insert(user);
 
-      const res = await fetch(`${url}/identity/user/follow/${userId}`, {
+      const res = await fetch(`${url}/identity/user/follow/${targetUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,6 +224,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
       expect(res.status).toBe(HttpStatus.CREATED);
     });
   });
+
   describe('Unfollow user', () => {
     it('should unfollow user successfully', async () => {
       const user = userFactory.build();
@@ -285,6 +286,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
+
     it('should return ok response when user not follow another user', async () => {
       const user = userFactory.build();
       const anotherUser = userFactory.build({
@@ -339,6 +341,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       expect(res.status).toBe(200);
     });
+
     it('should alter user privacy settings successfully when send partial data', async () => {
       const user = userFactory.build();
       const privacySettings = userPrivacySettingsFactory.build();
@@ -369,6 +372,7 @@ describe('Identity - User Management Controller - (e2e)', () => {
 
       expect(res.status).toBe(200);
     });
+
     it('should alter user privacy settigns successfully when data is empty', async () => {
       const user = userFactory.build();
       const privacySettings = userPrivacySettingsFactory.build();

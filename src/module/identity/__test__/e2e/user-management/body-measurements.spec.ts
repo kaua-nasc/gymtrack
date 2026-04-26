@@ -8,16 +8,16 @@ import {
   it,
 } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { WeightUnit } from '@src/module/identity/core/enum/weight-unit.enum';
 import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
-import { WeightUnit } from '@src/module/identity/core/enum/weight-unit.enum';
 
 describe('Identity - Body Measurements Controller - (e2e)', () => {
   let app: INestApplication;
@@ -165,7 +165,9 @@ describe('Identity - Body Measurements Controller - (e2e)', () => {
       const data = (await response.json()) as { type: MeasurementType; value: number }[];
       expect(data.length).toBe(2);
 
-      const waist = data.find((m: { type: string; value: number }) => m.type === MeasurementType.WAIST);
+      const waist = data.find(
+        (m: { type: string; value: number }) => m.type === MeasurementType.WAIST
+      );
       expect(Number(waist?.value)).toBe(85);
     });
   });

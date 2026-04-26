@@ -6,4 +6,6 @@ export const CreatePlanDayProgressRequestSchema = z.object({
   dayId: z.string().uuid().describe('ID do dia concluído do treino'),
 });
 
-export class CreatePlanDayProgressRequestDto extends createZodDto(CreatePlanDayProgressRequestSchema) {}
+export class CreatePlanDayProgressRequestDto extends createZodDto(
+  CreatePlanDayProgressRequestSchema
+) {}

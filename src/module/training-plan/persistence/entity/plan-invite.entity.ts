@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, ManyToOne, JoinColumn, type Relation } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, type Relation } from 'typeorm';
 import { PlanInviteStatus } from '../../core/enum/plan-invite-status.enum';
 import { TrainingPlan } from './training-plan.entity';
 

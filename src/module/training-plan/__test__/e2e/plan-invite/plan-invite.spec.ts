@@ -7,19 +7,19 @@ import {
   expect,
   it,
 } from 'bun:test';
-import { HttpStatus, INestApplication } from '@nestjs/common';
-import { TestingModule } from '@nestjs/testing';
+import { HttpStatus, type INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import type { TestingModule } from '@nestjs/testing';
+import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
+import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
-import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
-import { SetupServer } from 'msw/node';
-import { trainingPlanFactory } from '../../factory/training-plan.factory';
-import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { mockEmailService } from '@testInfra/mock/email.mock';
-import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
-import { http, HttpResponse } from 'msw';
+import { createNestApp } from '@testInfra/test-e2e.setup';
+import { HttpResponse, http } from 'msw';
+import type { SetupServer } from 'msw/node';
+import { trainingPlanFactory } from '../../factory/training-plan.factory';
 
 describe('Plan Invite Controller - (e2e)', () => {
   let app: INestApplication;

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import dayjs from 'dayjs';
 import { CreateExerciseLogRequestDto } from '../../http/rest/dto/request/create-exercise-log-request.dto';
+import { WeeklyActivityResponseDto } from '../../http/rest/dto/response/weekly-activity-response.dto';
 import { ExerciseLog } from '../../persistence/entity/exercise-log.entity';
 import { ExerciseLogRepository } from '../../persistence/repository/exercise-log.repository';
-import { WeeklyActivityResponseDto } from '../../http/rest/dto/response/weekly-activity-response.dto';
 import { PlanDayProgressRepository } from '../../persistence/repository/plan-day-progress.repository';
-import { REQUEST } from '@nestjs/core';
 
 @Injectable()
 export class ExerciseLogService {
@@ -48,9 +48,7 @@ export class ExerciseLogService {
       endOfWeek.toDate()
     );
 
-    const trainedDates = trainingDays.map((date) =>
-      dayjs(date).format('YYYY-MM-DD')
-    );
+    const trainedDates = trainingDays.map((date) => dayjs(date).format('YYYY-MM-DD'));
 
     return {
       mon: trainedDates.includes(startOfWeek.format('YYYY-MM-DD')),

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { DataSource, EntityManager } from 'typeorm';
 import { HeightUnit } from '../../core/enum/height-unit.enum';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { MetricGoalStatus } from '../../core/enum/metric-goal-status.enum';
 import { UserType } from '../../core/enum/user-type.enum';
 import { WeightUnit } from '../../core/enum/weight-unit.enum';
@@ -23,11 +24,10 @@ import { TrainerStudentRelationshipRepository } from '../../persistence/reposito
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
-import { MetricGoalNotFoundException } from '../exception/metric-goal-not-found.exception';
-import { WeightLogNotFoundException } from '../exception/weight-log-not-found.exception';
 import { BodyMeasurementNotFoundException } from '../exception/body-measurement-not-found.exception';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
+import { MetricGoalNotFoundException } from '../exception/metric-goal-not-found.exception';
+import { UserNotFoundException } from '../exception/user-not-found.exception';
+import { WeightLogNotFoundException } from '../exception/weight-log-not-found.exception';
 
 @Injectable()
 export class UserMetricsService {

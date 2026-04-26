@@ -1,5 +1,5 @@
-import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
+import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
 import { Day } from './day.entity';
 

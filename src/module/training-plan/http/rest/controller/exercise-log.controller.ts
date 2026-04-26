@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { ExerciseLogService } from '@src/module/training-plan/core/service/exercise-log.service';
-import { CreateExerciseLogRequestDto } from '../dto/request/create-exercise-log-request.dto';
 import { ExerciseLog } from '@src/module/training-plan/persistence/entity/exercise-log.entity';
+import { CreateExerciseLogRequestDto } from '../dto/request/create-exercise-log-request.dto';
 import { WeeklyActivityResponseDto } from '../dto/response/weekly-activity-response.dto';
 
 @ApiTags('Exercise Log')
@@ -21,7 +21,7 @@ export class ExerciseLogController {
     type: ExerciseLog,
   })
   async createLog(
-    @Body() createExerciseLogDto: CreateExerciseLogRequestDto,
+    @Body() createExerciseLogDto: CreateExerciseLogRequestDto
   ): Promise<ExerciseLog> {
     return this.exerciseLogService.createLog(createExerciseLogDto);
   }
@@ -35,7 +35,7 @@ export class ExerciseLogController {
   })
   async getLogHistory(
     @Param('userId') userId: string,
-    @Param('exerciseId') exerciseId: string,
+    @Param('exerciseId') exerciseId: string
   ): Promise<ExerciseLog[]> {
     return this.exerciseLogService.getLogsForUserAndExercise(userId, exerciseId);
   }
@@ -47,8 +47,7 @@ export class ExerciseLogController {
     description: 'The weekly activity status.',
     type: WeeklyActivityResponseDto,
   })
-  async getWeeklyActivity(
-  ): Promise<WeeklyActivityResponseDto> {
+  async getWeeklyActivity(): Promise<WeeklyActivityResponseDto> {
     return this.exerciseLogService.getWeeklyActivity();
   }
 }

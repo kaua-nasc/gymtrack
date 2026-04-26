@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
-import { UserType } from '@src/module/identity/core/enum/user-type.enum';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()

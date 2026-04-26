@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, In } from 'typeorm';
-import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
-import { TrainingPlanLike } from '../entity/training-plan-like.entity';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { DataSource, In } from 'typeorm';
+import { TrainingPlanLike } from '../entity/training-plan-like.entity';
 
 @Injectable()
 export class TrainingPlanLikeRepository extends DefaultTypeOrmRepository<TrainingPlanLike> {
@@ -15,7 +15,10 @@ export class TrainingPlanLikeRepository extends DefaultTypeOrmRepository<Trainin
     super(TrainingPlanLike, dataSource.manager, logger);
   }
 
-  async findLike(trainingPlanId: string, likedBy: string): Promise<TrainingPlanLike | null> {
+  async findLike(
+    trainingPlanId: string,
+    likedBy: string
+  ): Promise<TrainingPlanLike | null> {
     return this.find({
       where: {
         trainingPlanId,

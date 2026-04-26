@@ -1,7 +1,7 @@
-import * as Factory from 'factory.ts';
-import { PlanInvite } from '../../persistence/entity/plan-invite.entity';
-import { PlanInviteStatus } from '../../core/enum/plan-invite-status.enum';
 import { faker } from '@faker-js/faker';
+import * as Factory from 'factory.ts';
+import { PlanInviteStatus } from '../../core/enum/plan-invite-status.enum';
+import type { PlanInvite } from '../../persistence/entity/plan-invite.entity';
 
 export const planInviteFactory = Factory.Sync.makeFactory<Partial<PlanInvite>>({
   id: faker.string.uuid(),

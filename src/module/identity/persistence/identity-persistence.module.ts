@@ -5,11 +5,11 @@ import { ConfigService } from '@src/module/shared/module/config/service/config.s
 import { TypeOrmPersistenceModule } from '@src/module/shared/module/persistence/typeorm/typeorm-persistence.module';
 import { BodyMeasurementRepository } from './repository/body-measurement.repository';
 import { MetricGoalRepository } from './repository/metric-goal.repository';
+import { TrainerStudentRelationshipRepository } from './repository/trainer-student-relationship.repository';
 import { UserRepository } from './repository/user.repository';
 import { UserFollowsRepository } from './repository/user-follows.repository';
 import { UserPrivacySettingsRepository } from './repository/user-privacy-settings.repository';
 import { WeightLogRepository } from './repository/weight-log.repository';
-import { TrainerStudentRelationshipRepository } from './repository/trainer-student-relationship.repository';
 import { dataSourceOptionsFactory } from './typeorm-datasource.factory';
 
 @Module({

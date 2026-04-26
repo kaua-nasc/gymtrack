@@ -1,7 +1,7 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
-import { User } from './user.entity';
 import { MetricGoalStatus } from '../../core/enum/metric-goal-status.enum';
+import { User } from './user.entity';
 
 @Entity({ name: 'metric_goals' })
 export class MetricGoal extends DefaultEntity<MetricGoal> {
@@ -42,9 +42,6 @@ export class MetricGoal extends DefaultEntity<MetricGoal> {
   @Column()
   userId: string;
 
-  @ManyToOne(
-    () => User,
-    { onDelete: 'CASCADE' }
-  )
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: Relation<User>;
 }

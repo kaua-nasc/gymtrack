@@ -1,5 +1,7 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { FilePath } from '@src/module/shared/module/storage/enum/file-path.enum';
@@ -17,9 +19,7 @@ import { PlanSubscription } from '../../persistence/entity/plan-subscription.ent
 import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
-import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -173,7 +173,7 @@ export class TrainingPlanManagementService {
           likedBy: userId,
         },
       });
-      trainingPlan.likedByCurrentUser = user ? true : false;
+      trainingPlan.likedByCurrentUser = !!user;
     }
 
     this.logger.log('Training plan fetched successfully', { trainingPlanId: id });
@@ -250,14 +250,17 @@ export class TrainingPlanManagementService {
       likesCounts.map((lc) => [lc.trainingPlanId, lc.count])
     );
     const userLikesSet = new Set(userLikes.map((ul) => ul.trainingPlanId));
-    const authorsMap = new Map(authors.map((a) => [a['id'], a]));
+    const authorsMap = new Map(authors.map((a) => [a.id, a]));
     const subscriptionsMap = new Map<string, PlanSubscription[]>();
     subscriptions.forEach((subscription) => {
       const planId = subscription.trainingPlanId;
       if (!subscriptionsMap.has(planId)) {
         subscriptionsMap.set(planId, []);
       }
-      subscriptionsMap.get(planId)!.push(subscription);
+
+      const subs = subscriptionsMap.get(planId);
+      if (!subs) return;
+      subs.push(subscription);
     });
 
     const data = plans.map((p) => {

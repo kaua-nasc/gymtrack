@@ -6,4 +6,6 @@ export const ResetPasswordNewPasswordRequestSchema = z.object({
   newPassword: z.string().min(8).max(255).describe('Nova senha criada'),
 });
 
-export class ResetPasswordNewPasswordRequestDto extends createZodDto(ResetPasswordNewPasswordRequestSchema) {}
+export class ResetPasswordNewPasswordRequestDto extends createZodDto(
+  ResetPasswordNewPasswordRequestSchema
+) {}

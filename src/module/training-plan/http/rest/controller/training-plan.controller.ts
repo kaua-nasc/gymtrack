@@ -156,7 +156,11 @@ export class TrainingPlanController {
   async giveFeedback(
     @Body() feedback: CreateTrainingPlanFeedbackRequestDto
   ): Promise<void> {
-    await this.trainingPlanFeedbackService.giveFeedback({ ...feedback });
+    await this.trainingPlanFeedbackService.giveFeedback({
+      trainingPlanId: feedback.trainingPlanId,
+      rating: feedback.rating,
+      message: feedback.message ?? null,
+    });
   }
 
   @Get(':trainingPlanId/feedbacks')

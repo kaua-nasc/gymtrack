@@ -125,7 +125,7 @@ export class AuthService {
       this.logger.warn(
         `Password change failed for user ID ${data.userId}: User not found or new password is the same as old.`
       );
-      throw new UnauthorizedDomainException('cannot authorize user: ' + data.newPassword);
+      throw new UnauthorizedDomainException(`cannot authorize user: ${data.newPassword}`);
     }
 
     user.password = await hashPassword(data.newPassword);

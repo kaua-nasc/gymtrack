@@ -24,6 +24,7 @@ import { PlanSubscriptionNotFoundException } from '@src/module/training-plan/cor
 import { TrainingPlanCommentNotFoundException } from '@src/module/training-plan/core/exception/training-plan-comment-not-found.exception';
 import { TrainingPlanNotFoundException } from '@src/module/training-plan/core/exception/training-plan-not-found.exception';
 import { ZodValidationException } from 'nestjs-zod';
+import { ZodError } from 'zod';
 
 @Catch()
 export class GlobalHttpExceptionFilter implements ExceptionFilter {
@@ -39,7 +40,8 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof ZodValidationException) {
       status = HttpStatus.BAD_REQUEST;
-      message = exception.getZodError().issues.map((issue) => ({
+      const zodError = (exception as ZodValidationException).getZodError() as ZodError;
+      message = zodError.issues.map((issue) => ({
         path: issue.path.join('.'),
         message: issue.message,
       }));
@@ -47,7 +49,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       status = exception.getStatus();
       message = exception.getResponse();
     } else if (exception instanceof HttpClientException) {
-      status = exception.context?.statusCode || HttpStatus.BAD_GATEWAY;
+      status = exception.statusCode || HttpStatus.BAD_GATEWAY;
       message = exception.message;
     } else if (exception instanceof DomainException) {
       status = this.mapDomainExceptionToStatus(exception);

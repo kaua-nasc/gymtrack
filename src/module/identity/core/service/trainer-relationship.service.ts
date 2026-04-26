@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { UserType } from '../../core/enum/user-type.enum';
 import { TrainerStudentRelationship } from '../../persistence/entity/trainer-student-relationship.entity';
@@ -8,7 +9,6 @@ import { TrainerStudentRelationshipRepository } from '../../persistence/reposito
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { UserNotFoundException } from '../exception/user-not-found.exception';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { UserFollowsService } from './user-follows.service';
 
 @Injectable()

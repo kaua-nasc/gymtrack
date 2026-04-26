@@ -32,7 +32,10 @@ export class PlanInviteController {
   @ApiOperation({ summary: 'Compartilha um plano de treino com outro usuário' })
   @ApiParam({ name: 'id', description: 'ID do plano de treino' })
   @ApiResponse({ status: 200, description: 'Plano compartilhado com sucesso' })
-  @ApiResponse({ status: 403, description: 'Ação não permitida (não é autor ou plano privado)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Ação não permitida (não é autor ou plano privado)',
+  })
   @ApiResponse({ status: 404, description: 'Plano não encontrado' })
   async share(
     @Param('id') id: string,

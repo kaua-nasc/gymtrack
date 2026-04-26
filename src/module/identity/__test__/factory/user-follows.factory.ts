@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import * as Factory from 'factory.ts';
 import { UserFollows } from '../../persistence/entity/user-follows.entity';
-import { faker } from '@faker-js/faker';
 
 export const userFollowsFactory = Factory.Sync.makeFactory<Partial<UserFollows>>({
   id: faker.string.uuid(),

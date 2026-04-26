@@ -8,18 +8,18 @@ import {
   it,
 } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
+import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
+import { Exercise } from '@src/module/training-plan/persistence/entity/exercise.entity';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { dayFactory } from '../../factory/day.factory';
-import { trainingPlanFactory } from '../../factory/training-plan.factory';
 import { exerciseFactory } from '../../factory/exercise.factory';
-import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
-import { Exercise } from '@src/module/training-plan/persistence/entity/exercise.entity';
+import { trainingPlanFactory } from '../../factory/training-plan.factory';
 
 describe('Exercise Controller - (e2e)', () => {
   let app: INestApplication;

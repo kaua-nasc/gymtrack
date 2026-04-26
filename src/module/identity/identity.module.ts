@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
-import { IdentityPersistenceModule } from './persistence/identity-persistence.module';
+import { AuthModule } from '../shared/module/auth/auth.module';
+import { EmailModule } from '../shared/module/email/email.module';
 import { DomainModuleIntegrationModule } from '../shared/module/integration/interface/domain-module-integration.module';
+import { StorageModule } from '../shared/module/storage/storage.module';
 import { AuthService } from './core/service/authentication.service';
+import { TrainerRelationshipService } from './core/service/trainer-relationship.service';
+import { UserFollowsService } from './core/service/user-follows.service';
 import { UserManagementService } from './core/service/user-management.service';
 import { UserMetricsService } from './core/service/user-metrics.service';
-import { UserFollowsService } from './core/service/user-follows.service';
-import { TrainerRelationshipService } from './core/service/trainer-relationship.service';
 import { UserPrivacyService } from './core/service/user-privacy.service';
-import { AuthModule } from '../shared/module/auth/auth.module';
 import { AuthController } from './http/rest/controller/auth.controller';
 import { UserController } from './http/rest/controller/user.controller';
-import { EmailModule } from '../shared/module/email/email.module';
-import { StorageModule } from '../shared/module/storage/storage.module';
+import { IdentityPersistenceModule } from './persistence/identity-persistence.module';
 
 @Module({
   imports: [

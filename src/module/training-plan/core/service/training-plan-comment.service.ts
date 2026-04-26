@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { Cursor } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { TrainingPlanComment } from '../../persistence/entity/training-plan-comment.entity';
 import { TrainingPlanCommentRepository } from '../../persistence/repository/training-plan-comment.repository';
-import { UserType } from '@src/module/identity/core/enum/user-type.enum';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 import { TrainingPlanCommentNotFoundException } from '../exception/training-plan-comment-not-found.exception';
+import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class TrainingPlanCommentService {

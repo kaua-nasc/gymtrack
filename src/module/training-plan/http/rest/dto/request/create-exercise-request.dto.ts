@@ -1,6 +1,6 @@
+import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
 
 export const CreateExerciseRequestSchema = z.object({
   name: z.string().min(1).describe('Nome do exercício'),

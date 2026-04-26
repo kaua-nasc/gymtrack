@@ -35,15 +35,17 @@ export const userGetByIdsRequestSchema = z.object({
 });
 export type UserGetByIdsRequestSchema = z.infer<typeof userGetByIdsRequestSchema>;
 
-export const userCreateRequestSchema = z.object({
-  id: z.string().uuid().optional(),
-  email: z.string().email().trim(),
-  password: z.string().trim().min(1),
-  firstName: z.string().trim().min(1),
-  lastName: z.string().trim().min(1),
-  bio: z.string().trim().min(1).optional(),
-  type: z.nativeEnum(UserType).optional(),
-}).passthrough();
+export const userCreateRequestSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    email: z.string().email().trim(),
+    password: z.string().trim().min(1),
+    firstName: z.string().trim().min(1),
+    lastName: z.string().trim().min(1),
+    bio: z.string().trim().min(1).optional(),
+    type: z.nativeEnum(UserType).optional(),
+  })
+  .passthrough();
 export type UserCreateRequestSchema = z.infer<typeof userCreateRequestSchema>;
 
 export const userPrivacySettingsRequestSchema = z.object({
@@ -105,9 +107,7 @@ export const createMetricGoalRequestSchema = z.object({
   targetValue: z.number().min(0),
   deadline: z.iso.datetime().optional(),
 });
-export type CreateMetricGoalRequestSchema = z.infer<
-  typeof createMetricGoalRequestSchema
->;
+export type CreateMetricGoalRequestSchema = z.infer<typeof createMetricGoalRequestSchema>;
 
 export const updateMetricGoalStatusRequestSchema = z.object({
   status: z.enum(MetricGoalStatus),

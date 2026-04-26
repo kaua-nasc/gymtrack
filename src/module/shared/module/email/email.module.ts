@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { EmailService } from './service/email.service';
 import { ConfigModule } from '../config/config.module';
+import { EmailService } from './service/email.service';
 
 @Module({
   imports: [ConfigModule.forRoot()],

@@ -2,7 +2,7 @@ export enum MeasurementType {
   // Body Composition (%)
   BODY_FAT = 'BODY_FAT',
   WATER_PERCENTAGE = 'WATER_PERCENTAGE',
-  
+
   // Body Composition (kg/lb)
   MUSCLE_MASS = 'MUSCLE_MASS',
   BONE_MASS = 'BONE_MASS',

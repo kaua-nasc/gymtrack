@@ -8,16 +8,16 @@ import {
   it,
 } from 'bun:test';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { MetricGoalStatus } from '@src/module/identity/core/enum/metric-goal-status.enum';
 import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
-import { MetricGoalStatus } from '@src/module/identity/core/enum/metric-goal-status.enum';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 
 describe('Identity - User Goals Controller - (e2e)', () => {
   let app: INestApplication;

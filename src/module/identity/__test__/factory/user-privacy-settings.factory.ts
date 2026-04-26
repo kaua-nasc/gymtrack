@@ -1,5 +1,5 @@
-import * as Factory from 'factory.ts';
 import { faker } from '@faker-js/faker';
+import * as Factory from 'factory.ts';
 import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
 
 export const userPrivacySettingsFactory = Factory.Sync.makeFactory<

@@ -1,7 +1,7 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, type Relation } from 'typeorm';
-import { PlanDayProgress } from './plan-day-progress.entity';
 import { ActiveSetLog } from './active-set-log.entity';
+import { PlanDayProgress } from './plan-day-progress.entity';
 
 @Entity({ name: 'active_workout_sessions' })
 export class ActiveWorkoutSession extends DefaultEntity<ActiveWorkoutSession> {
@@ -33,6 +33,9 @@ export class ActiveWorkoutSession extends DefaultEntity<ActiveWorkoutSession> {
   @JoinColumn({ name: 'planDayProgressId' })
   planDayProgress: Relation<PlanDayProgress>;
 
-  @OneToMany(() => ActiveSetLog, (log) => log.session)
+  @OneToMany(
+    () => ActiveSetLog,
+    (log) => log.session
+  )
   logs: Relation<ActiveSetLog[]>;
 }

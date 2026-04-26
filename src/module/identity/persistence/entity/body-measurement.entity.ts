@@ -1,7 +1,7 @@
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
 import { Column, Entity, ManyToOne, type Relation } from 'typeorm';
 import { User } from './user.entity';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 
 @Entity({ name: 'body_measurements' })
 export class BodyMeasurement extends DefaultEntity<BodyMeasurement> {
@@ -31,9 +31,6 @@ export class BodyMeasurement extends DefaultEntity<BodyMeasurement> {
   @Column({ type: 'timestamp', nullable: true })
   trainerNoteAt?: Date;
 
-  @ManyToOne(
-    () => User,
-    { onDelete: 'CASCADE' }
-  )
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: Relation<User>;
 }

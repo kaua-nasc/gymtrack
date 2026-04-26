@@ -1,17 +1,17 @@
-import { DynamicModule } from '@nestjs/common';
+import type { DynamicModule } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from '@src/app.module';
+import { GlobalHttpExceptionFilter } from '@src/module/shared/http/filter/global-http-exception.filter';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
+import { EmailModule } from '@src/module/shared/module/email/email.module';
 import { LoggerModule } from '@src/module/shared/module/logger/logger.module';
 import { StorageModule } from '@src/module/shared/module/storage/storage.module';
-import { EmailModule } from '@src/module/shared/module/email/email.module';
-import { MockStorageModule } from './mock/storage.mock';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { MockEmailModule } from './mock/email.mock';
+import { MockLoggerModule } from './mock/logger.mock';
+import { MockStorageModule } from './mock/storage.mock';
 import { configureMswServer } from './msw.setup';
 import { getTestConfig } from './test.setup';
-import { MockLoggerModule } from './mock/logger.mock';
-import { GlobalHttpExceptionFilter } from '@src/module/shared/http/filter/global-http-exception.filter';
 
 type Override =
   | { provide: unknown; useValue: unknown }
@@ -33,7 +33,6 @@ export const createNestApp = async (
   builder.overrideModule(EmailModule).useModule(MockEmailModule);
 
   builder.overrideProvider(ConfigService).useValue({
-    /*@ts-ignore*/
     get: (key: string) => configuration[key],
   });
 
@@ -50,10 +49,9 @@ export const createNestApp = async (
   const app = module.createNestApplication({
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
-  
-  app.useGlobalPipes(new ZodValidationPipe());
-  
-  app.useGlobalFilters(new GlobalHttpExceptionFilter());
 
+  app.useGlobalPipes(new ZodValidationPipe());
+
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
   return { module, app, configuration, server };
 };

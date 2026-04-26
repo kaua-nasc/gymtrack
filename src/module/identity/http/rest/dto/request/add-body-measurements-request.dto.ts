@@ -1,6 +1,6 @@
+import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 
 export const BodyMeasurementEntrySchema = z.object({
   type: z.nativeEnum(MeasurementType).describe('Tipo de medida corporal'),
@@ -8,8 +8,12 @@ export const BodyMeasurementEntrySchema = z.object({
 });
 
 export const AddBodyMeasurementsRequestSchema = z.object({
-  measurements: z.array(BodyMeasurementEntrySchema).describe('Lista de medidas corporais'),
+  measurements: z
+    .array(BodyMeasurementEntrySchema)
+    .describe('Lista de medidas corporais'),
   measuredAt: z.string().datetime().optional().describe('Data da medição'),
 });
 
-export class AddBodyMeasurementsRequestDto extends createZodDto(AddBodyMeasurementsRequestSchema) {}
+export class AddBodyMeasurementsRequestDto extends createZodDto(
+  AddBodyMeasurementsRequestSchema
+) {}

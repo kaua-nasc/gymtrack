@@ -1,8 +1,8 @@
-import { Day } from '@src/module/training-plan/persistence/entity/day.entity';
-import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
-import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
+import { DefaultTypeOrmRepository } from '@src/module/shared/module/persistence/typeorm/repository/default-typeorm.repository';
+import { Day } from '@src/module/training-plan/persistence/entity/day.entity';
+import { DataSource } from 'typeorm';
 
 export class DayRepository extends DefaultTypeOrmRepository<Day> {
   constructor(

@@ -6,4 +6,6 @@ export const CreateTrainingPlanProgressRequestSchema = z.object({
   trainingPlanId: z.string().uuid().describe('ID do plano de treino associado'),
 });
 
-export class CreateTrainingPlanProgressRequestDto extends createZodDto(CreateTrainingPlanProgressRequestSchema) {}
+export class CreateTrainingPlanProgressRequestDto extends createZodDto(
+  CreateTrainingPlanProgressRequestSchema
+) {}

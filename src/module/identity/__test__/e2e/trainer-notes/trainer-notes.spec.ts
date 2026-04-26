@@ -7,18 +7,18 @@ import {
   expect,
   it,
 } from 'bun:test';
+import { randomUUID } from 'node:crypto';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
-import { IdentityModule } from '@src/module/identity/identity.module';
-import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { UserType } from '@src/module/identity/core/enum/user-type.enum';
+import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import { JwtService } from '@nestjs/jwt';
 import { SetupServer } from 'msw/node';
 import { userFactory } from '../../factory/user.factory';
-import { randomUUID } from 'node:crypto';
 
 describe('Identity - Trainer Notes Controller - (e2e)', () => {
   let app: INestApplication;
