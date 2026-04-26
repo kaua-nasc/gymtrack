@@ -1,5 +1,6 @@
-import { DynamicModule, ValidationPipe } from '@nestjs/common';
+import { DynamicModule } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from '@src/app.module';
 import { ConfigService } from '@src/module/shared/module/config/service/config.service';
 import { LoggerModule } from '@src/module/shared/module/logger/logger.module';
@@ -50,11 +51,7 @@ export const createNestApp = async (
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
   
-  // Disable strict whitelist for E2E tests as factories often pass extra fields
-  app.useGlobalPipes(new ValidationPipe({ 
-    transform: true,
-    whitelist: false, 
-  }));
+  app.useGlobalPipes(new ZodValidationPipe());
   
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
 

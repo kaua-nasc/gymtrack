@@ -1,14 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNumber, IsOptional, Min } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class AddWeightLogRequestDto {
-  @ApiProperty({ example: 80.5, description: 'User weight' })
-  @IsNumber()
-  @Min(0)
-  weight: number;
+export const AddWeightLogRequestSchema = z.object({
+  weight: z.number().min(0).describe('User weight'),
+  measuredAt: z.string().datetime().optional().describe('When the weight was measured'),
+});
 
-  @ApiProperty({ example: '2026-03-01T12:00:00Z', description: 'When the weight was measured', required: false })
-  @IsDateString()
-  @IsOptional()
-  measuredAt?: string;
-}
+export class AddWeightLogRequestDto extends createZodDto(AddWeightLogRequestSchema) {}

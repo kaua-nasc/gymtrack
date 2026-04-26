@@ -1,22 +1,11 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class UserChangeBioRequestDto {
-  @IsNotEmpty()
-  @ApiProperty({ example: 'João', description: 'Primeiro nome do usuário' })
-  firstName: string;
+export const UserChangeBioRequestSchema = z.object({
+  firstName: z.string().min(1).describe('Primeiro nome do usuário'),
+  lastName: z.string().min(1).describe('Sobrenome do usuário'),
+  bio: z.string().min(1).describe('Bio do usuário'),
+  cref: z.string().max(20).optional().describe('Registro Profissional (CREF)'),
+});
 
-  @IsNotEmpty()
-  @ApiProperty({ example: 'Silva', description: 'Sobrenome do usuário' })
-  lastName: string;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: 'Bio aleatoria', description: 'Bio do usuário' })
-  bio: string;
-
-  @ApiPropertyOptional({ example: '123456-G/SP', description: 'Registro Profissional (CREF)' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  cref?: string;
-}
+export class UserChangeBioRequestDto extends createZodDto(UserChangeBioRequestSchema) {}

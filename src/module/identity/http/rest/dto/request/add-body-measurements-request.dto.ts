@@ -1,28 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsEnum, IsNumber, IsOptional, Min, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
 
-export class BodyMeasurementEntryDto {
-  @ApiProperty({ type: String, enum: MeasurementType, enumName: 'MeasurementType', example: MeasurementType.WAIST })
-  @IsEnum(MeasurementType)
-  type: MeasurementType;
+export const BodyMeasurementEntrySchema = z.object({
+  type: z.nativeEnum(MeasurementType).describe('Tipo de medida corporal'),
+  value: z.number().min(0).describe('Valor da medida'),
+});
 
-  @ApiProperty({ example: 85.5 })
-  @IsNumber()
-  @Min(0)
-  value: number;
-}
+export const AddBodyMeasurementsRequestSchema = z.object({
+  measurements: z.array(BodyMeasurementEntrySchema).describe('Lista de medidas corporais'),
+  measuredAt: z.string().datetime().optional().describe('Data da medição'),
+});
 
-export class AddBodyMeasurementsRequestDto {
-  @ApiProperty({ type: () => [BodyMeasurementEntryDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => BodyMeasurementEntryDto)
-  measurements: BodyMeasurementEntryDto[];
-
-  @ApiProperty({ example: '2026-03-01T12:00:00Z', required: false })
-  @IsDateString()
-  @IsOptional()
-  measuredAt?: string;
-}
+export class AddBodyMeasurementsRequestDto extends createZodDto(AddBodyMeasurementsRequestSchema) {}

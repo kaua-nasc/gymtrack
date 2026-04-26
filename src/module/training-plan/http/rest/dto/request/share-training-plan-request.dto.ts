@@ -1,21 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class ShareTrainingPlanRequestDto {
-  @ApiProperty({
-    description: 'Email do destinatário',
-    example: 'amigo@exemplo.com',
-  })
-  @IsEmail()
-  @IsNotEmpty()
-  recipientEmail: string;
+export const ShareTrainingPlanRequestSchema = z.object({
+  recipientEmail: z.string().email().describe('Email do destinatário'),
+  recipientId: z.string().uuid().optional().describe('ID do usuário destinatário (opcional)'),
+});
 
-  @ApiProperty({
-    description: 'ID do usuário destinatário (opcional)',
-    example: '0d5f4e8d-9f9c-47a2-96c1-d3a02fcb0a50',
-    required: false,
-  })
-  @IsUUID()
-  @IsOptional()
-  recipientId?: string;
-}
+export class ShareTrainingPlanRequestDto extends createZodDto(ShareTrainingPlanRequestSchema) {}

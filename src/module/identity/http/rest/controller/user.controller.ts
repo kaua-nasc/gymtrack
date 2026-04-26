@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
@@ -33,21 +32,17 @@ import { UserManagementService } from '../../../core/service/user-management.ser
 import { UserMetricsService } from '../../../core/service/user-metrics.service';
 import { UserPrivacyService } from '../../../core/service/user-privacy.service';
 import { UserCreateRequestDto } from '../dto/request/user-create-request.dto';
-import { UserPrivacySettingsRequestDto } from '../dto/request/user-privacy-settings-request.dto';
 import { UserExistsResponseDto } from '../dto/response/user-exists-response.dto';
 import { UserFollowCountResponseDto } from '../dto/response/user-follow-count-response.dto';
 import { UserPrivacySettingsResponseDto } from '../dto/response/user-privacy-settings-response.dto';
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import 'multer';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
+import { ZodBody } from '@src/module/shared/http/decorator/zod-body.decorator';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { Public } from '../../../../shared/module/auth/guard/jwt-auth.guard';
 import { AddBodyMeasurementsRequestDto } from '../dto/request/add-body-measurements-request.dto';
 import { AddWeightLogRequestDto } from '../dto/request/add-weight-log-request.dto';
-import { CreateMetricGoalRequestDto } from '../dto/request/create-metric-goal-request.dto';
-import { LinkTrainerRequestDto } from '../dto/request/link-trainer-request.dto';
-import { UpdateMetricGoalStatusRequestDto } from '../dto/request/update-metric-goal-status-request.dto';
-import { UpdateTrainerInviteCodeRequestDto } from '../dto/request/update-trainer-invite-code-request.dto';
 import { UpdateTrainerNoteRequestDto } from '../dto/request/update-trainer-note-request.dto';
 import { UpdateUserMetricsRequestDto } from '../dto/request/update-user-metrics-request.dto';
 import { UpgradeToPersonalTrainerRequestDto } from '../dto/request/upgrade-to-personal-trainer-request.dto';
@@ -56,6 +51,36 @@ import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.d
 import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-response.dto';
 import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
 import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
+import type {
+  AddBodyMeasurementsRequestSchema,
+  AddWeightLogRequestSchema,
+  CreateMetricGoalRequestSchema,
+  LinkTrainerRequestSchema,
+  UpdateMetricGoalStatusRequestSchema,
+  UpdateTrainerInviteCodeRequestSchema,
+  UpdateTrainerNoteRequestSchema,
+  UpdateUserMetricsRequestSchema,
+  UpgradeToPersonalTrainerRequestSchema,
+  UserChangeBioRequestSchema,
+  UserCreateRequestSchema,
+  UserGetByIdsRequestSchema,
+  UserPrivacySettingsRequestSchema,
+} from '../schema/identity-request.schema';
+import {
+  addBodyMeasurementsRequestSchema,
+  addWeightLogRequestSchema,
+  createMetricGoalRequestSchema,
+  linkTrainerRequestSchema,
+  updateMetricGoalStatusRequestSchema,
+  updateTrainerInviteCodeRequestSchema,
+  updateTrainerNoteRequestSchema,
+  updateUserMetricsRequestSchema,
+  upgradeToPersonalTrainerRequestSchema,
+  userChangeBioRequestSchema,
+  userCreateRequestSchema,
+  userGetByIdsRequestSchema,
+  userPrivacySettingsRequestSchema,
+} from '../schema/identity-request.schema';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -94,7 +119,9 @@ export class UserController {
     type: [UserResponseDto],
   })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  async getUserByIds(@Body() data: UserGetByIdsRequestDto): Promise<UserResponseDto[]> {
+  async getUserByIds(
+    @ZodBody(userGetByIdsRequestSchema) data: UserGetByIdsRequestSchema
+  ): Promise<UserResponseDto[]> {
     const users = await this.userManagementService.getUsersByIds(data.userIds);
     return users.map((user) => ({
       id: user.id,
@@ -120,7 +147,9 @@ export class UserController {
   })
   @ApiBody({ type: UserCreateRequestDto })
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso.' })
-  async createUser(@Body() user: UserCreateRequestDto): Promise<void> {
+  async createUser(
+    @ZodBody(userCreateRequestSchema) user: UserCreateRequestSchema
+  ): Promise<void> {
     await this.userManagementService.create({ ...user });
   }
 
@@ -234,7 +263,9 @@ export class UserController {
     description: 'Configurações de privacidade atualizadas com sucesso.',
   })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
-  async alterPrivacySettings(@Body() createDto: UserPrivacySettingsRequestDto) {
+  async alterPrivacySettings(
+    @ZodBody(userPrivacySettingsRequestSchema) createDto: UserPrivacySettingsRequestSchema
+  ) {
     await this.userPrivacyService.alterPrivacySettings({ ...createDto });
   }
 
@@ -273,7 +304,9 @@ export class UserController {
   @ApiOperation({ summary: 'Altera as informações do usuário logado' })
   @ApiBody({ type: UserChangeBioRequestDto })
   @ApiResponse({ status: 200, description: 'Informações alteradas com sucesso' })
-  async alterUserInformation(@Body() data: UserChangeBioRequestDto): Promise<void> {
+  async alterUserInformation(
+    @ZodBody(userChangeBioRequestSchema) data: UserChangeBioRequestSchema
+  ): Promise<void> {
     const userId = this.request.user.id;
     await this.userManagementService.alterUserInformation(userId, data);
   }
@@ -282,7 +315,9 @@ export class UserController {
   @ApiOperation({ summary: 'Update user height, weight and unit preferences' })
   @ApiBody({ type: UpdateUserMetricsRequestDto })
   @ApiResponse({ status: 200, description: 'Metrics updated successfully' })
-  async updateMetrics(@Body() dto: UpdateUserMetricsRequestDto): Promise<void> {
+  async updateMetrics(
+    @ZodBody(updateUserMetricsRequestSchema) dto: UpdateUserMetricsRequestSchema
+  ): Promise<void> {
     await this.userMetricsService.updateMetrics(dto);
   }
 
@@ -292,7 +327,8 @@ export class UserController {
   @ApiBody({ type: UpgradeToPersonalTrainerRequestDto })
   @ApiResponse({ status: 200, description: 'Profile upgraded successfully' })
   async upgradeToPersonalTrainer(
-    @Body() dto: UpgradeToPersonalTrainerRequestDto
+    @ZodBody(upgradeToPersonalTrainerRequestSchema)
+    dto: UpgradeToPersonalTrainerRequestSchema
   ): Promise<{ accessToken: string }> {
     return await this.userManagementService.upgradeToPersonalTrainer(dto.cref);
   }
@@ -313,7 +349,9 @@ export class UserController {
     description: 'Weight log entry created successfully',
     type: WeightLogResponseDto,
   })
-  async addWeightLog(@Body() dto: AddWeightLogRequestDto): Promise<WeightLogResponseDto> {
+  async addWeightLog(
+    @ZodBody(addWeightLogRequestSchema) dto: AddWeightLogRequestSchema
+  ): Promise<WeightLogResponseDto> {
     const log = await this.userMetricsService.addWeightLog(dto);
     return { id: log.id, weight: log.weight, measuredAt: log.measuredAt };
   }
@@ -342,7 +380,7 @@ export class UserController {
   @ApiOperation({ summary: 'Add body measurements (bulk)' })
   @ApiBody({ type: AddBodyMeasurementsRequestDto })
   async addBodyMeasurements(
-    @Body() dto: AddBodyMeasurementsRequestDto
+    @ZodBody(addBodyMeasurementsRequestSchema) dto: AddBodyMeasurementsRequestSchema
   ): Promise<BodyMeasurementResponseDto[]> {
     const measurements = await this.userMetricsService.addBodyMeasurements(dto);
     return measurements.map((m) => ({
@@ -392,7 +430,7 @@ export class UserController {
   @Post('profile/goals')
   @ApiOperation({ summary: 'Create a new metric goal' })
   async createMetricGoal(
-    @Body() dto: CreateMetricGoalRequestDto
+    @ZodBody(createMetricGoalRequestSchema) dto: CreateMetricGoalRequestSchema
   ): Promise<MetricGoalResponseDto> {
     const goal = await this.userMetricsService.createMetricGoal(dto);
     return {
@@ -426,7 +464,7 @@ export class UserController {
   @ApiOperation({ summary: 'Update a metric goal status' })
   async updateMetricGoalStatus(
     @Param('id') id: string,
-    @Body() dto: UpdateMetricGoalStatusRequestDto
+    @ZodBody(updateMetricGoalStatusRequestSchema) dto: UpdateMetricGoalStatusRequestSchema
   ): Promise<void> {
     await this.userMetricsService.updateMetricGoalStatus(id, dto);
   }
@@ -441,7 +479,8 @@ export class UserController {
   @Patch('profile/trainer-code')
   @ApiOperation({ summary: 'Update trainer invite code (Trainer only)' })
   async updateTrainerInviteCode(
-    @Body() dto: UpdateTrainerInviteCodeRequestDto
+    @ZodBody(updateTrainerInviteCodeRequestSchema)
+    dto: UpdateTrainerInviteCodeRequestSchema
   ): Promise<void> {
     await this.trainerRelationshipService.updateTrainerInviteCode(dto.inviteCode);
   }
@@ -449,7 +488,9 @@ export class UserController {
   @Post('profile/link-trainer')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Link to a trainer using invite code (Student only)' })
-  async linkTrainer(@Body() dto: LinkTrainerRequestDto): Promise<void> {
+  async linkTrainer(
+    @ZodBody(linkTrainerRequestSchema) dto: LinkTrainerRequestSchema
+  ): Promise<void> {
     await this.trainerRelationshipService.linkTrainer(dto.inviteCode);
   }
 
@@ -532,7 +573,7 @@ export class UserController {
   @ApiBody({ type: UpdateTrainerNoteRequestDto })
   async updateWeightLogNote(
     @Param('id') id: string,
-    @Body() dto: UpdateTrainerNoteRequestDto
+    @ZodBody(updateTrainerNoteRequestSchema) dto: UpdateTrainerNoteRequestSchema
   ): Promise<void> {
     await this.userMetricsService.addWeightLogNote(id, dto.note);
   }
@@ -542,7 +583,7 @@ export class UserController {
   @ApiBody({ type: UpdateTrainerNoteRequestDto })
   async updateBodyMeasurementNote(
     @Param('id') id: string,
-    @Body() dto: UpdateTrainerNoteRequestDto
+    @ZodBody(updateTrainerNoteRequestSchema) dto: UpdateTrainerNoteRequestSchema
   ): Promise<void> {
     await this.userMetricsService.addBodyMeasurementNote(id, dto.note);
   }

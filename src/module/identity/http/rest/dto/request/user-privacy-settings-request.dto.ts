@@ -1,32 +1,11 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class UserPrivacySettingsRequestDto {
-  @ApiPropertyOptional({
-    description: 'Indica se o nome do usuário pode ser exibido publicamente',
-    example: true,
-  })
-  @IsOptional()
-  shareName?: boolean;
+export const UserPrivacySettingsRequestSchema = z.object({
+  shareName: z.boolean().optional().describe('Indica se o nome do usuário pode ser exibido publicamente'),
+  shareEmail: z.boolean().optional().describe('Indica se o e-mail do usuário pode ser compartilhado'),
+  shareTrainingProgress: z.boolean().optional().describe('Indica se o progresso de treino pode ser compartilhado'),
+  sharePastDataWithTrainer: z.boolean().optional().describe('Indica se o treinador pode ver o histórico anterior ao vínculo'),
+});
 
-  @ApiPropertyOptional({
-    description: 'Indica se o e-mail do usuário pode ser compartilhado',
-    example: false,
-  })
-  @IsOptional()
-  shareEmail?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Indica se o progresso de treino pode ser compartilhado',
-    example: true,
-  })
-  @IsOptional()
-  shareTrainingProgress?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Indica se o treinador pode ver o histórico anterior ao vínculo',
-    example: false,
-  })
-  @IsOptional()
-  sharePastDataWithTrainer?: boolean;
-}
+export class UserPrivacySettingsRequestDto extends createZodDto(UserPrivacySettingsRequestSchema) {}

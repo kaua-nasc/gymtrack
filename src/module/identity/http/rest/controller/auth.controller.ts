@@ -1,11 +1,24 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { AuthService } from '@src/module/identity/core/service/authentication.service';
-import { SignInRequestDto } from '../dto/request/sign-in-request.dto';
-import { SignInResponseDto } from '../dto/response/sign-in-response.dto';
+import { Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthService } from '@src/module/identity/core/service/authentication.service';
+import { ZodBody } from '@src/module/shared/http/decorator/zod-body.decorator';
+import { ResetPasswordNewPasswordRequestDto } from '../dto/request/reset-password-new-password-request.dto';
 import { ResetPasswordRequestDto } from '../dto/request/reset-password-request.dto';
 import { ResetPasswordVerifyDto } from '../dto/request/reset-password-verify-request.dto';
-import { ResetPasswordNewPasswordRequestDto } from '../dto/request/reset-password-new-password-request.dto';
+import { SignInRequestDto } from '../dto/request/sign-in-request.dto';
+import { SignInResponseDto } from '../dto/response/sign-in-response.dto';
+import type {
+  ResetPasswordNewPasswordSchema,
+  ResetPasswordRequestSchema,
+  ResetPasswordVerifySchema,
+  SignInRequestSchema,
+} from '../schema/identity-request.schema';
+import {
+  resetPasswordNewPasswordSchema,
+  resetPasswordRequestSchema,
+  resetPasswordVerifySchema,
+  signInRequestSchema,
+} from '../schema/identity-request.schema';
 
 @ApiTags('Authentication')
 @Controller('identity/auth')
@@ -27,7 +40,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas.' })
   async signIn(
-    @Body() { email, password }: SignInRequestDto
+    @ZodBody(signInRequestSchema) { email, password }: SignInRequestSchema
   ): Promise<SignInResponseDto> {
     return await this.authService.signIn(email, password);
   }
@@ -48,7 +61,9 @@ export class AuthController {
     status: 404,
     description: 'Usuário não encontrado.',
   })
-  async requestResetPassword(@Body() body: ResetPasswordRequestDto): Promise<void> {
+  async requestResetPassword(
+    @ZodBody(resetPasswordRequestSchema) body: ResetPasswordRequestSchema
+  ): Promise<void> {
     return await this.authService.requestResetPassword({ ...body });
   }
 
@@ -67,7 +82,9 @@ export class AuthController {
     status: 400,
     description: 'Código inválido ou expirado.',
   })
-  async verifyResetPassword(@Body() body: ResetPasswordVerifyDto): Promise<void> {
+  async verifyResetPassword(
+    @ZodBody(resetPasswordVerifySchema) body: ResetPasswordVerifySchema
+  ): Promise<void> {
     return await this.authService.verifyResetPassword({ ...body });
   }
 
@@ -88,7 +105,7 @@ export class AuthController {
     description: 'Requisição inválida.',
   })
   async changePasswordByReset(
-    @Body() body: ResetPasswordNewPasswordRequestDto
+    @ZodBody(resetPasswordNewPasswordSchema) body: ResetPasswordNewPasswordSchema
   ): Promise<void> {
     return await this.authService.changePasswordByReset({ ...body });
   }

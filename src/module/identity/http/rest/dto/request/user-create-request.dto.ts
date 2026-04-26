@@ -1,37 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class UserCreateRequestDto {
-  @IsEmail()
-  @IsNotEmpty()
-  @ApiProperty({ example: 'joao.silva@email.com', description: 'Email do usuário' })
-  email: string;
+export const UserCreateRequestSchema = z.object({
+  id: z.string().uuid().optional().describe('ID do usuário (opcional, usado em testes)'),
+  email: z.string().email().describe('Email do usuário'),
+  password: z.string().min(1).describe('Senha do usuário'),
+  firstName: z.string().min(1).describe('Primeiro nome do usuário'),
+  lastName: z.string().min(1).describe('Sobrenome do usuário'),
+  bio: z.string().min(1).optional().describe('Bio do usuário'),
+  type: z.nativeEnum(UserType).optional().default(UserType.client).describe('Tipo de usuário (CLIENT ou PERSONAL_TRAINER)'),
+}).passthrough();
 
-  @IsNotEmpty()
-  @ApiProperty({ example: 'senha123', description: 'Senha do usuário' })
-  password: string;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: 'João', description: 'Primeiro nome do usuário' })
-  firstName: string;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: 'Silva', description: 'Sobrenome do usuário' })
-  lastName: string;
-
-  @IsOptional()
-  @IsNotEmpty()
-  @ApiProperty({ example: 'Ola, tudo bom?', description: 'Bio do usuário' })
-  bio: string;
-
-  @IsOptional()
-  @IsEnum(UserType)
-  @ApiProperty({
-    enum: UserType,
-    example: UserType.client,
-    description: 'Tipo de usuário (CLIENT ou PERSONAL_TRAINER)',
-    default: UserType.client,
-  })
-  type?: UserType;
-}
+export class UserCreateRequestDto extends createZodDto(UserCreateRequestSchema) {}

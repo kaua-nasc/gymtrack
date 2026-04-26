@@ -6,22 +6,24 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
-import { UserNotFoundException } from '@src/module/identity/core/exception/user-not-found.exception';
+import { BodyMeasurementNotFoundException } from '@src/module/identity/core/exception/body-measurement-not-found.exception';
 import { EmailAlreadyInUseException } from '@src/module/identity/core/exception/email-already-in-use.exception';
 import { InvalidCredentialsException } from '@src/module/identity/core/exception/invalid-credentials.exception';
 import { MetricGoalNotFoundException } from '@src/module/identity/core/exception/metric-goal-not-found.exception';
-import { WeightLogNotFoundException } from '@src/module/identity/core/exception/weight-log-not-found.exception';
-import { BodyMeasurementNotFoundException } from '@src/module/identity/core/exception/body-measurement-not-found.exception';
 import { TokenMismatchException } from '@src/module/identity/core/exception/token-mismatch.exception';
-import { TrainingPlanNotFoundException } from '@src/module/training-plan/core/exception/training-plan-not-found.exception';
-import { TrainingPlanCommentNotFoundException } from '@src/module/training-plan/core/exception/training-plan-comment-not-found.exception';
-import { PlanSubscriptionNotFoundException } from '@src/module/training-plan/core/exception/plan-subscription-not-found.exception';
-import { DayNotFoundException } from '@src/module/training-plan/core/exception/day-not-found.exception';
-import { ActiveWorkoutSessionNotFoundException } from '@src/module/training-plan/core/exception/active-workout-session-not-found.exception';
+import { UserNotFoundException } from '@src/module/identity/core/exception/user-not-found.exception';
+import { WeightLogNotFoundException } from '@src/module/identity/core/exception/weight-log-not-found.exception';
 import { AccessDeniedException } from '@src/module/shared/core/exception/access-denied.exception';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { ResourceAlreadyExistsException } from '@src/module/shared/core/exception/resource-already-exists.exception';
 import { UnauthorizedDomainException } from '@src/module/shared/core/exception/unauthorized.exception';
+import { HttpClientException } from '@src/module/shared/module/http-client/exception/http-client.exception';
+import { ActiveWorkoutSessionNotFoundException } from '@src/module/training-plan/core/exception/active-workout-session-not-found.exception';
+import { DayNotFoundException } from '@src/module/training-plan/core/exception/day-not-found.exception';
+import { PlanSubscriptionNotFoundException } from '@src/module/training-plan/core/exception/plan-subscription-not-found.exception';
+import { TrainingPlanCommentNotFoundException } from '@src/module/training-plan/core/exception/training-plan-comment-not-found.exception';
+import { TrainingPlanNotFoundException } from '@src/module/training-plan/core/exception/training-plan-not-found.exception';
+import { ZodValidationException } from 'nestjs-zod';
 
 @Catch()
 export class GlobalHttpExceptionFilter implements ExceptionFilter {
@@ -35,15 +37,24 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | object = 'Internal server error';
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof ZodValidationException) {
+      status = HttpStatus.BAD_REQUEST;
+      message = exception.getZodError().issues.map((issue) => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+      }));
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       message = exception.getResponse();
+    } else if (exception instanceof HttpClientException) {
+      status = exception.context?.statusCode || HttpStatus.BAD_GATEWAY;
+      message = exception.message;
     } else if (exception instanceof DomainException) {
       status = this.mapDomainExceptionToStatus(exception);
       message = exception.message;
     } else {
       this.logger.error(
-        `Unhandled exception: ${exception instanceof Error ? exception.stack : exception}`,
+        `Unhandled exception: ${exception instanceof Error ? exception.stack : exception}`
       );
     }
 
@@ -83,8 +94,10 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       return HttpStatus.CONFLICT;
     }
 
-    if (exception instanceof AccessDeniedException || 
-        exception.message.toLowerCase().includes('not authorized')) {
+    if (
+      exception instanceof AccessDeniedException ||
+      exception.message.toLowerCase().includes('not authorized')
+    ) {
       return HttpStatus.FORBIDDEN;
     }
 
@@ -94,9 +107,9 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       exception instanceof UnauthorizedDomainException ||
       exception.message.toLowerCase().includes('not found')
     ) {
-        if (exception.message.toLowerCase().includes('user not found')) {
-            return HttpStatus.NOT_FOUND;
-        }
+      if (exception.message.toLowerCase().includes('user not found')) {
+        return HttpStatus.NOT_FOUND;
+      }
       return HttpStatus.UNAUTHORIZED;
     }
 

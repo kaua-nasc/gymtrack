@@ -1,11 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class UpgradeToPersonalTrainerRequestDto {
-  @ApiProperty({ example: '123456-G/SP', description: 'Registro Profissional (CREF)' })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(5)
-  @MaxLength(20)
-  cref: string;
-}
+export const UpgradeToPersonalTrainerRequestSchema = z.object({
+  cref: z.string().min(5).max(20).describe('Registro Profissional (CREF)'),
+});
+
+export class UpgradeToPersonalTrainerRequestDto extends createZodDto(UpgradeToPersonalTrainerRequestSchema) {}

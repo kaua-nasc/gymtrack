@@ -1,9 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class StartWorkoutSessionRequestDto {
-  @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
-  @IsUUID()
-  @IsNotEmpty()
-  dayId: string;
-}
+export const StartWorkoutSessionRequestSchema = z.object({
+  dayId: z.string().uuid().describe('ID do dia de treino'),
+});
+
+export class StartWorkoutSessionRequestDto extends createZodDto(StartWorkoutSessionRequestSchema) {}

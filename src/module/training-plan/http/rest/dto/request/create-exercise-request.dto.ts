@@ -1,60 +1,15 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 import { ExerciseType } from '@src/module/training-plan/core/enum/exercise-type.enum';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
-export class CreateExerciseRequestDto {
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'Nome do exercício',
-    example: 'Agachamento Livre',
-  })
-  name: string;
+export const CreateExerciseRequestSchema = z.object({
+  name: z.string().min(1).describe('Nome do exercício'),
+  dayId: z.string().uuid().describe('ID do dia ao qual o exercício pertence'),
+  type: z.nativeEnum(ExerciseType).describe('Tipo do exercício'),
+  setsNumber: z.number().int().describe('Número de séries do exercício'),
+  repsNumber: z.number().int().describe('Número de repetições por série'),
+  description: z.string().min(1).optional().describe('Descrição do exercício'),
+  observation: z.string().min(1).optional().describe('Observações adicionais'),
+});
 
-  @IsUUID()
-  @ApiProperty({
-    description: 'ID do dia ao qual o exercício pertence',
-    example: '5b3b6b30-3f6d-4a15-a5db-2a7b9d6b1e71',
-  })
-  dayId: string;
-
-  @IsEnum(ExerciseType)
-  @ApiProperty({
-    description: 'Tipo do exercício',
-    enum: ExerciseType,
-    example: ExerciseType.cardio,
-  })
-  type: ExerciseType;
-
-  @IsInt()
-  @ApiProperty({
-    description: 'Número de séries do exercício',
-    example: 4,
-  })
-  setsNumber: number;
-
-  @IsInt()
-  @ApiProperty({
-    description: 'Número de repetições por série',
-    example: 12,
-  })
-  repsNumber: number;
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @ApiPropertyOptional({
-    description: 'Descrição do exercício',
-    example: 'Manter a coluna ereta durante todo o movimento',
-  })
-  description?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @ApiPropertyOptional({
-    description: 'Observações adicionais',
-    example: 'Aumentar carga progressivamente a cada semana',
-  })
-  observation?: string;
-}
+export class CreateExerciseRequestDto extends createZodDto(CreateExerciseRequestSchema) {}

@@ -1,16 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsByteLength, IsEmail, IsString } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class ResetPasswordVerifyDto {
-  @IsString()
-  @IsByteLength(4, 4)
-  @ApiProperty({
-    example: '1234',
-    description: 'Codigo gerado ao requerir a redefinicao da senha',
-  })
-  token: string;
+export const ResetPasswordVerifySchema = z.object({
+  token: z.string().length(4).describe('Codigo gerado ao requerir a redefinicao da senha'),
+  email: z.string().email().describe('Email do usuário'),
+});
 
-  @IsEmail()
-  @ApiProperty({ example: 'joao.silva@email.com', description: 'Email do usuário' })
-  email: string;
-}
+export class ResetPasswordVerifyDto extends createZodDto(ResetPasswordVerifySchema) {}

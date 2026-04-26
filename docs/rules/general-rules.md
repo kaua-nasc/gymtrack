@@ -176,29 +176,21 @@ export const configValidationSchema = z.object({
 
 ### 📦 DTOs & API Evolution
 
-*   **Validation**: DTOs must use `class-validator` decorators for all properties.
-*   **Transformation**: Enable `transform: true` in validation pipes to automatically convert incoming payloads to DTO class instances.
+*   **Validation**: Request payloads (`body`, `query`, `param`) must be validated with **Zod** schemas in the controller boundary.
+*   **Transformation**: Use `createZodDto` from `nestjs-zod` to transform schemas into NestJS-compatible DTO classes. This ensures seamless Swagger documentation and type safety.
 *   **Pagination**: For paginated lists, use a standardized query DTO.
 
 ```typescript
 // src/module/shared/http/dto/pagination-query.dto.ts
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class PaginationQueryDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  readonly page?: number = 1;
+export const PaginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  readonly limit?: number = 20;
-}
+export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
 ```
 
 *   **Response Shape**: Paginated responses must use the shape: `{ "items": [...], "meta": { "totalItems": 100, "itemCount": 20, "itemsPerPage": 20, "currentPage": 1 } }`.

@@ -1,13 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, IsUUID } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class UserGetByIdsRequestDto {
-  @ApiProperty({
-    description: 'Lista de IDs dos usuários',
-    example: ['a8216f60-34b3-4b6e-91e0-1a9d93b1a924'],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsUUID('7', { each: true })
-  userIds: string[];
-}
+export const UserGetByIdsRequestSchema = z.object({
+  userIds: z.array(z.string().uuid()).describe('Lista de IDs dos usuários'),
+});
+
+export class UserGetByIdsRequestDto extends createZodDto(UserGetByIdsRequestSchema) {}

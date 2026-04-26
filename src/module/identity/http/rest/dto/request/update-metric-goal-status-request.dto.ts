@@ -1,9 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 import { MetricGoalStatus } from '../../../../core/enum/metric-goal-status.enum';
 
-export class UpdateMetricGoalStatusRequestDto {
-  @ApiProperty({ enum: MetricGoalStatus, example: MetricGoalStatus.ABANDONED })
-  @IsEnum(MetricGoalStatus)
-  status: MetricGoalStatus;
-}
+export const UpdateMetricGoalStatusRequestSchema = z.object({
+  status: z.nativeEnum(MetricGoalStatus).describe('Status do objetivo métrico'),
+});
+
+export class UpdateMetricGoalStatusRequestDto extends createZodDto(UpdateMetricGoalStatusRequestSchema) {}

@@ -85,7 +85,7 @@ src/module/{domain}/
     *   **Injection**: Inject the correct `DataSource` via `@InjectDataSource('{domain}')`.
 
 *   **DTOs**:
-    *   **Implementation**: Use `class-validator` for request validation and `@ApiProperty` from `@nestjs/swagger` for API documentation.
+    *   **Implementation**: Use `zod` and `nestjs-zod` for request validation. Request DTOs must be created using `createZodDto` from `nestjs-zod` to ensure seamless Swagger integration and type safety.
 
 ---
 

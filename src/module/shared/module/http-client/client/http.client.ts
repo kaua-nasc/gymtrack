@@ -108,10 +108,14 @@ export class HttpClient {
         );
       }
 
-      throw new HttpClientException(`Error fetching data from ${url}: ${String(error)}`, error, {
-        method,
-        url,
-      });
+      throw new HttpClientException(
+        `Error fetching data from ${url}: ${String(error)}`,
+        error,
+        {
+          method,
+          url,
+        }
+      );
     } finally {
       clearTimeout(timeout);
     }

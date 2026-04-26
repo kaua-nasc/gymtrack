@@ -1,9 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 
-export class LinkTrainerRequestDto {
-  @ApiProperty({ example: 'TEAM-SILVA-2026', description: 'Código de convite do treinador' })
-  @IsString()
-  @IsNotEmpty()
-  inviteCode: string;
-}
+export const LinkTrainerRequestSchema = z.object({
+  inviteCode: z.string().min(1).describe('Código de convite do treinador'),
+});
+
+export class LinkTrainerRequestDto extends createZodDto(LinkTrainerRequestSchema) {}
