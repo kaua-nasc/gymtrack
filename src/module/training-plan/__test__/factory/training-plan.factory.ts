@@ -3,9 +3,9 @@ import * as Factory from 'factory.ts';
 import { TrainingPlanLevel } from '../../core/enum/training-plan-level.enum';
 import { TrainingPlanType } from '../../core/enum/training-plan-type.enum';
 import { TrainingPlanVisibility } from '../../core/enum/training-plan-visibility.enum';
-import type { PlanParticipant } from '../../persistence/entity/plan-participant.entity';
-import type { TrainingPlan } from '../../persistence/entity/training-plan.entity';
-import type { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
+import { PlanParticipant } from '../../persistence/entity/plan-participant.entity';
+import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
+import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
 
 export const trainingPlanFactory = Factory.Sync.makeFactory<Partial<TrainingPlan>>({
   id: Factory.each(() => faker.string.uuid()),

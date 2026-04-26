@@ -7,14 +7,14 @@ import {
   expect,
   it,
 } from 'bun:test';
-import { HttpStatus, type INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { IdentityModule } from '@src/module/identity/identity.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
-import type { SetupServer } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { createUserFactory, userFactory } from '../../factory/user.factory';
 import { userFollowsFactory } from '../../factory/user-follows.factory';
 import { userPrivacySettingsFactory } from '../../factory/user-privacy-settings.factory';

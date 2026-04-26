@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { HttpStatus, type INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { trainingPlanFactory } from '@src/module/training-plan/__test__/factory/training-plan.factory';
 import { PlanSubscriptionType } from '@src/module/training-plan/core/enum/plan-subscription-type.enum';
@@ -10,7 +10,7 @@ import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { HttpResponse, http } from 'msw';
-import type { SetupServer } from 'msw/node';
+import { SetupServer } from 'msw/node';
 
 describe('Training Plan - Plan Assignment - (e2e)', () => {
   let app: INestApplication;

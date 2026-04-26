@@ -51,20 +51,20 @@ import { UserGetByIdsRequestDto } from '../dto/request/user-get-by-ids-request.d
 import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-response.dto';
 import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
 import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
-import type {
-  AddBodyMeasurementsRequestSchema,
-  AddWeightLogRequestSchema,
-  CreateMetricGoalRequestSchema,
-  LinkTrainerRequestSchema,
-  UpdateMetricGoalStatusRequestSchema,
-  UpdateTrainerInviteCodeRequestSchema,
-  UpdateTrainerNoteRequestSchema,
-  UpdateUserMetricsRequestSchema,
-  UpgradeToPersonalTrainerRequestSchema,
-  UserChangeBioRequestSchema,
-  UserCreateRequestSchema,
-  UserGetByIdsRequestSchema,
-  UserPrivacySettingsRequestSchema,
+import {
+  type AddBodyMeasurementsRequestSchema,
+  type AddWeightLogRequestSchema,
+  type CreateMetricGoalRequestSchema,
+  type LinkTrainerRequestSchema,
+  type UpdateMetricGoalStatusRequestSchema,
+  type UpdateTrainerInviteCodeRequestSchema,
+  type UpdateTrainerNoteRequestSchema,
+  type UpdateUserMetricsRequestSchema,
+  type UpgradeToPersonalTrainerRequestSchema,
+  type UserChangeBioRequestSchema,
+  type UserCreateRequestSchema,
+  type UserGetByIdsRequestSchema,
+  type UserPrivacySettingsRequestSchema,
 } from '../schema/identity-request.schema';
 import {
   addBodyMeasurementsRequestSchema,

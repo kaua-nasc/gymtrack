@@ -7,11 +7,11 @@ import { ResetPasswordRequestDto } from '../dto/request/reset-password-request.d
 import { ResetPasswordVerifyDto } from '../dto/request/reset-password-verify-request.dto';
 import { SignInRequestDto } from '../dto/request/sign-in-request.dto';
 import { SignInResponseDto } from '../dto/response/sign-in-response.dto';
-import type {
-  ResetPasswordNewPasswordSchema,
-  ResetPasswordRequestSchema,
-  ResetPasswordVerifySchema,
-  SignInRequestSchema,
+import {
+  type ResetPasswordNewPasswordSchema,
+  type ResetPasswordRequestSchema,
+  type ResetPasswordVerifySchema,
+  type SignInRequestSchema,
 } from '../schema/identity-request.schema';
 import {
   resetPasswordNewPasswordSchema,

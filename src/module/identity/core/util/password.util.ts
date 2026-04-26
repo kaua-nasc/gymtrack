@@ -1,4 +1,4 @@
-import type { ScryptOptions } from 'node:crypto';
+import { ScryptOptions } from 'node:crypto';
 import {
   scrypt as nodeScrypt,
   randomBytes,

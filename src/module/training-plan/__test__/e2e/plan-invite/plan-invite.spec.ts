@@ -7,9 +7,9 @@ import {
   expect,
   it,
 } from 'bun:test';
-import { HttpStatus, type INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
 import { TrainingPlanVisibility } from '@src/module/training-plan/core/enum/training-plan-visibility.enum';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
@@ -18,7 +18,7 @@ import { testDbClient } from '@testInfra/knex.database';
 import { mockEmailService } from '@testInfra/mock/email.mock';
 import { createNestApp } from '@testInfra/test-e2e.setup';
 import { HttpResponse, http } from 'msw';
-import type { SetupServer } from 'msw/node';
+import { SetupServer } from 'msw/node';
 import { trainingPlanFactory } from '../../factory/training-plan.factory';
 
 describe('Plan Invite Controller - (e2e)', () => {

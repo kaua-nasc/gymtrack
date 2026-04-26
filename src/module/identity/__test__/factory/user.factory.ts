@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import * as Factory from 'factory.ts';
 import { UserType } from '../../core/enum/user-type.enum';
 import { hashPasswordSync } from '../../core/util/password.util';
-import type { User } from '../../persistence/entity/user.entity';
+import { User } from '../../persistence/entity/user.entity';
 
 export const userFactory = Factory.Sync.makeFactory<Partial<User>>({
   id: Factory.each(() => faker.string.uuid()),

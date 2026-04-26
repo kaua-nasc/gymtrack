@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import * as Factory from 'factory.ts';
-import type { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
+import { PlanDayProgress } from '../../persistence/entity/plan-day-progress.entity';
 
 export const planDayProgressFactory = Factory.Sync.makeFactory<Partial<PlanDayProgress>>({
   id: Factory.each(() => faker.string.uuid()),

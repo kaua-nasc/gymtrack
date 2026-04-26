@@ -1,4 +1,4 @@
-import type { DynamicModule } from '@nestjs/common';
+import { DynamicModule } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '@src/app.module';
 import { GlobalHttpExceptionFilter } from '@src/module/shared/http/filter/global-http-exception.filter';
