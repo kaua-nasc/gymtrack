@@ -214,6 +214,9 @@ export class TrainingPlanManagementService {
                   visibility: TrainingPlanVisibility.protected,
                   privateParticipants: { userId },
                 },
+                {
+                  authorId: userId,
+                },
               ]
             : []),
         ],
