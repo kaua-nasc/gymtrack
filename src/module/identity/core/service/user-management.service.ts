@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
@@ -13,8 +13,6 @@ import { User } from '../../persistence/entity/user.entity';
 import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
-import { EmailAlreadyInUseException } from '../exception/email-already-in-use.exception';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
 import { hashPassword } from '../util/password.util';
 import { AuthService } from './authentication.service';
 import { UserFollowsService } from './user-follows.service';
@@ -44,7 +42,7 @@ export class UserManagementService {
     this.logger.log(`Attempting to create user with email: ${user.email}`);
     if (await this.userRepository.findOneByEmail(user.email)) {
       this.logger.warn(`User creation failed: Email already in use: ${user.email}`);
-      throw new EmailAlreadyInUseException(user.email);
+      throw new ConflictException(`The email '${user.email}' is already in use.`);
     }
     const newUser = new User({
       ...user,
@@ -73,7 +71,7 @@ export class UserManagementService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new UserNotFoundException(userId);
+            throw new NotFoundException(`User with identifier '${userId}' was not found.`);
     }
 
     if (user.type === UserType.personalTrainer) {
@@ -83,7 +81,7 @@ export class UserManagementService {
 
     const existing = await this.userRepository.find({ where: { cref } });
     if (existing && existing.id !== userId) {
-      throw new DomainException('CREF already in use');
+      throw new ConflictException(`The CREF '${cref}' is already in use.`);
     }
 
     await this.userRepository.update(
@@ -106,7 +104,7 @@ export class UserManagementService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`User with identifier '${userId}' was not found.`);
     }
 
     if (user.type === UserType.client) {
@@ -142,7 +140,7 @@ export class UserManagementService {
 
     if (!user) {
       this.logger.warn(`Failed to fetch user: User not found with ID: ${id}`);
-      throw new UserNotFoundException(id);
+      throw new NotFoundException(`User with identifier '${id}' was not found.`);
     }
 
     if (user.profilePictureUrl) {
@@ -165,7 +163,7 @@ export class UserManagementService {
 
     if (!users || users.length === 0) {
       this.logger.warn(`Failed to fetch users: No users found with IDs: ${userIds}`);
-      throw new UserNotFoundException(userIds.join(', '));
+      throw new NotFoundException(`Users with identifiers '${userIds.join(', ')}' were not found.`);
     }
 
     return users;
@@ -204,7 +202,7 @@ export class UserManagementService {
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
       this.logger.warn(`Alter user information failed: User not found: ${userId}`);
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`User with identifier '${userId}' was not found.`);
     }
 
     let isVerified = user.isVerified;
@@ -234,7 +232,7 @@ export class UserManagementService {
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
       this.logger.warn(`Change profile failed: User not found: ${userId}`);
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`User with identifier '${userId}' was not found.`);
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -269,7 +267,7 @@ export class UserManagementService {
     const user = await this.userRepository.findOneById(userId);
     if (user === null) {
       this.logger.warn(`Remove profile failed: User not found: ${userId}`);
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`User with identifier '${userId}' was not found.`);
     }
 
     if (user.profilePictureUrl) {

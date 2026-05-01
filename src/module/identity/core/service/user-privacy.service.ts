@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { UserType } from '../../core/enum/user-type.enum';
@@ -6,7 +6,6 @@ import { UserPrivacySettingsRequestDto } from '../../http/rest/dto/request/user-
 import { UserPrivacySettings } from '../../persistence/entity/user-privacy-settings.entity';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
 
 @Injectable()
 export class UserPrivacyService {
@@ -40,7 +39,7 @@ export class UserPrivacyService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
     }
 
     const settings = await this.userPrivacySettingsRepository.findOneByUserId(userId);

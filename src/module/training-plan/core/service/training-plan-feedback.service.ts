@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
@@ -7,7 +7,6 @@ import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.s
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class TrainingPlanFeedbackService {
@@ -36,7 +35,7 @@ export class TrainingPlanFeedbackService {
       newFeedback.trainingPlanId
     );
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(newFeedback.trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${newFeedback.trainingPlanId}' was not found.`);
     }
 
     if (trainingPlan?.authorId === userId) {

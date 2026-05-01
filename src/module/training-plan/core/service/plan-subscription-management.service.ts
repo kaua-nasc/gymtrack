@@ -1,8 +1,7 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
-import { ResourceAlreadyExistsException } from '@src/module/shared/core/exception/resource-already-exists.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { PlanSubscriptionStatus } from '../../core/enum/plan-subscription-status.enum';
@@ -11,8 +10,6 @@ import { AssignPlanRequestDto } from '../../http/rest/dto/request/assign-plan-re
 import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
-import { PlanSubscriptionNotFoundException } from '../exception/plan-subscription-not-found.exception';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -37,7 +34,7 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!(await this.trainingPlanManagementService.exists(trainingPlanId))) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
@@ -52,7 +49,7 @@ export class PlanSubscriptionManagementService {
     });
 
     if (existingSubscription) {
-      throw new ResourceAlreadyExistsException(
+      throw new ConflictException(
         'user already subscribed in this training plan'
       );
     }
@@ -79,7 +76,7 @@ export class PlanSubscriptionManagementService {
 
     const trainingPlan = await this.trainingPlanManagementService.get(planId);
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(planId);
+      throw new NotFoundException(`Training plan with ID '${planId}' was not found.`);
     }
 
     if (trainingPlan.authorId !== trainerId) {
@@ -100,7 +97,7 @@ export class PlanSubscriptionManagementService {
     });
 
     if (existingSubscription) {
-      throw new ResourceAlreadyExistsException(
+      throw new ConflictException(
         'student is already subscribed to this plan'
       );
     }
@@ -149,7 +146,7 @@ export class PlanSubscriptionManagementService {
       where: { userId, status: PlanSubscriptionStatus.inProgress },
       relations: ['trainingPlan'],
     });
-    if (!subscription) throw new PlanSubscriptionNotFoundException('in-progress');
+    if (!subscription) throw new NotFoundException(`Plan subscription with status 'in-progress' was not found.`);
     return subscription;
   }
 

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
@@ -20,7 +20,6 @@ import { TrainingPlan } from '../../persistence/entity/training-plan.entity';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TrainingPlanManagementService {
@@ -101,7 +100,7 @@ export class TrainingPlanManagementService {
       this.logger.warn('Attempt to delete non-existing training plan', {
         trainingPlanId: id,
       });
-      throw new TrainingPlanNotFoundException(id);
+      throw new NotFoundException(`Training plan with ID '${id}' was not found.`);
     }
 
     await this.authorizeAccess(trainingPlan);
@@ -151,7 +150,7 @@ export class TrainingPlanManagementService {
 
     if (!trainingPlan) {
       this.logger.warn('Training plan not found', { trainingPlanId: id });
-      throw new TrainingPlanNotFoundException(id);
+      throw new NotFoundException(`Training plan with ID '${id}' was not found.`);
     }
 
     if (trainingPlan.imageUrl) {
@@ -317,7 +316,7 @@ export class TrainingPlanManagementService {
     this.logger.log(`Attempting to add image for training plan: ${trainingPlanId}`);
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     await this.authorizeAccess(trainingPlan);
@@ -357,11 +356,11 @@ export class TrainingPlanManagementService {
     });
 
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (trainingPlan?.visibility === TrainingPlanVisibility.private) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (
@@ -369,7 +368,7 @@ export class TrainingPlanManagementService {
       !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
       trainingPlan.authorId !== userId
     ) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     const clonedTrainingPlan = new TrainingPlan({

@@ -1,12 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedDomainException } from '@src/module/shared/core/exception/unauthorized.exception';
 import { EmailService } from '@src/module/shared/module/email/service/email.service';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { UserRepository } from '../../persistence/repository/user.repository';
-import { InvalidCredentialsException } from '../exception/invalid-credentials.exception';
-import { TokenMismatchException } from '../exception/token-mismatch.exception';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
 import { hashPassword, verifyPassword } from '../util/password.util';
 
 @Injectable()
@@ -27,7 +23,7 @@ export class AuthService {
       this.logger.warn(
         `Failed sign-in for email ${email}: User not found or password mismatch.`
       );
-      throw new InvalidCredentialsException();
+      throw new UnauthorizedException('Invalid credentials provided.');
     }
 
     this.logger.log(`Sign-in successful for user ID: ${user.id}`);
@@ -63,7 +59,7 @@ export class AuthService {
       this.logger.warn(
         `Password reset request failed: User not found for email ${email}.`
       );
-      throw new UserNotFoundException(email);
+      throw new NotFoundException(`User with identifier '${email}' was not found.`);
     }
     const code = this.generateResetCode();
 
@@ -98,7 +94,7 @@ export class AuthService {
       this.logger.warn(
         `Reset code verification failed: User not found for email ${data.email}.`
       );
-      throw new UserNotFoundException(data.email);
+      throw new NotFoundException(`User with identifier '${data.email}' was not found.`);
     }
 
     const token = await this.userRepository.findResetCode(data.email);
@@ -107,7 +103,7 @@ export class AuthService {
       this.logger.warn(
         `Reset code verification failed for user ID ${user.id}: Token mismatch.`
       );
-      throw new TokenMismatchException();
+      throw new UnauthorizedException("The provided token does not match or is invalid.");
     }
 
     await this.userRepository.removeResetCode(data.email);
@@ -125,7 +121,7 @@ export class AuthService {
       this.logger.warn(
         `Password change failed for user ID ${data.userId}: User not found or new password is the same as old.`
       );
-      throw new UnauthorizedDomainException(`cannot authorize user: ${data.newPassword}`);
+      throw new UnauthorizedException(`cannot authorize user: ${data.newPassword}`);
     }
 
     user.password = await hashPassword(data.newPassword);

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { MeasurementType } from '@src/module/identity/core/enum/measurement-type.enum';
@@ -24,10 +24,6 @@ import { TrainerStudentRelationshipRepository } from '../../persistence/reposito
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
 import { WeightLogRepository } from '../../persistence/repository/weight-log.repository';
-import { BodyMeasurementNotFoundException } from '../exception/body-measurement-not-found.exception';
-import { MetricGoalNotFoundException } from '../exception/metric-goal-not-found.exception';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
-import { WeightLogNotFoundException } from '../exception/weight-log-not-found.exception';
 
 @Injectable()
 export class UserMetricsService {
@@ -49,7 +45,7 @@ export class UserMetricsService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
     }
 
     if (dto.height !== undefined) {
@@ -84,7 +80,7 @@ export class UserMetricsService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
     }
 
     const weightInMetric = this.convertToMetricWeight(dto.weight, user.weightUnit);
@@ -131,7 +127,7 @@ export class UserMetricsService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new UserNotFoundException(userId);
+      throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
     }
 
     const measuredAt = dto.measuredAt ? new Date(dto.measuredAt) : new Date();
@@ -189,7 +185,7 @@ export class UserMetricsService {
     this.logger.log(`Creating metric goal for user: ${userId}, type: ${dto.type}`);
 
     const user = await this.userRepository.findOneById(userId);
-    if (!user) throw new UserNotFoundException(userId);
+    if (!user) throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
 
     let startingValue: number;
     if (dto.type === 'WEIGHT') {
@@ -269,7 +265,7 @@ export class UserMetricsService {
 
     const goal = await this.metricGoalRepository.findOneById(id);
     if (!goal || goal.userId !== userId) {
-      throw new MetricGoalNotFoundException(id);
+      throw new NotFoundException(`Metric goal with ID '${id}' was not found.`);
     }
 
     await this.metricGoalRepository.update({ id }, { status: dto.status });
@@ -367,7 +363,7 @@ export class UserMetricsService {
     this.logger.log(`Trainer adding note to weight log: ${logId}`);
     const log = await this.weightLogRepository.findOneById(logId);
     if (!log) {
-      throw new WeightLogNotFoundException(logId);
+      throw new NotFoundException(`Weight log with ID '${logId}' was not found.`);
     }
 
     await this.validateTrainerAccess(log.userId);
@@ -385,7 +381,7 @@ export class UserMetricsService {
     this.logger.log(`Trainer adding note to body measurement: ${measurementId}`);
     const measurement = await this.bodyMeasurementRepository.findOneById(measurementId);
     if (!measurement) {
-      throw new BodyMeasurementNotFoundException(measurementId);
+      throw new NotFoundException(`Body measurement with ID '${measurementId}' was not found.`);
     }
 
     await this.validateTrainerAccess(measurement.userId);

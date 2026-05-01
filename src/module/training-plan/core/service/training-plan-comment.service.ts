@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
@@ -8,8 +8,6 @@ import { Cursor } from '@src/module/shared/module/persistence/typeorm/repository
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { TrainingPlanComment } from '../../persistence/entity/training-plan-comment.entity';
 import { TrainingPlanCommentRepository } from '../../persistence/repository/training-plan-comment.repository';
-import { TrainingPlanCommentNotFoundException } from '../exception/training-plan-comment-not-found.exception';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class TrainingPlanCommentService {
@@ -31,7 +29,7 @@ export class TrainingPlanCommentService {
 
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     const decodedCursor: Cursor = cursor
@@ -71,7 +69,7 @@ export class TrainingPlanCommentService {
 
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
@@ -96,7 +94,7 @@ export class TrainingPlanCommentService {
 
     const comment = await this.trainingPlanCommentRepository.findOneById(commentId);
     if (!comment) {
-      throw new TrainingPlanCommentNotFoundException(commentId);
+      throw new NotFoundException(`Training plan comment with ID '${commentId}' was not found.`);
     }
 
     if (comment.authorId !== userId) {

@@ -6,12 +6,10 @@ import {
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
-import { AccessDeniedException } from '@src/module/shared/core/exception/access-denied.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { TrainingPlanRepository } from '../../persistence/repository/training-plan.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class PlanInviteManagementService {
@@ -35,7 +33,7 @@ export class PlanInviteManagementService {
       await this.trainingPlanRepository.findOneTrainingPlanById(trainingPlanId);
 
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
@@ -61,11 +59,11 @@ export class PlanInviteManagementService {
     }
 
     if (trainingPlan.visibility === TrainingPlanVisibility.private) {
-      throw new AccessDeniedException('This training plan is private.');
+      throw new ForbiddenException('This training plan is private.');
     }
 
     if (trainingPlan.authorId !== userId) {
-      throw new AccessDeniedException('Only the creator of this plan can share it');
+      throw new ForbiddenException('Only the creator of this plan can share it');
     }
 
     const invitationToken = Math.random().toString(36).substring(2, 15);

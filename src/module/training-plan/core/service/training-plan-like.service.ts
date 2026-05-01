@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
@@ -7,7 +7,6 @@ import { TrainingPlanRepository } from '@src/module/training-plan/persistence/re
 import { TrainingPlanLike } from '../../persistence/entity/training-plan-like.entity';
 import { TrainingPlanLikeRepository } from '../../persistence/repository/training-plan-like.repository';
 import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
-import { TrainingPlanNotFoundException } from '../exception/training-plan-not-found.exception';
 
 @Injectable()
 export class TrainingPlanLikeService {
@@ -27,7 +26,7 @@ export class TrainingPlanLikeService {
     );
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
-      throw new TrainingPlanNotFoundException('user not found'); // Reuse or specific
+      throw new NotFoundException('user not found');
     }
 
     const trainingPlan = await this.trainingPlanRepository.find({
@@ -35,14 +34,14 @@ export class TrainingPlanLikeService {
       relations: { privateParticipants: true },
     });
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (
       trainingPlan.visibility === TrainingPlanVisibility.private &&
       trainingPlan.authorId !== userId
     ) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     if (
@@ -50,7 +49,7 @@ export class TrainingPlanLikeService {
       !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
       trainingPlan.authorId !== userId
     ) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     const alreadyLiked = await this.trainingPlanLikeRepository.existsBy({
@@ -77,12 +76,12 @@ export class TrainingPlanLikeService {
     );
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
-      throw new TrainingPlanNotFoundException('user not found');
+      throw new NotFoundException('user not found');
     }
 
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new TrainingPlanNotFoundException(trainingPlanId);
+      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
     }
 
     await this.trainingPlanLikeRepository.delete({ trainingPlanId, likedBy: userId });

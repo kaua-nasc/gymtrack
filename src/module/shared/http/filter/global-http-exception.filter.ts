@@ -6,23 +6,8 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { BodyMeasurementNotFoundException } from '@src/module/identity/core/exception/body-measurement-not-found.exception';
-import { EmailAlreadyInUseException } from '@src/module/identity/core/exception/email-already-in-use.exception';
-import { InvalidCredentialsException } from '@src/module/identity/core/exception/invalid-credentials.exception';
-import { MetricGoalNotFoundException } from '@src/module/identity/core/exception/metric-goal-not-found.exception';
-import { TokenMismatchException } from '@src/module/identity/core/exception/token-mismatch.exception';
-import { UserNotFoundException } from '@src/module/identity/core/exception/user-not-found.exception';
-import { WeightLogNotFoundException } from '@src/module/identity/core/exception/weight-log-not-found.exception';
-import { AccessDeniedException } from '@src/module/shared/core/exception/access-denied.exception';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
-import { ResourceAlreadyExistsException } from '@src/module/shared/core/exception/resource-already-exists.exception';
-import { UnauthorizedDomainException } from '@src/module/shared/core/exception/unauthorized.exception';
 import { HttpClientException } from '@src/module/shared/module/http-client/exception/http-client.exception';
-import { ActiveWorkoutSessionNotFoundException } from '@src/module/training-plan/core/exception/active-workout-session-not-found.exception';
-import { DayNotFoundException } from '@src/module/training-plan/core/exception/day-not-found.exception';
-import { PlanSubscriptionNotFoundException } from '@src/module/training-plan/core/exception/plan-subscription-not-found.exception';
-import { TrainingPlanCommentNotFoundException } from '@src/module/training-plan/core/exception/training-plan-comment-not-found.exception';
-import { TrainingPlanNotFoundException } from '@src/module/training-plan/core/exception/training-plan-not-found.exception';
 import { ZodValidationException } from 'nestjs-zod';
 import { ZodError } from 'zod';
 
@@ -52,7 +37,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       status = exception.statusCode || HttpStatus.BAD_GATEWAY;
       message = exception.message;
     } else if (exception instanceof DomainException) {
-      status = this.mapDomainExceptionToStatus(exception);
+      status = HttpStatus.BAD_REQUEST;
       message = exception.message;
     } else {
       this.logger.error(
@@ -71,50 +56,5 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     };
 
     response.status(status).json(responseBody);
-  }
-
-  private mapDomainExceptionToStatus(exception: DomainException): HttpStatus {
-    if (
-      exception instanceof UserNotFoundException ||
-      exception instanceof MetricGoalNotFoundException ||
-      exception instanceof WeightLogNotFoundException ||
-      exception instanceof BodyMeasurementNotFoundException ||
-      exception instanceof TrainingPlanNotFoundException ||
-      exception instanceof TrainingPlanCommentNotFoundException ||
-      exception instanceof PlanSubscriptionNotFoundException ||
-      exception instanceof DayNotFoundException ||
-      exception instanceof ActiveWorkoutSessionNotFoundException
-    ) {
-      return HttpStatus.NOT_FOUND;
-    }
-
-    if (
-      exception instanceof EmailAlreadyInUseException ||
-      exception instanceof ResourceAlreadyExistsException ||
-      exception.message.toLowerCase().includes('already in use')
-    ) {
-      return HttpStatus.CONFLICT;
-    }
-
-    if (
-      exception instanceof AccessDeniedException ||
-      exception.message.toLowerCase().includes('not authorized')
-    ) {
-      return HttpStatus.FORBIDDEN;
-    }
-
-    if (
-      exception instanceof InvalidCredentialsException ||
-      exception instanceof TokenMismatchException ||
-      exception instanceof UnauthorizedDomainException ||
-      exception.message.toLowerCase().includes('not found')
-    ) {
-      if (exception.message.toLowerCase().includes('user not found')) {
-        return HttpStatus.NOT_FOUND;
-      }
-      return HttpStatus.UNAUTHORIZED;
-    }
-
-    return HttpStatus.BAD_REQUEST;
   }
 }

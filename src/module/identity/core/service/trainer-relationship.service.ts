@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
@@ -8,7 +8,6 @@ import { User } from '../../persistence/entity/user.entity';
 import { TrainerStudentRelationshipRepository } from '../../persistence/repository/trainer-student-relationship.repository';
 import { UserRepository } from '../../persistence/repository/user.repository';
 import { UserPrivacySettingsRepository } from '../../persistence/repository/user-privacy-settings.repository';
-import { UserNotFoundException } from '../exception/user-not-found.exception';
 import { UserFollowsService } from './user-follows.service';
 
 @Injectable()
@@ -56,7 +55,7 @@ export class TrainerRelationshipService {
 
     const trainer = await this.userRepository.findByInviteCode(inviteCode);
     if (!trainer || trainer.type !== UserType.personalTrainer) {
-      throw new UserNotFoundException(inviteCode);
+      throw new NotFoundException(`Users with identifiers '${inviteCode}' were not found.`);
     }
 
     const existingRelationship =

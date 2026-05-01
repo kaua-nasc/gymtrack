@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
 import { DomainException } from '@src/module/shared/core/exception/domain.exception';
@@ -13,8 +13,6 @@ import { ActiveWorkoutSessionRepository } from '../../persistence/repository/act
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
 import { PlanDayProgressStatus } from '../enum/plan-day-progress-status.enum';
 import { PlanSubscriptionStatus } from '../enum/plan-subscription-status.enum';
-import { ActiveWorkoutSessionNotFoundException } from '../exception/active-workout-session-not-found.exception';
-import { DayNotFoundException } from '../exception/day-not-found.exception';
 
 @Injectable({ scope: Scope.REQUEST })
 export class WorkoutSessionService {
@@ -48,7 +46,7 @@ export class WorkoutSessionService {
 
     const day = subscription.trainingPlan.days.find((d) => d.id === dayId);
     if (!day) {
-      throw new DayNotFoundException(dayId);
+      throw new NotFoundException(`Day with ID '${dayId}' was not found.`);
     }
 
     if (subscription.status !== PlanSubscriptionStatus.inProgress) {
@@ -84,7 +82,7 @@ export class WorkoutSessionService {
     const session =
       await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new ActiveWorkoutSessionNotFoundException();
+      throw new NotFoundException('No active workout session was found for this user.');
     }
     return session;
   }
@@ -94,7 +92,7 @@ export class WorkoutSessionService {
     const session =
       await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new ActiveWorkoutSessionNotFoundException();
+      throw new NotFoundException('No active workout session was found for this user.');
     }
 
     const exerciseLogs =
@@ -140,7 +138,7 @@ export class WorkoutSessionService {
     const session =
       await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new ActiveWorkoutSessionNotFoundException();
+      throw new NotFoundException('No active workout session was found for this user.');
     }
 
     await this.activeWorkoutSessionRepository.manager.transaction(async (manager) => {
@@ -186,7 +184,7 @@ export class WorkoutSessionService {
     const session =
       await this.activeWorkoutSessionRepository.findActiveSessionByUserId(userId);
     if (!session) {
-      throw new ActiveWorkoutSessionNotFoundException();
+      throw new NotFoundException('No active workout session was found for this user.');
     }
 
     await this.activeWorkoutSessionRepository.manager.transaction(async (manager) => {
