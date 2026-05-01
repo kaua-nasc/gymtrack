@@ -56,6 +56,17 @@ export class PlanSubscriptionController {
     return await this.planSubscriptionManagementService.getSubscriptions();
   }
 
+  @Get('/subscriptions/:userId')
+  @ApiOperation({ summary: 'Lista todas as assinaturas de um usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de assinaturas',
+    type: [PlanSubscriptionResponseDto],
+  })
+  async getSubscriptionsById(userId: string): Promise<PlanSubscriptionResponseDto[]> {
+    return await this.planSubscriptionManagementService.getSubscriptions(userId);
+  }
+
   @Get(':trainingPlanId/subscriptions/exists')
   @ApiOperation({
     summary: 'Verifica se o usuário possui assinatura de um plano específico',

@@ -10,6 +10,7 @@ import { AssignPlanRequestDto } from '../../http/rest/dto/request/assign-plan-re
 import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
+import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -144,19 +145,24 @@ export class PlanSubscriptionManagementService {
       where: { userId, status: PlanSubscriptionStatus.inProgress },
       relations: ['trainingPlan'],
     });
-    if (!subscription)
+    if (!subscription) {
       throw new NotFoundException(
         `Plan subscription with status 'in-progress' was not found.`
       );
+    }
+    
     return subscription;
   }
 
-  async getSubscriptions() {
-    const { id: userId } = this.request.user;
+  async getSubscriptions(userId = this.request.user.id) {
     const subscriptions = await this.planSubscriptionRepository.findMany({
       where: { userId },
       relations: ['trainingPlan', 'planDayProgress'],
     });
+
+    if (userId !== this.request.user.id) {
+      return subscriptions?.filter((s) => s.trainingPlan.visibility === TrainingPlanVisibility.public) ?? [];
+    }
     return subscriptions ?? [];
   }
 

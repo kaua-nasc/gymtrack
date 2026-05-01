@@ -34,12 +34,17 @@ export class TrainingPlanCommentService {
       );
     }
 
-    const decodedCursor: Cursor = cursor
-      ? JSON.parse(Buffer.from(cursor, 'base64').toString())
-      : undefined;
-
-    if (decodedCursor?.value) {
-      decodedCursor.value = new Date(decodedCursor.value);
+    let decodedCursor: Cursor | undefined;
+    if (cursor) {
+      try {
+        decodedCursor = JSON.parse(Buffer.from(cursor, 'base64').toString());
+        if (decodedCursor?.value) {
+          decodedCursor.value = new Date(decodedCursor.value);
+        }
+      } catch (error) {
+        this.logger.warn('Failed to decode cursor', { cursor, error });
+        throw new DomainException('invalid pagination cursor');
+      }
     }
 
     const { data: comments } =
@@ -50,9 +55,10 @@ export class TrainingPlanCommentService {
         'createdAt'
       );
 
-    const users = comments.length > 0 ? await this.identityUserServiceClient.getUsers(
-      comments.map((c) => c.authorId)
-    ) : [];
+    const authorIds = [...new Set(comments.map((c) => c.authorId))];
+    const users = authorIds.length > 0
+      ? await this.identityUserServiceClient.getUsers(authorIds)
+      : [];
 
     const usersMap = new Map(users.map((u) => [u.id, u]));
     comments.forEach((comment) => {

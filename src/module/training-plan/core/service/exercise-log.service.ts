@@ -16,13 +16,7 @@ export class ExerciseLogService {
   ) {}
 
   async createLog(data: CreateExerciseLogRequestDto): Promise<ExerciseLog> {
-    const log = new ExerciseLog({
-      userId: data.userId,
-      exerciseId: data.exerciseId,
-      reps: data.reps,
-      weight: data.weight,
-      notes: data.notes,
-    });
+    const log = new ExerciseLog(data);
 
     return this.exerciseLogRepository.save(log);
   }

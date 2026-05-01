@@ -48,13 +48,8 @@ export class DayManagementService {
 
         await this.exerciseRepository.save(
           new Exercise({
-            dayId: savedDay.id,
-            name: exercise.name,
-            description: exercise.description,
-            observation: exercise.observation,
-            repsNumber: exercise.repsNumber,
-            setsNumber: exercise.setsNumber,
-            type: exercise.type,
+            ...exercise,
+            dayId: savedDay.id
           })
         );
       }
@@ -67,10 +62,8 @@ export class DayManagementService {
 
   async delete(id: string) {
     this.logger.log(`Attempting to delete day with id: ${id}`);
-    const result = await this.dayRepository.delete({ id });
+    await this.dayRepository.delete({ id });
 
     this.logger.log(`Successfully deleted day ${id}.`);
-
-    return result;
   }
 }
