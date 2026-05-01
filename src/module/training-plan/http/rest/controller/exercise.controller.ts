@@ -51,8 +51,7 @@ export class ExerciseController {
   })
   @ApiResponse({ status: 404, description: 'Exercício não encontrado' })
   async findExeciseById(@Param('exerciseId') id: string): Promise<ExerciseResponseDto> {
-    const exercise = await this.exerciseManagementService.get(id);
-    return { ...exercise };
+    return await this.exerciseManagementService.get(id);
   }
 
   @Delete(':exerciseId')

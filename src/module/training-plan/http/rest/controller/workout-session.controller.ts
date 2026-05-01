@@ -17,8 +17,6 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@src/module/shared/module/auth/guard/jwt-auth.guard';
 import { WorkoutSessionService } from '@src/module/training-plan/core/service/workout-session.service';
-import { ActiveSetLog } from '@src/module/training-plan/persistence/entity/active-set-log.entity';
-import { ActiveWorkoutSession } from '@src/module/training-plan/persistence/entity/active-workout-session.entity';
 import { LogWorkoutSetRequestDto } from '../dto/request/log-workout-set-request.dto';
 import { StartWorkoutSessionRequestDto } from '../dto/request/start-workout-session-request.dto';
 import { ActiveWorkoutSessionResponseDto } from '../dto/response/active-workout-session-response.dto';
@@ -42,8 +40,7 @@ export class WorkoutSessionController {
   async startSession(
     @Body() dto: StartWorkoutSessionRequestDto
   ): Promise<ActiveWorkoutSessionResponseDto> {
-    const session = await this.workoutSessionService.startSession(dto);
-    return this.mapToResponse(session);
+    return await this.workoutSessionService.startSession(dto);
   }
 
   @Get('active')
@@ -55,8 +52,7 @@ export class WorkoutSessionController {
   })
   @ApiResponse({ status: 404, description: 'No active session found' })
   async getActiveSession(): Promise<ActiveWorkoutSessionResponseDto> {
-    const session = await this.workoutSessionService.getActiveSession();
-    return this.mapToResponse(session);
+    return await this.workoutSessionService.getActiveSession();
   }
 
   @Patch('log-set')
@@ -71,8 +67,7 @@ export class WorkoutSessionController {
   async logSet(
     @Body() dto: LogWorkoutSetRequestDto
   ): Promise<ActiveWorkoutSessionResponseDto> {
-    const session = await this.workoutSessionService.logSet(dto);
-    return this.mapToResponse(session);
+    return await this.workoutSessionService.logSet(dto);
   }
 
   @Post('finish')
@@ -89,28 +84,5 @@ export class WorkoutSessionController {
   @ApiResponse({ status: 204, description: 'Session cancelled successfully' })
   async cancelSession(): Promise<void> {
     await this.workoutSessionService.cancelSession();
-  }
-
-  private mapToResponse(session: ActiveWorkoutSession): ActiveWorkoutSessionResponseDto {
-    return {
-      id: session.id,
-      userId: session.userId,
-      planDayProgressId: session.planDayProgressId,
-      currentExerciseId: session.currentExerciseId || undefined,
-      currentSetIndex: session.currentSetIndex,
-      restStartedAt: session.restStartedAt || undefined,
-      adaptiveRestDurationSeconds: session.adaptiveRestDurationSeconds || undefined,
-      startedAt: session.startedAt,
-      lastActiveAt: session.lastActiveAt,
-      logs:
-        session.logs?.map((log: ActiveSetLog) => ({
-          id: log.id,
-          exerciseId: log.exerciseId,
-          setIndex: log.setIndex,
-          reps: log.reps,
-          weight: log.weight,
-          rpe: log.rpe || undefined,
-        })) ?? [],
-    };
   }
 }

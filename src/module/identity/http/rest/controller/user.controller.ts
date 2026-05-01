@@ -122,19 +122,7 @@ export class UserController {
   async getUserByIds(
     @ZodBody(userGetByIdsRequestSchema) data: UserGetByIdsRequestSchema
   ): Promise<UserResponseDto[]> {
-    const users = await this.userManagementService.getUsersByIds(data.userIds);
-    return users.map((user) => ({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      bio: user.bio,
-      profilePictureUrl: user.profilePictureUrl,
-      type: user.type,
-      cref: user.cref,
-      isVerified: user.isVerified,
-      trainerInviteCode: user.trainerInviteCode,
-    }));
+    return await this.userManagementService.getUsersByIds(data.userIds);
   }
 
   @Public()
@@ -209,18 +197,7 @@ export class UserController {
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, type: [UserResponseDto] })
   async getFollowing(@Param('userId') userId: string): Promise<UserResponseDto[]> {
-    const users = await this.userFollowsService.getFollowing(userId);
-    return users.map((u) => ({
-      id: u.id,
-      email: u.email,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      bio: u.bio,
-      profilePictureUrl: u.profilePictureUrl,
-      type: u.type,
-      cref: u.cref,
-      isVerified: u.isVerified,
-    }));
+    return await this.userFollowsService.getFollowing(userId);
   }
 
   @Get('/:userId/followers')
@@ -228,18 +205,7 @@ export class UserController {
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
   @ApiResponse({ status: 200, type: [UserResponseDto] })
   async getFollowers(@Param('userId') userId: string): Promise<UserResponseDto[]> {
-    const users = await this.userFollowsService.getFollowers(userId);
-    return users.map((u) => ({
-      id: u.id,
-      email: u.email,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      bio: u.bio,
-      profilePictureUrl: u.profilePictureUrl,
-      type: u.type,
-      cref: u.cref,
-      isVerified: u.isVerified,
-    }));
+    return await this.userFollowsService.getFollowers(userId);
   }
 
   @Get('privacy/settings')
@@ -251,8 +217,7 @@ export class UserController {
     type: UserPrivacySettingsResponseDto,
   })
   async getPrivacyConfiguration(): Promise<UserPrivacySettingsResponseDto> {
-    const privacyConfiguration = await this.userPrivacyService.getPrivacyConfiguration();
-    return { ...privacyConfiguration };
+    return await this.userPrivacyService.getPrivacyConfiguration();
   }
 
   @Put('privacy/settings')
@@ -352,8 +317,7 @@ export class UserController {
   async addWeightLog(
     @ZodBody(addWeightLogRequestSchema) dto: AddWeightLogRequestSchema
   ): Promise<WeightLogResponseDto> {
-    const log = await this.userMetricsService.addWeightLog(dto);
-    return { id: log.id, weight: log.weight, measuredAt: log.measuredAt };
+    return await this.userMetricsService.addWeightLog(dto);
   }
 
   @Get('profile/weight-history')
@@ -382,13 +346,7 @@ export class UserController {
   async addBodyMeasurements(
     @ZodBody(addBodyMeasurementsRequestSchema) dto: AddBodyMeasurementsRequestSchema
   ): Promise<BodyMeasurementResponseDto[]> {
-    const measurements = await this.userMetricsService.addBodyMeasurements(dto);
-    return measurements.map((m) => ({
-      id: m.id,
-      type: m.type,
-      value: m.value,
-      measuredAt: m.measuredAt,
-    }));
+    return await this.userMetricsService.addBodyMeasurements(dto);
   }
 
   @Get('profile/measurements')
@@ -418,13 +376,7 @@ export class UserController {
   @Get('profile/measurements/latest')
   @ApiOperation({ summary: 'Get latest body measurements for all types' })
   async getLatestBodyMeasurements(): Promise<BodyMeasurementResponseDto[]> {
-    const measurements = await this.userMetricsService.getLatestBodyMeasurements();
-    return measurements.map((m) => ({
-      id: m.id,
-      type: m.type,
-      value: m.value,
-      measuredAt: m.measuredAt,
-    }));
+    return await this.userMetricsService.getLatestBodyMeasurements();
   }
 
   @Post('profile/goals')
@@ -434,12 +386,7 @@ export class UserController {
   ): Promise<MetricGoalResponseDto> {
     const goal = await this.userMetricsService.createMetricGoal(dto);
     return {
-      id: goal.id,
-      type: goal.type,
-      startingValue: goal.startingValue,
-      targetValue: goal.targetValue,
-      deadline: goal.deadline,
-      status: goal.status,
+      ...goal,
       progress: 0,
     };
   }
@@ -448,16 +395,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get all metric goals' })
   async getMetricGoals(): Promise<MetricGoalResponseDto[]> {
     const goals = await this.userMetricsService.getMetricGoals();
-    return goals.map((goal) => ({
-      id: goal.id,
-      type: goal.type,
-      startingValue: goal.startingValue,
-      targetValue: goal.targetValue,
-      deadline: goal.deadline,
-      achievedAt: goal.achievedAt,
-      status: goal.status,
-      progress: goal.progress,
-    }));
+    return goals.map((goal) => ({...goal}));
   }
 
   @Patch('profile/metrics/goals/:id')
@@ -472,8 +410,7 @@ export class UserController {
   @Get('profile/trainer-code')
   @ApiOperation({ summary: 'Get current trainer invite code (Trainer only)' })
   async getTrainerInviteCode(): Promise<{ inviteCode?: string }> {
-    const code = await this.trainerRelationshipService.getTrainerInviteCode();
-    return { inviteCode: code };
+    return { inviteCode: await this.trainerRelationshipService.getTrainerInviteCode() };
   }
 
   @Patch('profile/trainer-code')
@@ -509,18 +446,7 @@ export class UserController {
   @Get('profile/students')
   @ApiOperation({ summary: 'List all linked students (Trainer only)' })
   async getStudents(): Promise<UserResponseDto[]> {
-    const students = await this.trainerRelationshipService.getStudents();
-    return students.map((s) => ({
-      id: s.id,
-      firstName: s.firstName,
-      lastName: s.lastName,
-      email: s.email,
-      bio: s.bio,
-      profilePictureUrl: s.profilePictureUrl,
-      type: s.type,
-      cref: s.cref,
-      isVerified: s.isVerified,
-    }));
+    return await this.trainerRelationshipService.getStudents();
   }
 
   @Get('trainer/students/:studentId/metrics/weight')
@@ -555,17 +481,7 @@ export class UserController {
   @Get('trainer/students/:studentId/metrics/goals')
   @ApiOperation({ summary: 'Get metric goals of a linked student (Trainer only)' })
   async getStudentMetricGoals(@Param('studentId') studentId: string) {
-    const goals = await this.userMetricsService.getStudentMetricGoals(studentId);
-    return goals.map((goal) => ({
-      id: goal.id,
-      type: goal.type,
-      startingValue: goal.startingValue,
-      targetValue: goal.targetValue,
-      deadline: goal.deadline,
-      achievedAt: goal.achievedAt,
-      status: goal.status,
-      progress: goal.progress,
-    }));
+    return await this.userMetricsService.getStudentMetricGoals(studentId);
   }
 
   @Patch('trainer/weight-log/:id/note')
@@ -591,19 +507,7 @@ export class UserController {
   @Get('profile/trainer')
   @ApiOperation({ summary: 'Get current trainer information (Student only)' })
   async getTrainer(): Promise<UserResponseDto | null> {
-    const trainer = await this.trainerRelationshipService.getTrainer();
-    if (!trainer) return null;
-    return {
-      id: trainer.id,
-      firstName: trainer.firstName,
-      lastName: trainer.lastName,
-      email: trainer.email,
-      bio: trainer.bio,
-      profilePictureUrl: trainer.profilePictureUrl,
-      type: trainer.type,
-      cref: trainer.cref,
-      isVerified: trainer.isVerified,
-    };
+    return await this.trainerRelationshipService.getTrainer() ?? null;
   }
 
   @Public()
@@ -623,19 +527,6 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Usuário encontrado', type: UserResponseDto })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
-    const user = await this.userManagementService.getUserById(id);
-    return {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      bio: user.bio,
-      profilePictureUrl: user.profilePictureUrl,
-      trainerInviteCode: user.trainerInviteCode,
-      type: user.type,
-      cref: user.cref,
-      isVerified: user.isVerified,
-      isFollowing: user.isFollowing,
-    };
+    return await this.userManagementService.getUserById(id);
   }
 }

@@ -73,8 +73,7 @@ export class TrainingPlanController {
     @Query('limit') limit: number = 10,
     @Query('cursor') cursor?: string
   ): Promise<TrainingPlanListResponseDto> {
-    const paginatedPlans = await this.trainingPlanManagementService.list(limit, cursor);
-    return paginatedPlans;
+    return await this.trainingPlanManagementService.list(limit, cursor);
   }
 
   @Post()
@@ -101,8 +100,7 @@ export class TrainingPlanController {
   async findTrainingPlansByAuthorId(
     @Param('authorId') authorId: string
   ): Promise<TrainingPlanResponseDto[]> {
-    const plans = await this.trainingPlanManagementService.listByUserId(authorId);
-    return plans.map((p) => ({ ...p }));
+    return await this.trainingPlanManagementService.listByUserId(authorId);
   }
 
   @Get('exists/:trainingPlanId')
@@ -116,10 +114,8 @@ export class TrainingPlanController {
   async trainingPlanExists(
     @Param('trainingPlanId') trainingPlanId: string
   ): Promise<TrainingPlanExistsResponseDto> {
-    const exists = await this.trainingPlanManagementService.exists(trainingPlanId);
-
     return {
-      exists: exists,
+      exists: await this.trainingPlanManagementService.exists(trainingPlanId),
     };
   }
 
@@ -194,11 +190,9 @@ export class TrainingPlanController {
     @Query('limit') limit: number = 10,
     @Query('cursor') cursor?: string
   ): Promise<TrainingPlanFeedbackResponseDto> {
-    const parsedLimit = Number(limit);
-
     return this.trainingPlanFeedbackService.getFeedbacks(
       trainingPlanId,
-      parsedLimit,
+      Number(limit),
       cursor
     );
   }
@@ -276,13 +270,7 @@ export class TrainingPlanController {
   async findOneTrainingPlanById(
     @Param('trainingPlanId') trainingPlanId: string
   ): Promise<TrainingPlanResponseDto> {
-    const plan = await this.trainingPlanManagementService.get(trainingPlanId);
-
-    return {
-      ...plan,
-      likes: plan.likes?.map((like) => ({ ...like })),
-      likesCount: plan.likesCount ?? null,
-    };
+    return await this.trainingPlanManagementService.get(trainingPlanId);
   }
 
   @Delete(':trainingPlanId')
@@ -336,12 +324,11 @@ export class TrainingPlanController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: number
   ) {
-    const comments = await this.trainingPlanCommentService.listComments(
+    return await this.trainingPlanCommentService.listComments(
       trainingPlanId,
       cursor,
       limit ?? 10
     );
-    return comments.map((c) => ({ ...c }));
   }
 
   @Post('comments/:trainingPlanId')

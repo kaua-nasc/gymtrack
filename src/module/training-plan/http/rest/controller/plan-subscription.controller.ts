@@ -42,11 +42,7 @@ export class PlanSubscriptionController {
     type: PlanSubscriptionResponseDto,
   })
   async getInProgressSubscription(): Promise<PlanSubscriptionResponseDto> {
-    const subscription =
-      await this.planSubscriptionManagementService.getInProgressSubscription();
-    return {
-      ...subscription,
-    };
+    return await this.planSubscriptionManagementService.getInProgressSubscription();
   }
 
   @Get('/subscriptions')
@@ -57,8 +53,7 @@ export class PlanSubscriptionController {
     type: [PlanSubscriptionResponseDto],
   })
   async getSubscriptions(): Promise<PlanSubscriptionResponseDto[]> {
-    const subscriptions = await this.planSubscriptionManagementService.getSubscriptions();
-    return subscriptions.map((s) => ({ ...s }));
+    return await this.planSubscriptionManagementService.getSubscriptions();
   }
 
   @Get(':trainingPlanId/subscriptions/exists')
@@ -74,8 +69,7 @@ export class PlanSubscriptionController {
   async exists(
     @Param('trainingPlanId') trainingPlanId: string
   ): Promise<PlanSubscriptionExistsResponseDto> {
-    const exists = await this.planSubscriptionManagementService.exists(trainingPlanId);
-    return { ...exists };
+    return await this.planSubscriptionManagementService.exists(trainingPlanId);
   }
 
   @Get('/:trainingPlanId/subscriptions/exists/in-progress')
@@ -91,9 +85,7 @@ export class PlanSubscriptionController {
   async existsInProgress(
     @Param('trainingPlanId') trainingPlanId: string
   ): Promise<PlanSubscriptionExistsResponseDto> {
-    const exists =
-      await this.planSubscriptionManagementService.existsInProgress(trainingPlanId);
-    return { ...exists };
+    return await this.planSubscriptionManagementService.existsInProgress(trainingPlanId);
   }
 
   @Post('/subscriptions/assign')
@@ -190,7 +182,6 @@ export class PlanSubscriptionController {
     type: [DayProgressResponseDto],
   })
   async getDaysProgress(): Promise<DayProgressResponseDto[]> {
-    const progress = await this.planSubscriptionManagementService.getDaysProgress();
-    return progress.map((p) => ({ ...p }));
+    return await this.planSubscriptionManagementService.getDaysProgress();
   }
 }
