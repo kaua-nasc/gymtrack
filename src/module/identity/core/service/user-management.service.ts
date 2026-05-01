@@ -136,7 +136,10 @@ export class UserManagementService {
     const userId = this.request.user.id;
 
     this.logger.log(`Fetching user by ID: ${id}`);
-    const user = await this.userRepository.findOneById(id);
+    const user = await this.userRepository.find({
+      where: { id },
+      relations: ['trainerRelationship', 'trainerRelationship.trainer'],
+    });
 
     if (!user) {
       this.logger.warn(`Failed to fetch user: User not found with ID: ${id}`);
@@ -148,9 +151,28 @@ export class UserManagementService {
       user.profilePictureUrl = this.storageService.generateUrl(user.profilePictureUrl);
     }
 
+    let trainer: any = undefined;
+    if (user.trainerRelationship?.trainer) {
+      const t = user.trainerRelationship.trainer;
+      trainer = {
+        id: t.id,
+        firstName: t.firstName,
+        lastName: t.lastName,
+        email: t.email,
+        bio: t.bio,
+        profilePictureUrl: t.profilePictureUrl
+          ? this.storageService.generateUrl(t.profilePictureUrl)
+          : undefined,
+        type: t.type,
+        cref: t.cref,
+        isVerified: t.isVerified,
+      };
+    }
+
     this.logger.log(`Successfully fetched user: ${id}`);
     return {
       ...user,
+      trainer,
       isFollowing: await this.userFollowsService.isFollowing(userId, id),
     };
   }

@@ -52,4 +52,10 @@ export class UserResponseDto {
     example: true,
   })
   isFollowing?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Informações do treinador vinculado',
+    type: () => UserResponseDto,
+  })
+  trainer?: UserResponseDto;
 }

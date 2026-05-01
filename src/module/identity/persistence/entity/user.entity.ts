@@ -1,10 +1,11 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne, type Relation } from 'typeorm';
 import { HeightUnit } from '../../core/enum/height-unit.enum';
 import { UserType } from '../../core/enum/user-type.enum';
 import { WeightUnit } from '../../core/enum/weight-unit.enum';
 import { UserFollows } from './user-follows.entity';
 import { UserPrivacySettings } from './user-privacy-settings.entity';
+import { TrainerStudentRelationship } from './trainer-student-relationship.entity';
 
 @Entity({ name: 'users' })
 export class User extends DefaultEntity<User> {
@@ -85,7 +86,19 @@ export class User extends DefaultEntity<User> {
     (settings) => settings.user,
     { cascade: true }
   )
-  privacySettings: UserPrivacySettings;
+  privacySettings: Relation<UserPrivacySettings>;
+
+  @OneToMany(
+    () => TrainerStudentRelationship,
+    (relationship) => relationship.trainer
+  )
+  students: TrainerStudentRelationship[];
+
+  @OneToOne(
+    () => TrainerStudentRelationship,
+    (relationship) => relationship.student
+  )
+  trainerRelationship: Relation<TrainerStudentRelationship>;
 
   isFollowing?: boolean;
 }

@@ -1,5 +1,5 @@
 import { DefaultEntity } from '@src/module/shared/module/persistence/typeorm/entity/default.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, type Relation } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({ name: 'trainer_student_relationships' })
@@ -10,13 +10,13 @@ export class TrainerStudentRelationship extends DefaultEntity<TrainerStudentRela
   @Column({ type: 'uuid', unique: true })
   studentId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.students)
   @JoinColumn({ name: 'trainerId' })
-  trainer: User;
+  trainer: Relation<User>;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, (user) => user.trainerRelationship)
   @JoinColumn({ name: 'studentId' })
-  student: User;
+  student: Relation<User>;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   linkedAt: Date;

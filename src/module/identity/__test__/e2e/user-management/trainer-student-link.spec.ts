@@ -243,6 +243,31 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
       expect(Number(body.items[0].weight)).toBe(80);
     });
 
+    it('should return trainer info when fetching student profile', async () => {
+      const trainer = userFactory.build({
+        type: UserType.personalTrainer,
+        firstName: 'Coach',
+        lastName: 'Trainer',
+      });
+      const student = userFactory.build({ type: UserType.client });
+      await testDbClient(Tables.User).insert([trainer, student]);
+
+      await testDbClient(Tables.TrainerStudentRelationship).insert({
+        trainerId: trainer.id,
+        studentId: student.id,
+      });
+
+      const response = await fetch(`${url}/identity/user/${student.id}`, {
+        headers: getAuthorizationHeader(student.id!, UserType.client),
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      const body = (await response.json()) as any;
+      expect(body.trainer).toBeDefined();
+      expect(body.trainer.id).toBe(trainer.id);
+      expect(body.trainer.firstName).toBe('Coach');
+    });
+
     it('should respect student privacy settings regarding past data', async () => {
       const trainer = userFactory.build({ type: UserType.personalTrainer });
       const student = userFactory.build({ type: UserType.client });
