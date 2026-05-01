@@ -3,7 +3,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const BodyMeasurementEntrySchema = z.object({
-  type: z.nativeEnum(MeasurementType).describe('Tipo de medida corporal'),
+  type: z.enum(MeasurementType).describe('Tipo de medida corporal'),
   value: z.number().min(0).describe('Valor da medida'),
 });
 

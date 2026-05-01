@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const CreatePlanSubscriptionRequestSchema = z.object({
   type: z
-    .nativeEnum(PlanSubscriptionType)
+    .enum(PlanSubscriptionType)
     .describe('Tipo de inscricao (ex.: PRIVADA, PARTIAL_ACCESS, etc.)'),
 });
 

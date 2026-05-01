@@ -6,7 +6,7 @@ export const ResetPasswordVerifySchema = z.object({
     .string()
     .length(4)
     .describe('Codigo gerado ao requerir a redefinicao da senha'),
-  email: z.string().email().describe('Email do usuário'),
+  email: z.email().describe('Email do usuário'),
 });
 
 export class ResetPasswordVerifyDto extends createZodDto(ResetPasswordVerifySchema) {}

@@ -15,7 +15,7 @@ export const UserCreateRequestSchema = z
     lastName: z.string().min(1).describe('Sobrenome do usuário'),
     bio: z.string().min(1).optional().describe('Bio do usuário'),
     type: z
-      .nativeEnum(UserType)
+      .enum(UserType)
       .optional()
       .default(UserType.client)
       .describe('Tipo de usuário (CLIENT ou PERSONAL_TRAINER)'),

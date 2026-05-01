@@ -4,7 +4,6 @@ import { z } from 'zod';
 export const CreateDayRequestSchema = z.object({
   name: z.string().min(1).describe('Nome do dia de treino'),
   trainingPlanId: z
-    .string()
     .uuid()
     .describe('ID do plano de treino ao qual o dia pertence'),
 });

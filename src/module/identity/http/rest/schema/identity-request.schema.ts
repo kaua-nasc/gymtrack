@@ -37,13 +37,13 @@ export type UserGetByIdsRequestSchema = z.infer<typeof userGetByIdsRequestSchema
 
 export const userCreateRequestSchema = z
   .object({
-    id: z.string().uuid().optional(),
-    email: z.string().email().trim(),
+    id: z.uuid().optional(),
+    email: z.email().trim(),
     password: z.string().trim().min(1),
     firstName: z.string().trim().min(1),
     lastName: z.string().trim().min(1),
     bio: z.string().trim().min(1).optional(),
-    type: z.nativeEnum(UserType).optional(),
+    type: z.enum(UserType).optional(),
   })
   .passthrough();
 export type UserCreateRequestSchema = z.infer<typeof userCreateRequestSchema>;
