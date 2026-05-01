@@ -198,7 +198,7 @@ describe('Identity - Trainer Student Link - (e2e)', () => {
           'Content-Type': 'application/json',
           ...getAuthorizationHeader(student.id!, UserType.client),
         },
-        body: JSON.stringify({ inviteCode: 'LINK-ME' }),
+        body: JSON.stringify({ code: 'LINK-ME' }),
       });
 
       expect(response.status).toBe(HttpStatus.OK);
