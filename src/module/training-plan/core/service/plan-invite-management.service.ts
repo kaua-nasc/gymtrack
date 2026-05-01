@@ -33,7 +33,9 @@ export class PlanInviteManagementService {
       await this.trainingPlanRepository.findOneTrainingPlanById(trainingPlanId);
 
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {

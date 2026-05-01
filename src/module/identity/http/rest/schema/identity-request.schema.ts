@@ -35,17 +35,15 @@ export const userGetByIdsRequestSchema = z.object({
 });
 export type UserGetByIdsRequestSchema = z.infer<typeof userGetByIdsRequestSchema>;
 
-export const userCreateRequestSchema = z
-  .object({
-    id: z.uuid().optional(),
-    email: z.email().trim(),
-    password: z.string().trim().min(1),
-    firstName: z.string().trim().min(1),
-    lastName: z.string().trim().min(1),
-    bio: z.string().trim().min(1).optional(),
-    type: z.enum(UserType).optional(),
-  })
-  .passthrough();
+export const userCreateRequestSchema = z.looseObject({
+  id: z.uuid().optional(),
+  email: z.email().trim(),
+  password: z.string().trim().min(1),
+  firstName: z.string().trim().min(1),
+  lastName: z.string().trim().min(1),
+  bio: z.string().trim().min(1).optional(),
+  type: z.enum(UserType).optional(),
+});
 export type UserCreateRequestSchema = z.infer<typeof userCreateRequestSchema>;
 
 export const userPrivacySettingsRequestSchema = z.object({

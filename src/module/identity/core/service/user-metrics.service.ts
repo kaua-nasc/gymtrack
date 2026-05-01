@@ -185,7 +185,8 @@ export class UserMetricsService {
     this.logger.log(`Creating metric goal for user: ${userId}, type: ${dto.type}`);
 
     const user = await this.userRepository.findOneById(userId);
-    if (!user) throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
+    if (!user)
+      throw new NotFoundException(`Users with identifiers '${userId}' were not found.`);
 
     let startingValue: number;
     if (dto.type === 'WEIGHT') {
@@ -381,7 +382,9 @@ export class UserMetricsService {
     this.logger.log(`Trainer adding note to body measurement: ${measurementId}`);
     const measurement = await this.bodyMeasurementRepository.findOneById(measurementId);
     if (!measurement) {
-      throw new NotFoundException(`Body measurement with ID '${measurementId}' was not found.`);
+      throw new NotFoundException(
+        `Body measurement with ID '${measurementId}' was not found.`
+      );
     }
 
     await this.validateTrainerAccess(measurement.userId);

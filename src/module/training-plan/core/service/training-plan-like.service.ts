@@ -34,14 +34,18 @@ export class TrainingPlanLikeService {
       relations: { privateParticipants: true },
     });
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (
       trainingPlan.visibility === TrainingPlanVisibility.private &&
       trainingPlan.authorId !== userId
     ) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (
@@ -49,7 +53,9 @@ export class TrainingPlanLikeService {
       !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
       trainingPlan.authorId !== userId
     ) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     const alreadyLiked = await this.trainingPlanLikeRepository.existsBy({
@@ -81,7 +87,9 @@ export class TrainingPlanLikeService {
 
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     await this.trainingPlanLikeRepository.delete({ trainingPlanId, likedBy: userId });

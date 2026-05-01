@@ -98,8 +98,9 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
     });
 
     it('should return a not found status code when have not user with filled id', async () => {
+      const user = userFactory.build();
       const trainingPlan = trainingPlanFactory.build({
-        authorId: '00000000-0000-0000-0000-000000000001',
+        authorId: user.id,
       });
 
       await testDbClient(Tables.TrainingPlan).insert(trainingPlan);

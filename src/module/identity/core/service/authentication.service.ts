@@ -103,7 +103,7 @@ export class AuthService {
       this.logger.warn(
         `Reset code verification failed for user ID ${user.id}: Token mismatch.`
       );
-      throw new UnauthorizedException("The provided token does not match or is invalid.");
+      throw new UnauthorizedException('The provided token does not match or is invalid.');
     }
 
     await this.userRepository.removeResetCode(data.email);

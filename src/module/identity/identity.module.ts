@@ -12,6 +12,8 @@ import { UserPrivacyService } from './core/service/user-privacy.service';
 import { AuthController } from './http/rest/controller/auth.controller';
 import { UserController } from './http/rest/controller/user.controller';
 import { IdentityPersistenceModule } from './persistence/identity-persistence.module';
+import { UserProfileController } from './http/rest/controller/user-profile.controller';
+import { UserTrainerController } from './http/rest/controller/user-trainer.controller';
 
 @Module({
   imports: [
@@ -29,6 +31,11 @@ import { IdentityPersistenceModule } from './persistence/identity-persistence.mo
     TrainerRelationshipService,
     UserPrivacyService,
   ],
-  controllers: [AuthController, UserController],
+  controllers: [
+    AuthController,
+    UserController,
+    UserProfileController,
+    UserTrainerController,
+  ],
 })
 export class IdentityModule {}

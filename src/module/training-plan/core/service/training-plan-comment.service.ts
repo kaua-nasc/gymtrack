@@ -29,7 +29,9 @@ export class TrainingPlanCommentService {
 
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     const decodedCursor: Cursor = cursor
@@ -69,7 +71,9 @@ export class TrainingPlanCommentService {
 
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
@@ -94,7 +98,9 @@ export class TrainingPlanCommentService {
 
     const comment = await this.trainingPlanCommentRepository.findOneById(commentId);
     if (!comment) {
-      throw new NotFoundException(`Training plan comment with ID '${commentId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan comment with ID '${commentId}' was not found.`
+      );
     }
 
     if (comment.authorId !== userId) {

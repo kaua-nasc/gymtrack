@@ -34,11 +34,13 @@ export class PlanSubscriptionManagementService {
     });
 
     if (!(await this.trainingPlanManagementService.exists(trainingPlanId))) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
-      throw new DomainException('user not found');
+      throw new NotFoundException('user not found');
     }
 
     const existingSubscription = await this.planSubscriptionRepository.find({
@@ -49,9 +51,7 @@ export class PlanSubscriptionManagementService {
     });
 
     if (existingSubscription) {
-      throw new ConflictException(
-        'user already subscribed in this training plan'
-      );
+      throw new ConflictException('user already subscribed in this training plan');
     }
 
     const subscription = await this.planSubscriptionRepository.save(
@@ -97,9 +97,7 @@ export class PlanSubscriptionManagementService {
     });
 
     if (existingSubscription) {
-      throw new ConflictException(
-        'student is already subscribed to this plan'
-      );
+      throw new ConflictException('student is already subscribed to this plan');
     }
 
     const sub = await this.planSubscriptionRepository.save(
@@ -146,7 +144,10 @@ export class PlanSubscriptionManagementService {
       where: { userId, status: PlanSubscriptionStatus.inProgress },
       relations: ['trainingPlan'],
     });
-    if (!subscription) throw new NotFoundException(`Plan subscription with status 'in-progress' was not found.`);
+    if (!subscription)
+      throw new NotFoundException(
+        `Plan subscription with status 'in-progress' was not found.`
+      );
     return subscription;
   }
 

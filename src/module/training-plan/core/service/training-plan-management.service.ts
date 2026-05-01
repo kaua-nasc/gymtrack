@@ -51,7 +51,7 @@ export class TrainingPlanManagementService {
       this.logger.warn('User not found when creating training plan', {
         userId,
       });
-      throw new DomainException('user not found');
+      throw new NotFoundException('user not found');
     }
 
     let visibility = trainingPlanData.visibility;
@@ -316,7 +316,9 @@ export class TrainingPlanManagementService {
     this.logger.log(`Attempting to add image for training plan: ${trainingPlanId}`);
     const trainingPlan = await this.trainingPlanRepository.findOneById(trainingPlanId);
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     await this.authorizeAccess(trainingPlan);
@@ -347,7 +349,7 @@ export class TrainingPlanManagementService {
     const userId = this.request.user.id;
     this.logger.log('Cloning training plan', { userId, trainingPlanId });
     if (!(await this.identityUserServiceClient.userExists(userId))) {
-      throw new DomainException('user not found');
+      throw new NotFoundException('user not found');
     }
 
     const trainingPlan = await this.trainingPlanRepository.find({
@@ -356,11 +358,15 @@ export class TrainingPlanManagementService {
     });
 
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (trainingPlan?.visibility === TrainingPlanVisibility.private) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     if (
@@ -368,7 +374,9 @@ export class TrainingPlanManagementService {
       !trainingPlan.privateParticipants.some((v) => v.userId === userId) &&
       trainingPlan.authorId !== userId
     ) {
-      throw new NotFoundException(`Training plan with ID '${trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${trainingPlanId}' was not found.`
+      );
     }
 
     const clonedTrainingPlan = new TrainingPlan({

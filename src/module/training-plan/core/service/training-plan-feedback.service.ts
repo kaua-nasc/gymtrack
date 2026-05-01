@@ -1,12 +1,12 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { UserType } from '@src/module/identity/core/enum/user-type.enum';
-import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 import { IdentityUserExistsApi } from '@src/module/shared/module/integration/interface/identity-integration.interface';
 import { AppLogger } from '@src/module/shared/module/logger/service/app-logger.service';
 import { TrainingPlanRepository } from '@src/module/training-plan/persistence/repository/training-plan.repository';
 import { TrainingPlanFeedback } from '../../persistence/entity/training-plan-feedback.entity';
 import { TrainingPlanFeedbackRepository } from '../../persistence/repository/training-plan-feedback.repository';
+import { DomainException } from '@src/module/shared/core/exception/domain.exception';
 
 @Injectable()
 export class TrainingPlanFeedbackService {
@@ -35,7 +35,9 @@ export class TrainingPlanFeedbackService {
       newFeedback.trainingPlanId
     );
     if (!trainingPlan) {
-      throw new NotFoundException(`Training plan with ID '${newFeedback.trainingPlanId}' was not found.`);
+      throw new NotFoundException(
+        `Training plan with ID '${newFeedback.trainingPlanId}' was not found.`
+      );
     }
 
     if (trainingPlan?.authorId === userId) {
@@ -45,7 +47,7 @@ export class TrainingPlanFeedbackService {
     }
 
     if (!(await this.identityUserServiceClient.userExists(userId))) {
-      throw new DomainException('user not found');
+      throw new NotFoundException('user not found');
     }
 
     const feedback = new TrainingPlanFeedback({

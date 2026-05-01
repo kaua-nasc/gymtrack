@@ -11,7 +11,7 @@ export const AddBodyMeasurementsRequestSchema = z.object({
   measurements: z
     .array(BodyMeasurementEntrySchema)
     .describe('Lista de medidas corporais'),
-  measuredAt: z.string().datetime().optional().describe('Data da medição'),
+  measuredAt: z.iso.datetime().optional().describe('Data da medição'),
 });
 
 export class AddBodyMeasurementsRequestDto extends createZodDto(

@@ -55,7 +55,9 @@ export class TrainerRelationshipService {
 
     const trainer = await this.userRepository.findByInviteCode(inviteCode);
     if (!trainer || trainer.type !== UserType.personalTrainer) {
-      throw new NotFoundException(`Users with identifiers '${inviteCode}' were not found.`);
+      throw new NotFoundException(
+        `Users with identifiers '${inviteCode}' were not found.`
+      );
     }
 
     const existingRelationship =

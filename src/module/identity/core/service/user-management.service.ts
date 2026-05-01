@@ -71,7 +71,7 @@ export class UserManagementService {
 
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-            throw new NotFoundException(`User with identifier '${userId}' was not found.`);
+      throw new NotFoundException(`User with identifier '${userId}' was not found.`);
     }
 
     if (user.type === UserType.personalTrainer) {
@@ -163,7 +163,9 @@ export class UserManagementService {
 
     if (!users || users.length === 0) {
       this.logger.warn(`Failed to fetch users: No users found with IDs: ${userIds}`);
-      throw new NotFoundException(`Users with identifiers '${userIds.join(', ')}' were not found.`);
+      throw new NotFoundException(
+        `Users with identifiers '${userIds.join(', ')}' were not found.`
+      );
     }
 
     return users;
