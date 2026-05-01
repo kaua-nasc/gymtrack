@@ -122,7 +122,7 @@ export type UpdateTrainerInviteCodeRequestSchema = z.infer<
 >;
 
 export const linkTrainerRequestSchema = z.object({
-  inviteCode: z.string().trim().min(1),
+  code: z.string().trim().min(1),
 });
 export type LinkTrainerRequestSchema = z.infer<typeof linkTrainerRequestSchema>;
 

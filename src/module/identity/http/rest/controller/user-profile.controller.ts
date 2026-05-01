@@ -255,7 +255,7 @@ export class UserProfileController {
   async linkTrainer(
     @ZodBody(linkTrainerRequestSchema) dto: LinkTrainerRequestSchema
   ): Promise<void> {
-    await this.trainerRelationshipService.linkTrainer(dto.inviteCode);
+    await this.trainerRelationshipService.linkTrainer(dto.code);
   }
 
   @Delete('unlink-trainer')
