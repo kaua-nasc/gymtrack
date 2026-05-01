@@ -50,9 +50,9 @@ export class TrainingPlanCommentService {
         'createdAt'
       );
 
-    const users = await this.identityUserServiceClient.getUsers(
+    const users = comments.length > 0 ? await this.identityUserServiceClient.getUsers(
       comments.map((c) => c.authorId)
-    );
+    ) : [];
 
     const usersMap = new Map(users.map((u) => [u.id, u]));
     comments.forEach((comment) => {
