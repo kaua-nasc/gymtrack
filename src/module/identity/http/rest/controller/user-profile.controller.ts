@@ -1,22 +1,4 @@
 import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Param,
-  Patch,
-  Post,
-  Put,
-  Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { FileInterceptor } from '@nestjs/platform-express';
-import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
@@ -63,6 +45,9 @@ import { BodyMeasurementResponseDto } from '../dto/response/body-measurement-res
 import { MetricGoalResponseDto } from '../dto/response/metric-goal-response.dto';
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import { WeightLogResponseDto } from '../dto/response/weight-log-response.dto';
+import { Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')

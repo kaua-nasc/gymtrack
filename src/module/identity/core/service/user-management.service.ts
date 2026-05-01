@@ -168,7 +168,13 @@ export class UserManagementService {
       );
     }
 
-    return users;
+    return users.map((user) => {
+      if (user.profilePictureUrl) {
+        this.logger.log(`Generating URL for profile picture for user: ${user.id}`);
+        user.profilePictureUrl = this.storageService.generateUrl(user.profilePictureUrl);
+      }
+      return user;
+    });
   }
 
   async getUsers() {

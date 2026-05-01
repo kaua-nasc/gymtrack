@@ -155,7 +155,7 @@ export class PlanSubscriptionManagementService {
     const { id: userId } = this.request.user;
     const subscriptions = await this.planSubscriptionRepository.findMany({
       where: { userId },
-      relations: ['trainingPlan'],
+      relations: ['trainingPlan', 'planDayProgress'],
     });
     return subscriptions ?? [];
   }
