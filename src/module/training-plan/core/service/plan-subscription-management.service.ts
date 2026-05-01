@@ -10,7 +10,8 @@ import { AssignPlanRequestDto } from '../../http/rest/dto/request/assign-plan-re
 import { CreatePlanSubscriptionRequestDto } from '../../http/rest/dto/request/create-plan-subscription-request.dto';
 import { PlanSubscription } from '../../persistence/entity/plan-subscription.entity';
 import { PlanSubscriptionRepository } from '../../persistence/repository/plan-subscription.repository';
-import { TrainingPlanVisibility } from '../enum/training-plan-visibility.enum';
+import { PlanSubscriptionType } from '../enum/plan-subscription-type.enum';
+import { In } from 'typeorm';
 
 @Injectable()
 export class PlanSubscriptionManagementService {
@@ -154,14 +155,22 @@ export class PlanSubscriptionManagementService {
     return subscription;
   }
 
-  async getSubscriptions(userId = this.request.user.id) {
+  async getSubscriptions() {
+    const subscriptions = await this.planSubscriptionRepository.findMany({
+      where: { userId: this.request.user.id },
+      relations: ['trainingPlan', 'planDayProgress'],
+    });
+    return subscriptions ?? [];
+  }
+
+  async getSubscriptionsByUserId(userId: string) {
     const subscriptions = await this.planSubscriptionRepository.findMany({
       where: { userId },
       relations: ['trainingPlan', 'planDayProgress'],
     });
 
     if (userId !== this.request.user.id) {
-      return subscriptions?.filter((s) => s.trainingPlan.visibility === TrainingPlanVisibility.public) ?? [];
+      return subscriptions?.filter((s) => s.type === PlanSubscriptionType.partialAccess || s.type === PlanSubscriptionType.totalAccess) ?? [];
     }
     return subscriptions ?? [];
   }
@@ -274,5 +283,29 @@ export class PlanSubscriptionManagementService {
       relations: ['planDayProgress'],
     });
     return subs?.flatMap((s) => s.planDayProgress) ?? [];
+  }
+
+  async changeType(trainingPlanId: string, newType: PlanSubscriptionType) {
+    const { id: userId } = this.request.user;
+    const subs = await this.planSubscriptionRepository.findMany({
+      where: { userId, status: In([PlanSubscriptionStatus.inProgress, PlanSubscriptionStatus.notStarted]) },
+    }) ?? [];
+
+    if (subs.some((s) => s.type === PlanSubscriptionType.private)) {
+      throw new DomainException('Cannot change subscription type when there is a private subscription.');
+    }
+
+    const sub = subs.find((s) => s.trainingPlanId === trainingPlanId);
+
+    if (!sub) {
+      throw new NotFoundException(
+        `Plan subscription for training plan ${trainingPlanId} not found.`
+      );
+    }
+
+    await this.planSubscriptionRepository.update(
+      { id: sub.id },
+      { type: newType }
+    );
   }
 }

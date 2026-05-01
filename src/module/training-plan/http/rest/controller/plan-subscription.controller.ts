@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -24,6 +25,7 @@ import { CreatePlanSubscriptionRequestDto } from '../dto/request/create-plan-sub
 import { DayProgressResponseDto } from '../dto/response/day-progress-response.dto';
 import { PlanSubscriptionExistsResponseDto } from '../dto/response/plan-subscription-exists-response.dto';
 import { PlanSubscriptionResponseDto } from '../dto/response/plan-subscription-response.dto';
+import { ChangeSubscriptionTypeRequestDto } from '../dto/request/change-subscription-type.dto';
 
 @ApiTags('Plan Subscriptions')
 @ApiBearerAuth('JWT-auth')
@@ -54,17 +56,6 @@ export class PlanSubscriptionController {
   })
   async getSubscriptions(): Promise<PlanSubscriptionResponseDto[]> {
     return await this.planSubscriptionManagementService.getSubscriptions();
-  }
-
-  @Get('/subscriptions/:userId')
-  @ApiOperation({ summary: 'Lista todas as assinaturas de um usuário' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de assinaturas',
-    type: [PlanSubscriptionResponseDto],
-  })
-  async getSubscriptionsById(userId: string): Promise<PlanSubscriptionResponseDto[]> {
-    return await this.planSubscriptionManagementService.getSubscriptions(userId);
   }
 
   @Get(':trainingPlanId/subscriptions/exists')
@@ -194,5 +185,32 @@ export class PlanSubscriptionController {
   })
   async getDaysProgress(): Promise<DayProgressResponseDto[]> {
     return await this.planSubscriptionManagementService.getDaysProgress();
+  }
+
+  @Get('/subscriptions/:userId')
+  @ApiOperation({ summary: 'Lista todas as assinaturas de um usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de assinaturas',
+    type: [PlanSubscriptionResponseDto],
+  })
+  async getSubscriptionsById(
+    @Param('userId') userId: string
+  ): Promise<PlanSubscriptionResponseDto[]> {
+    return await this.planSubscriptionManagementService.getSubscriptionsByUserId(userId);
+  }
+
+  @Put(':trainingPlanId/subscriptions/privacy')
+  @ApiOperation({
+    summary: 'Altera o tipo da assinatura de um plano específico',
+  })
+  @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
+  @ApiBody({ type: ChangeSubscriptionTypeRequestDto })
+  @ApiResponse({ status: 200, description: 'Tipo da assinatura alterado' })
+  async changeType(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Body() body: ChangeSubscriptionTypeRequestDto
+  ): Promise<void> {
+    await this.planSubscriptionManagementService.changeType(trainingPlanId, body.type);
   }
 }

@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { userFactory } from '@src/module/identity/__test__/factory/user.factory';
 import { PlanSubscriptionStatus } from '@src/module/training-plan/core/enum/plan-subscription-status.enum';
+import { PlanSubscriptionType } from '@src/module/training-plan/core/enum/plan-subscription-type.enum';
 import { TrainingPlanModule } from '@src/module/training-plan/training-plan.module';
 import { Tables } from '@testInfra/enum/table.enum';
 import { testDbClient } from '@testInfra/knex.database';
@@ -1160,6 +1161,108 @@ describe('Plan Subscription - Plan Subscription Controller - (e2e)', () => {
           },
         }
       );
+
+      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  describe('Change Subscription Type', () => {
+    it('should change subscription type successfully', async () => {
+      const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build();
+      const planSubscription = planSubscriptionFactory.build({
+        userId: user.id,
+        trainingPlanId: trainingPlan.id,
+        status: PlanSubscriptionStatus.notStarted,
+        type: PlanSubscriptionType.totalAccess,
+      });
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+      await testDbClient(Tables.PlanSubscription).insert(planSubscription);
+
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions/privacy`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: PlanSubscriptionType.partialAccess }),
+      });
+
+      expect(res.status).toBe(HttpStatus.OK);
+
+      const updatedSub = await testDbClient(Tables.PlanSubscription)
+        .where({ id: planSubscription.id })
+        .first();
+      expect(updatedSub.type).toBe(PlanSubscriptionType.partialAccess);
+    });
+
+    it('should return bad request when there is already a private subscription', async () => {
+      const user = userFactory.build();
+      const trainingPlan1 = trainingPlanFactory.build();
+      const trainingPlan2 = trainingPlanFactory.build();
+
+      const sub1 = planSubscriptionFactory.build({
+        userId: user.id,
+        trainingPlanId: trainingPlan1.id,
+        status: PlanSubscriptionStatus.inProgress,
+        type: PlanSubscriptionType.private,
+      });
+
+      const sub2 = planSubscriptionFactory.build({
+        userId: user.id,
+        trainingPlanId: trainingPlan2.id,
+        status: PlanSubscriptionStatus.notStarted,
+        type: PlanSubscriptionType.totalAccess,
+      });
+
+      await testDbClient(Tables.TrainingPlan).insert([trainingPlan1, trainingPlan2]);
+      await testDbClient(Tables.PlanSubscription).insert([sub1, sub2]);
+
+      const res = await fetch(`${url}/training-plan/${trainingPlan2.id}/subscriptions/privacy`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: PlanSubscriptionType.partialAccess }),
+      });
+
+      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should return not found when subscription does not exist', async () => {
+      const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions/privacy`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: PlanSubscriptionType.partialAccess }),
+      });
+
+      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return bad request for invalid type', async () => {
+      const user = userFactory.build();
+      const trainingPlan = trainingPlanFactory.build();
+
+      await testDbClient(Tables.TrainingPlan).insert(trainingPlan);
+
+      const res = await fetch(`${url}/training-plan/${trainingPlan.id}/subscriptions/privacy`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizationHeader(user.id!),
+        },
+        body: JSON.stringify({ type: 'INVALID_TYPE' }),
+      });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
