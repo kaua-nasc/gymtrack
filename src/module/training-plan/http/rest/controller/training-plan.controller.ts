@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   Query,
   UploadedFile,
   UseGuards,
@@ -85,6 +86,23 @@ export class TrainingPlanController {
     @Body() contentData: CreateTrainingPlanRequestDto
   ): Promise<{ id: string }> {
     const result = await this.trainingPlanManagementService.create({ ...contentData });
+
+    return { id: result.id };
+  }
+
+  @Put(':trainingPlanId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Edita um plano de treino existente' })
+  @ApiParam({ name: 'trainingPlanId', description: 'ID do plano de treino' })
+  @ApiBody({ type: CreateTrainingPlanRequestDto })
+  @ApiResponse({ status: 200, description: 'Plano de treino editado com sucesso' })
+  async edit(
+    @Param('trainingPlanId') trainingPlanId: string,
+    @Body() contentData: CreateTrainingPlanRequestDto
+  ): Promise<{ id: string }> {
+    const result = await this.trainingPlanManagementService.edit(trainingPlanId, {
+      ...contentData,
+    });
 
     return { id: result.id };
   }

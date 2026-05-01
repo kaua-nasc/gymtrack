@@ -109,6 +109,36 @@ export class TrainingPlanManagementService {
     this.logger.log('Training plan deleted successfully', { trainingPlanId: id });
   }
 
+  async edit(id: string, trainingPlanData: CreateTrainingPlanRequestDto) {
+    this.logger.log('Updating training plan', { trainingPlanId: id });
+
+    const trainingPlan = await this.trainingPlanRepository.findOneById(id);
+    if (!trainingPlan) {
+      this.logger.warn('Attempt to update non-existing training plan', {
+        trainingPlanId: id,
+      });
+      throw new NotFoundException(`Training plan with ID '${id}' was not found.`);
+    }
+
+    await this.authorizeAccess(trainingPlan);
+
+    const updatedPlan = await this.trainingPlanRepository.save(
+      new TrainingPlan({
+        ...trainingPlan,
+        ...trainingPlanData,
+        id,
+      })
+    );
+
+    this.logger.log('Training plan updated successfully', {
+      trainingPlanId: updatedPlan.id,
+    });
+
+    return {
+      id: updatedPlan.id,
+    };
+  }
+
   private async authorizeAccess(trainingPlan: TrainingPlan): Promise<void> {
     const { id: userId } = this.request.user;
 
